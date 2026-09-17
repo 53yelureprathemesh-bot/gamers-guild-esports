@@ -1,0 +1,135 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { dataStore } from '@/lib/dataStore';
+import { formStore } from '@/lib/defaultForm';
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get('type');
+
+    switch (type) {
+      case 'events':
+        return NextResponse.json({ success: true, data: dataStore.getEvents() });
+      case 'points-table':
+        return NextResponse.json({ success: true, data: dataStore.getPointsTable(searchParams.get('eventId') || undefined) });
+      case 'matches':
+        return NextResponse.json({ success: true, data: dataStore.getMatches(searchParams.get('eventId') || undefined) });
+      case 'registrations':
+        return NextResponse.json({ success: true, data: dataStore.getRegistrations() });
+      case 'form-fields':
+        return NextResponse.json({ success: true, data: formStore.getFields() });
+      case 'announcements':
+        return NextResponse.json({ success: true, data: dataStore.getAnnouncements() });
+      case 'gallery':
+        return NextResponse.json({ success: true, data: dataStore.getGallery() });
+      case 'sponsors':
+        return NextResponse.json({ success: true, data: dataStore.getSponsors() });
+      case 'settings':
+        return NextResponse.json({ success: true, data: dataStore.getSiteSettings() });
+      case 'admins':
+        return NextResponse.json({ success: true, data: dataStore.getAdmins() });
+      default:
+        return NextResponse.json({
+          success: true,
+          data: {
+            events: dataStore.getEvents(),
+            registrations: dataStore.getRegistrations(),
+            settings: dataStore.getSiteSettings(),
+            formFields: formStore.getFields(),
+            announcements: dataStore.getAnnouncements(),
+            gallery: dataStore.getGallery(),
+            sponsors: dataStore.getSponsors(),
+            admins: dataStore.getAdmins()
+          }
+        });
+    }
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { action, payload } = body;
+
+    switch (action) {
+      case 'save-event': {
+        const saved = dataStore.saveEvent(payload);
+        return NextResponse.json({ success: true, data: saved });
+      }
+      case 'delete-event': {
+        const deleted = dataStore.deleteEvent(payload.id);
+        return NextResponse.json({ success: deleted });
+      }
+      case 'update-registration-status': {
+        const updated = dataStore.updateRegistrationStatus(payload.id, payload.status, payload.notes);
+        return NextResponse.json({ success: Boolean(updated), data: updated });
+      }
+      case 'delete-registration': {
+        const deleted = dataStore.deleteRegistration(payload.id);
+        return NextResponse.json({ success: deleted });
+      }
+      case 'save-points-entry': {
+        const entry = dataStore.savePointsTableEntry(payload);
+        return NextResponse.json({ success: true, data: entry });
+      }
+      case 'save-form-fields': {
+        formStore.setFields(payload.fields);
+        return NextResponse.json({ success: true, data: formStore.getFields() });
+      }
+      case 'add-form-field': {
+        const field = formStore.addField(payload);
+        return NextResponse.json({ success: true, data: field });
+      }
+      case 'update-form-field': {
+        const field = formStore.updateField(payload.id, payload.updates);
+        return NextResponse.json({ success: Boolean(field), data: field });
+      }
+      case 'delete-form-field': {
+        const res = formStore.deleteField(payload.id);
+        return NextResponse.json({ success: res });
+      }
+      case 'duplicate-form-field': {
+        const dup = formStore.duplicateField(payload.id);
+        return NextResponse.json({ success: Boolean(dup), data: dup });
+      }
+      case 'save-announcement': {
+        const ann = dataStore.saveAnnouncement(payload);
+        return NextResponse.json({ success: true, data: ann });
+      }
+      case 'delete-announcement': {
+        const res = dataStore.deleteAnnouncement(payload.id);
+        return NextResponse.json({ success: res });
+      }
+      case 'save-gallery': {
+        const gal = dataStore.saveGalleryItem(payload);
+        return NextResponse.json({ success: true, data: gal });
+      }
+      case 'delete-gallery': {
+        const res = dataStore.deleteGalleryItem(payload.id);
+        return NextResponse.json({ success: res });
+      }
+      case 'save-sponsor': {
+        const sp = dataStore.saveSponsor(payload);
+        return NextResponse.json({ success: true, data: sp });
+      }
+      case 'delete-sponsor': {
+        const res = dataStore.deleteSponsor(payload.id);
+        return NextResponse.json({ success: res });
+      }
+      case 'update-site-settings': {
+        const updated = dataStore.updateSiteSettings(payload);
+        return NextResponse.json({ success: true, data: updated });
+      }
+      case 'save-admin': {
+        const adm = dataStore.saveAdmin(payload);
+        return NextResponse.json({ success: true, data: adm });
+      }
+      default:
+        return NextResponse.json({ success: false, error: 'Unrecognized action.' }, { status: 400 });
+    }
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
