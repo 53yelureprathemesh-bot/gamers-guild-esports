@@ -261,7 +261,7 @@ export const INITIAL_SPONSORS: Sponsor[] = [
 ];
 
 export const INITIAL_ADMINS: AdminUser[] = [
-  { id: "adm-1", email: "admin@gamersguild.gg", full_name: "Guild Commander (Super Admin)", role: "SUPER_ADMIN", is_active: true, created_at: "2026-01-01" },
+  { id: "adm-1", email: "53yelureprathemesh@gmail.com", full_name: "Prathamesh (Super Admin)", role: "SUPER_ADMIN", is_active: true, created_at: "2026-01-01" },
   { id: "adm-2", email: "events@gamersguild.gg", full_name: "Aman Sharma (Event Admin)", role: "EVENT_ADMIN", is_active: true, created_at: "2026-02-01" },
   { id: "adm-3", email: "registrations@gamersguild.gg", full_name: "Pooja Verma (Reg Manager)", role: "REGISTRATION_MANAGER", is_active: true, created_at: "2026-02-15" },
   { id: "adm-4", email: "content@gamersguild.gg", full_name: "Rohan Deshmukh (Content Editor)", role: "CONTENT_EDITOR", is_active: true, created_at: "2026-03-01" }

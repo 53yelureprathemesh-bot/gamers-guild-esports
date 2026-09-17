@@ -22,27 +22,19 @@ export default function AdminLoginPage() {
 
     // Store active session in localStorage for demonstration / mock state
     setTimeout(() => {
-      if (email.includes('admin') || password === 'admin123' || email.length > 3) {
+      const trimmedEmail = email.trim().toLowerCase();
+      if (trimmedEmail === '53yelureprathemesh@gmail.com' && password === 'Prathamesh@27') {
         localStorage.setItem('gg_admin_user', JSON.stringify({
-          email: email,
-          name: email.split('@')[0].toUpperCase(),
+          email: '53yelureprathemesh@gmail.com',
+          name: 'Prathamesh (Super Admin)',
           role: 'SUPER_ADMIN'
         }));
         router.push('/admin');
       } else {
-        setErrorMsg('Invalid admin credentials. For demo access, use the Quick Role Switcher below.');
+        setErrorMsg('ACCESS DENIED: Invalid administrator credentials.');
       }
       setLoading(false);
-    }, 500);
-  };
-
-  const handleQuickDemoLogin = (role: AdminRole, title: string) => {
-    localStorage.setItem('gg_admin_user', JSON.stringify({
-      email: `${role.toLowerCase()}@gamersguild.gg`,
-      name: title,
-      role: role
-    }));
-    router.push('/admin');
+    }, 400);
   };
 
   return (
@@ -87,7 +79,7 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 required
-                placeholder="admin@gamersguild.gg"
+                placeholder="admin@domain.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-9 pr-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan"
@@ -113,49 +105,12 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="btn-cyber-primary w-full py-3 rounded-lg text-xs font-black font-mono uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-2"
+            className="btn-cyber-primary w-full py-3 rounded-lg text-xs font-black font-mono uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-4"
           >
             <Shield className="w-4 h-4 text-cyber-black" />
             <span>{loading ? 'AUTHENTICATING...' : 'AUTHORIZE LOGIN'}</span>
           </button>
         </form>
-
-        {/* QUICK DEMO ROLE SWITCHER (FOR INSTANT TESTING) */}
-        <div className="mt-8 pt-6 border-t border-cyber-border">
-          <div className="text-[11px] font-mono text-gray-400 text-center uppercase tracking-wider mb-3">
-            QUICK ROLE-BASED ACCESS (TEST RUNNER):
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-[11px] font-mono font-bold">
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('SUPER_ADMIN', 'Guild Commander (Super Admin)')}
-              className="p-2 rounded bg-cyber-dark hover:bg-neon-emerald/20 border border-cyber-border hover:border-neon-emerald text-gray-300 hover:text-white text-left transition"
-            >
-              👑 SUPER ADMIN
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('EVENT_ADMIN', 'Tournament Director (Event Admin)')}
-              className="p-2 rounded bg-cyber-dark hover:bg-neon-cyan/20 border border-cyber-border hover:border-neon-cyan text-gray-300 hover:text-white text-left transition"
-            >
-              🎮 EVENT ADMIN
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('REGISTRATION_MANAGER', 'Arbiter (Registration Manager)')}
-              className="p-2 rounded bg-cyber-dark hover:bg-neon-gold/20 border border-cyber-border hover:border-neon-gold text-gray-300 hover:text-white text-left transition"
-            >
-              📋 REG MANAGER
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemoLogin('CONTENT_EDITOR', 'Publicist (Content Editor)')}
-              className="p-2 rounded bg-cyber-dark hover:bg-neon-purple/20 border border-cyber-border hover:border-neon-purple text-gray-300 hover:text-white text-left transition"
-            >
-              ✍️ CONTENT EDITOR
-            </button>
-          </div>
-        </div>
 
         <div className="text-center mt-6">
           <Link href="/" className="text-xs font-mono text-gray-400 hover:text-white flex items-center justify-center space-x-1">

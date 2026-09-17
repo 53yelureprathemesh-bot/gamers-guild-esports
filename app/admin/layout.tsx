@@ -35,37 +35,54 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [admin, setAdmin] = useState<CurrentAdmin | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Check login state
   useEffect(() => {
-    if (pathname === '/admin/login') return;
+    if (pathname === '/admin/login') {
+      setIsAuthorized(true);
+      return;
+    }
 
     const stored = localStorage.getItem('gg_admin_user');
     if (!stored) {
-      // Default to Super Admin in local dev if not logged in
-      const defaultAdmin = {
-        email: 'admin@gamersguild.gg',
-        name: 'Guild Commander',
-        role: 'SUPER_ADMIN' as AdminRole
-      };
-      localStorage.setItem('gg_admin_user', JSON.stringify(defaultAdmin));
-      setAdmin(defaultAdmin);
-    } else {
-      try {
-        setAdmin(JSON.parse(stored));
-      } catch {
-        setAdmin({
-          email: 'admin@gamersguild.gg',
-          name: 'Guild Commander',
-          role: 'SUPER_ADMIN'
-        });
-      }
+      setIsAuthorized(false);
+      router.replace('/admin/login');
+      return;
     }
-  }, [pathname]);
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.email?.toLowerCase() === '53yelureprathemesh@gmail.com') {
+        setAdmin(parsed);
+        setIsAuthorized(true);
+      } else {
+        localStorage.removeItem('gg_admin_user');
+        setIsAuthorized(false);
+        router.replace('/admin/login');
+      }
+    } catch {
+      localStorage.removeItem('gg_admin_user');
+      setIsAuthorized(false);
+      router.replace('/admin/login');
+    }
+  }, [pathname, router]);
 
   if (pathname === '/admin/login') {
     return <>{children}</>;
+  }
+
+  // Security gate: Block unauthorized visitors while redirecting
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen cyber-bg flex items-center justify-center p-4">
+        <div className="glass-hud p-8 rounded-2xl border border-neon-cyan/40 text-center font-mono space-y-3">
+          <div className="w-8 h-8 mx-auto border-2 border-neon-emerald border-t-transparent rounded-full animate-spin"></div>
+          <div className="text-xs text-gray-300 tracking-wider">VERIFYING ADMIN SECURITY CREDENTIALS...</div>
+        </div>
+      </div>
+    );
   }
 
   const role = admin?.role || 'SUPER_ADMIN';
