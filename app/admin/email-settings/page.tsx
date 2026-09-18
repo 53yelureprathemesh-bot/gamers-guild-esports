@@ -175,7 +175,7 @@ export default function AdminEmailSettingsPage() {
                 : 'bg-red-500/10 border-red-500/40 text-red-400'
             }`}>
               <strong>{testResult.success ? '✓ SUCCESS:' : '✕ FAILED:'}</strong>{' '}
-              {testResult.message || testResult.error}
+              {testResult.success ? testResult.message : (testResult.error || testResult.message)}
             </div>
           )}
         </form>
