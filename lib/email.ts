@@ -88,9 +88,9 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
         const errorData = await response.json();
         console.error('Resend API Error:', errorData);
 
-        // Fallback: If Resend blocks sending to player email because custom domain is not yet verified on free sandbox,
+        // Fallback: If Resend blocks sending to player email (e.g. 403/422/400 because custom domain is not yet verified on free sandbox),
         // automatically deliver the player's full confirmation receipt to the admin's verified email!
-        if (response.status === 403 && payload.to.toLowerCase() !== '53yelureprathemesh@gmail.com') {
+        if (payload.to.toLowerCase() !== '53yelureprathemesh@gmail.com') {
           const adminNotice = `<div style="background:#1e293b; border-left:4px solid #f59e0b; padding:12px; margin-bottom:20px; font-family:sans-serif; color:#f8fafc; font-size:13px;">
             <strong>Notice for Admin:</strong> Player registered with <code>${payload.to}</code>. Because custom domain is in sandbox mode on Resend, this confirmation was routed to your verified email.
           </div>`;
