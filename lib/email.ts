@@ -23,6 +23,25 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
       submission_date: payload.submissionDate,
     });
 
+    const plainText = 
+`GAMERS GUILD ESPORTS — REGISTRATION CONFIRMED
+
+Hello ${payload.playerName},
+Your tournament registration with Gamers Guild Esports has been successfully received.
+
+YOUR OFFICIAL STATE REGISTRATION CODE: ${payload.registrationCode}
+
+Tournament: ${payload.eventName}
+State: ${payload.state}
+Team: ${payload.teamName}
+Status: ${payload.status}
+Timestamp: ${payload.submissionDate}
+
+Please keep this registration code safe for bracket verification and custom room coordination.
+
+Gamers Guild Esports Organization • Nagpur, Maharashtra, India
+Support: gamersguildesports12@gmail.com`;
+
     // 1. Prioritize SMTP (Gmail App Password or custom SMTP) if configured
     if (smtpUser && smtpPass) {
       try {
@@ -51,6 +70,7 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
           from: fromEmail,
           to: payload.to,
           subject: `Gamers Guild Esports — Registration Confirmed [${payload.registrationCode}]`,
+          text: plainText,
           html: html,
         });
 
