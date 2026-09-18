@@ -4,6 +4,8 @@ import { sendRegistrationConfirmationEmail } from '@/lib/email';
 import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { getStateCode } from '@/lib/stateCodes';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

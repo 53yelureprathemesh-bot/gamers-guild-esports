@@ -3,6 +3,8 @@ import { dataStore } from '@/lib/dataStore';
 import { formStore } from '@/lib/defaultForm';
 import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
