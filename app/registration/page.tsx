@@ -26,6 +26,7 @@ import { INDIAN_STATES, getDistrictsForState } from '@/lib/stateCodes';
 import { DEFAULT_FORM_FIELDS } from '@/lib/defaultForm';
 import { Event, RegistrationField } from '@/lib/types';
 import { INITIAL_EVENTS } from '@/lib/dataStore';
+import PrintableReceipt from '@/components/PrintableReceipt';
 
 function RegistrationFormContent() {
   const searchParams = useSearchParams();
@@ -144,12 +145,6 @@ function RegistrationFormContent() {
       return;
     }
 
-    if (!uploadedFiles['f-doc-id']) {
-      setErrorMsg('Government ID proof document is mandatory for player verification.');
-      window.scrollTo({ top: 300, behavior: 'smooth' });
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -189,19 +184,32 @@ function RegistrationFormContent() {
         throw new Error(data.error || 'Registration submission failed.');
       }
 
-      setSubmissionSuccess({
+      const receiptRecord = {
         publicCode: data.publicCode,
-        registrationId: data.registrationId,
         playerName: formData.fullName,
+        inGameName: formData.inGameName,
+        playerUid: formData.playerUid,
+        teamName: formData.teamName,
+        game: formData.game,
         eventName: activeEvent?.title || 'Tournament',
         state: formData.state,
         district: formData.district,
-        game: formData.game,
-        teamName: formData.teamName,
+        phone: formData.phone,
         email: formData.email,
+        status: 'PENDING (Under Review)',
         date: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-      });
+      };
 
+      // Save to client localStorage for instant lookups on this device
+      try {
+        const stored = JSON.parse(localStorage.getItem('gg_my_registrations') || '[]');
+        stored.unshift(receiptRecord);
+        localStorage.setItem('gg_my_registrations', JSON.stringify(stored));
+      } catch (e) {
+        console.error('LocalStorage save error:', e);
+      }
+
+      setSubmissionSuccess(receiptRecord);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to submit registration. Please check inputs.');
@@ -210,106 +218,30 @@ function RegistrationFormContent() {
     }
   };
 
-  // Print slip handler
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // SUCCESS CONFIRMATION SCREEN
+  // SUCCESS CONFIRMATION SCREEN WITH 1-PAGE PRINTABLE RECEIPT
   if (submissionSuccess) {
     return (
       <div className="min-h-screen cyber-bg py-12 sm:py-20">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <div className="glass-hud rounded-2xl border-2 border-neon-emerald/50 p-6 sm:p-10 text-center shadow-neon-emerald relative">
-            
-            {/* Header Badge */}
-            <div className="w-16 h-16 rounded-full bg-neon-emerald/20 border-2 border-neon-emerald flex items-center justify-center mx-auto mb-4 text-neon-emerald">
-              <CheckCircle2 className="w-9 h-9" />
-            </div>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <PrintableReceipt data={submissionSuccess} />
 
-            <div className="inline-flex items-center space-x-1.5 text-xs font-mono font-bold text-neon-emerald uppercase mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>REGISTRATION CONFIRMED</span>
-            </div>
+          {/* Action Links */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center screen-only">
+            <Link
+              href="/find-registration"
+              className="btn-cyber-primary px-6 py-3 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2"
+            >
+              <UserCheck className="w-4 h-4 text-cyber-black" />
+              <span>TRACK IN REGISTRATION DASHBOARD</span>
+            </Link>
 
-            <h1 className="text-2xl sm:text-4xl font-black text-white font-mono uppercase">
-              ENTER THE ARENA
-            </h1>
-
-            <p className="text-xs sm:text-sm text-gray-300 mt-2 font-sans">
-              Your official credentials have been recorded in the central verification grid.
-            </p>
-
-            {/* MASSIVE STATE CODE CARD */}
-            <div className="my-8 p-6 rounded-xl bg-cyber-black/80 border-2 border-neon-cyan/50 text-center shadow-hud">
-              <span className="text-[11px] font-mono uppercase text-gray-400 font-bold tracking-widest block">
-                OFFICIAL STATE REGISTRATION CODE
-              </span>
-              <div className="text-4xl sm:text-6xl font-black text-neon-cyan font-mono tracking-widest my-2">
-                #{submissionSuccess.publicCode}
-              </div>
-              <span className="text-[11px] font-mono text-neon-emerald font-bold">
-                State Circuit: {submissionSuccess.state}
-              </span>
-            </div>
-
-            {/* Summary Details */}
-            <div className="bg-cyber-dark/60 rounded-xl p-5 border border-cyber-border text-left text-xs font-mono space-y-2.5">
-              <div className="flex justify-between border-b border-cyber-border pb-2">
-                <span className="text-gray-400">Player Legal Name:</span>
-                <span className="text-white font-bold">{submissionSuccess.playerName}</span>
-              </div>
-              <div className="flex justify-between border-b border-cyber-border pb-2">
-                <span className="text-gray-400">Registered Tournament:</span>
-                <span className="text-neon-cyan font-bold truncate max-w-[240px]">{submissionSuccess.eventName}</span>
-              </div>
-              <div className="flex justify-between border-b border-cyber-border pb-2">
-                <span className="text-gray-400">Squad / Clan:</span>
-                <span className="text-white font-bold">{submissionSuccess.teamName}</span>
-              </div>
-              <div className="flex justify-between border-b border-cyber-border pb-2">
-                <span className="text-gray-400">Title:</span>
-                <span className="text-neon-gold font-bold">{submissionSuccess.game}</span>
-              </div>
-              <div className="flex justify-between border-b border-cyber-border pb-2">
-                <span className="text-gray-400">Regional District:</span>
-                <span className="text-white">{submissionSuccess.district}, {submissionSuccess.state}</span>
-              </div>
-              <div className="flex justify-between border-b border-cyber-border pb-2">
-                <span className="text-gray-400">Verification Status:</span>
-                <span className="text-neon-gold font-bold">PENDING ARBITER VERIFICATION</span>
-              </div>
-              <div className="flex justify-between pt-1">
-                <span className="text-gray-400">Timestamp:</span>
-                <span className="text-gray-300">{submissionSuccess.date}</span>
-              </div>
-            </div>
-
-            {/* Email Dispatch Note */}
-            <div className="mt-5 p-3 rounded-lg bg-neon-cyan/10 border border-neon-cyan/30 text-xs font-mono text-gray-300 flex items-center justify-center space-x-2">
-              <Mail className="w-4 h-4 text-neon-cyan flex-shrink-0" />
-              <span>A confirmation dispatch has been sent to <strong>{submissionSuccess.email}</strong>.</span>
-            </div>
-
-            {/* Print & Action Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={handlePrint}
-                className="btn-cyber-primary px-6 py-3 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2"
-              >
-                <Printer className="w-4 h-4 text-cyber-black" />
-                <span>PRINT / SAVE SLIP (PDF)</span>
-              </button>
-
-              <Link
-                href="/"
-                className="btn-cyber-secondary px-6 py-3 rounded-lg text-xs font-bold font-mono uppercase flex items-center justify-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4 text-neon-cyan" />
-                <span>BACK TO ARENA HOME</span>
-              </Link>
-            </div>
-
+            <Link
+              href="/"
+              className="btn-cyber-secondary px-6 py-3 rounded-lg text-xs font-bold font-mono uppercase flex items-center justify-center space-x-2"
+            >
+              <ArrowLeft className="w-4 h-4 text-neon-cyan" />
+              <span>BACK TO ARENA HOME</span>
+            </Link>
           </div>
         </div>
       </div>
@@ -576,16 +508,24 @@ function RegistrationFormContent() {
               {/* Character UID */}
               <div className="space-y-1.5">
                 <label className="text-xs font-mono font-bold text-gray-300">
-                  Character UID / Player ID *
+                  Character UID / Player ID (Numbers Only) *
                 </label>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   required
-                  placeholder="e.g. 5129481023"
+                  placeholder="e.g. 5129481023 (Digits Only)"
                   value={formData.playerUid}
-                  onChange={(e) => handleInputChange('playerUid', e.target.value)}
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value.replace(/\D/g, '');
+                    handleInputChange('playerUid', digitsOnly);
+                  }}
                   className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
                 />
+                <span className="text-[10px] font-mono text-neon-cyan block">
+                  Only numeric digits (0-9) allowed. E.g. in-game numeric account ID.
+                </span>
               </div>
 
               {/* Team Name */}
@@ -656,10 +596,10 @@ function RegistrationFormContent() {
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <span className="text-xs font-mono font-bold text-white block">
-                      Government ID Proof (Aadhaar / Driving License / Student ID) *
+                      Government ID Proof (Aadhaar / Driving License / College ID)
                     </span>
                     <span className="text-[11px] font-mono text-gray-400">
-                      Permitted: PDF, JPG, PNG (Max 5MB)
+                      Optional online (can be presented at tournament check-in). PDF, JPG, PNG (Max 5MB)
                     </span>
                   </div>
                   <span title="Private Document">

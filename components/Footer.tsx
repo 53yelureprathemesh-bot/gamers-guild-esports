@@ -102,6 +102,9 @@ export default function Footer() {
                 <Link href="/registration" className="text-neon-emerald font-semibold hover:underline">Player & Squad Registration</Link>
               </li>
               <li>
+                <Link href="/find-registration" className="text-neon-cyan font-semibold hover:underline">Find Your Registration (Status)</Link>
+              </li>
+              <li>
                 <Link href="/about" className="hover:text-neon-emerald transition-colors">About the Guild</Link>
               </li>
               <li>

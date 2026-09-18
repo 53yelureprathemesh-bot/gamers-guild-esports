@@ -20,6 +20,13 @@ import {
 import { Event, TournamentMatch, PointsTableEntry } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES } from '@/lib/dataStore';
 
+function getYouTubeVideoId(url?: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|live\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+}
+
 export default function OngoingEventsPage() {
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
   const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>(INITIAL_POINTS_TABLE);
@@ -94,16 +101,54 @@ export default function OngoingEventsPage() {
               {/* Tournament Stream Button */}
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                 <a
-                  href="https://youtube.com"
+                  href={currentEvent.stream_url || "https://youtube.com"}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-cyber-primary px-6 py-3 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2 shadow-neon-emerald"
                 >
                   <Play className="w-4 h-4 text-cyber-black fill-current" />
-                  <span>WATCH OFFICIAL STREAM</span>
+                  <span>WATCH ON YOUTUBE</span>
                 </a>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* LIVE YOUTUBE VIDEO BROADCAST PLAYER */}
+        {currentEvent?.stream_url && (currentEvent.is_stream_live ?? true) && (
+          <div className="mb-10 glass-hud rounded-2xl overflow-hidden border-2 border-neon-red/60 p-4 sm:p-6 shadow-hud">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-cyber-border mb-4 gap-2">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-3 h-3 rounded-full bg-neon-red animate-ping"></span>
+                <span className="text-xs font-mono font-black text-neon-red uppercase tracking-wider">
+                  OFFICIAL LIVE BROADCAST & STREAM
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon-red/20 text-neon-red border border-neon-red/40 font-bold">
+                  LIVE ON AIR
+                </span>
+              </div>
+
+              <a
+                href={currentEvent.stream_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-mono text-neon-cyan hover:underline flex items-center space-x-1"
+              >
+                <span>Watch on YouTube App</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {/* 16:9 Cinema Container */}
+            <div className="relative w-full pb-[56.25%] rounded-xl overflow-hidden bg-black border border-cyber-border shadow-2xl">
+              <iframe
+                src={`https://www.youtube.com/embed/${getYouTubeVideoId(currentEvent.stream_url)}?autoplay=0&rel=0`}
+                title={`${currentEvent.title} Live Stream`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="absolute top-0 left-0 w-full h-full border-0"
+              />
             </div>
           </div>
         )}

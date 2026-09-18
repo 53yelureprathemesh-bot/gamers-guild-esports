@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dataStore } from '@/lib/dataStore';
 import { formStore } from '@/lib/defaultForm';
+import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,6 +9,28 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type');
 
     switch (type) {
+      case 'find-registration': {
+        const query = searchParams.get('query') || '';
+        if (isSupabaseConfigured) {
+          const supabase = getServiceSupabase();
+          if (supabase) {
+            const cleanQuery = query.trim().replace(/^#/, '');
+            const { data: dbData } = await supabase
+              .from('registrations')
+              .select('*, events(title)')
+              .or(`public_code.ilike.%${cleanQuery}%,email.ilike.%${cleanQuery}%,phone.ilike.%${cleanQuery}%,player_name.ilike.%${cleanQuery}%,team_name.ilike.%${cleanQuery}%,player_uid.ilike.%${cleanQuery}%`);
+            if (dbData && dbData.length > 0) {
+              const mapped = dbData.map((d: any) => ({
+                ...d,
+                event_title: d.events?.title || 'Gamers Guild Tournament'
+              }));
+              return NextResponse.json({ success: true, data: mapped });
+            }
+          }
+        }
+        const results = dataStore.findRegistrations(query);
+        return NextResponse.json({ success: true, data: results });
+      }
       case 'events':
         return NextResponse.json({ success: true, data: dataStore.getEvents() });
       case 'points-table':
@@ -57,6 +80,10 @@ export async function POST(req: NextRequest) {
       case 'save-event': {
         const saved = dataStore.saveEvent(payload);
         return NextResponse.json({ success: true, data: saved });
+      }
+      case 'update-stream-url': {
+        const updated = dataStore.updateEventStream(payload.eventId, payload.streamUrl, payload.isLive ?? true);
+        return NextResponse.json({ success: Boolean(updated), data: updated });
       }
       case 'delete-event': {
         const deleted = dataStore.deleteEvent(payload.id);

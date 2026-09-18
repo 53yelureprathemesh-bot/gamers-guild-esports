@@ -65,7 +65,9 @@ export const INITIAL_EVENTS: Event[] = [
     ],
     status: "ONGOING",
     is_published: true,
-    registration_form_id: "form-default"
+    registration_form_id: "form-default",
+    stream_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    is_stream_live: true
   },
   {
     id: "evt-003",
@@ -438,10 +440,26 @@ class DataStore {
       rules: event.rules || [],
       status: event.status || 'UPCOMING',
       is_published: event.is_published ?? true,
+      stream_url: event.stream_url,
+      is_stream_live: event.is_stream_live ?? false,
       created_at: new Date().toISOString()
     };
     this.events.unshift(newEvent);
     return newEvent;
+  }
+
+  public updateEventStream(eventId: string, streamUrl: string, isLive: boolean): Event | undefined {
+    const idx = this.events.findIndex(e => e.id === eventId);
+    if (idx !== -1) {
+      this.events[idx] = {
+        ...this.events[idx],
+        stream_url: streamUrl,
+        is_stream_live: isLive,
+        updated_at: new Date().toISOString()
+      };
+      return this.events[idx];
+    }
+    return undefined;
   }
 
   public deleteEvent(id: string): boolean {
@@ -484,7 +502,24 @@ class DataStore {
   // Registrations
   public getRegistrations(): Registration[] { return this.registrations; }
   public getRegistrationByCode(code: string): Registration | undefined {
-    return this.registrations.find(r => r.public_code.toLowerCase() === code.toLowerCase());
+    return this.registrations.find(r => r.public_code.toLowerCase() === code.toLowerCase().replace(/^#/, ''));
+  }
+
+  public findRegistrations(query: string): Registration[] {
+    const q = query.trim().toLowerCase().replace(/^#/, '');
+    if (!q) return [];
+    const cleanDigits = q.replace(/\D/g, '');
+    
+    return this.registrations.filter(r => {
+      const codeMatch = r.public_code.toLowerCase() === q;
+      const emailMatch = r.email.toLowerCase() === q;
+      const nameMatch = r.player_name.toLowerCase().includes(q) || r.in_game_name.toLowerCase().includes(q);
+      const teamMatch = r.team_name.toLowerCase().includes(q);
+      const uidMatch = Boolean(cleanDigits && r.player_uid.replace(/\D/g, '').includes(cleanDigits));
+      const phoneMatch = Boolean(cleanDigits && r.phone.replace(/\D/g, '').includes(cleanDigits));
+      
+      return codeMatch || emailMatch || nameMatch || teamMatch || uidMatch || phoneMatch;
+    });
   }
 
   public createRegistration(data: Omit<Registration, 'id' | 'public_code' | 'created_at' | 'status' | 'email_status'>): Registration {

@@ -26,6 +26,54 @@ export default function AdminOngoingEventsPage() {
   // New Points Row State
   const [editingRow, setEditingRow] = useState<Partial<PointsTableEntry> | null>(null);
 
+  // Live Stream State
+  const currentEvent = events.find(e => e.id === selectedEventId) || events[0];
+  const [streamUrl, setStreamUrl] = useState('');
+  const [isStreamLive, setIsStreamLive] = useState(true);
+  const [savingStream, setSavingStream] = useState(false);
+
+  useEffect(() => {
+    if (currentEvent) {
+      setStreamUrl(currentEvent.stream_url || '');
+      setIsStreamLive(currentEvent.is_stream_live ?? true);
+    }
+  }, [selectedEventId, currentEvent]);
+
+  const handleSaveStream = async () => {
+    setSavingStream(true);
+    try {
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-stream-url',
+          payload: {
+            eventId: selectedEventId,
+            streamUrl: streamUrl,
+            isLive: isStreamLive
+          }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNotice('YouTube Live Stream broadcast link updated successfully!');
+        setEvents(prev => prev.map(ev => ev.id === selectedEventId ? { ...ev, stream_url: streamUrl, is_stream_live: isStreamLive } : ev));
+        setTimeout(() => setNotice(null), 3500);
+      }
+    } catch (err: any) {
+      alert('Error updating stream: ' + err.message);
+    } finally {
+      setSavingStream(false);
+    }
+  };
+
+  const getYouTubeVideoId = (url: string): string | null => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|live\/)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
   const fetchCurrentPoints = () => {
     fetch(`/api/admin/data?type=points-table&eventId=${selectedEventId}`)
       .then(res => res.json())
@@ -108,6 +156,88 @@ export default function AdminOngoingEventsPage() {
           <span>{notice}</span>
         </div>
       )}
+
+      {/* YOUTUBE LIVE STREAM BROADCAST CONTROLLER */}
+      <div className="glass-hud p-6 rounded-2xl border-2 border-neon-red/40 space-y-4 shadow-hud">
+        <div className="flex items-center justify-between border-b border-cyber-border pb-3">
+          <div className="flex items-center space-x-2">
+            <Radio className="w-5 h-5 text-neon-red animate-pulse" />
+            <h2 className="text-base font-black text-white font-mono uppercase">
+              YOUTUBE LIVE STREAM BROADCAST CONTROLLER
+            </h2>
+          </div>
+          <span className="text-xs font-mono text-gray-400">
+            Selected: <strong className="text-white">{currentEvent?.title}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-mono font-bold text-gray-300">
+                YouTube Live Stream URL / Video Link
+              </label>
+              <input
+                type="url"
+                value={streamUrl}
+                onChange={(e) => setStreamUrl(e.target.value)}
+                placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+              />
+              <p className="text-[10px] font-mono text-gray-400">
+                Paste any YouTube Live stream link, standard watch link, or youtu.be short URL.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border">
+              <div>
+                <span className="text-xs font-mono font-bold text-white block">Broadcast Player Status</span>
+                <span className="text-[11px] font-mono text-gray-400">Enable live video stream on public Ongoing Events page</span>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isStreamLive}
+                  onChange={(e) => setIsStreamLive(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-red"></div>
+              </label>
+            </div>
+
+            <button
+              onClick={handleSaveStream}
+              disabled={savingStream}
+              className="btn-cyber-primary w-full py-2.5 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2"
+            >
+              <Save className="w-4 h-4 text-cyber-black" />
+              <span>{savingStream ? 'UPDATING BROADCAST...' : 'SAVE & BROADCAST YOUTUBE STREAM'}</span>
+            </button>
+          </div>
+
+          {/* Embed Preview */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono font-bold text-gray-400">
+              Live Stream Preview (As Displayed on Public Website):
+            </label>
+            {getYouTubeVideoId(streamUrl) ? (
+              <div className="relative w-full pb-[56.25%] rounded-xl overflow-hidden bg-black border border-cyber-border">
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYouTubeVideoId(streamUrl)}`}
+                  title="YouTube Preview"
+                  className="absolute top-0 left-0 w-full h-full border-0"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <div className="h-44 rounded-xl border-2 border-dashed border-cyber-border flex flex-col items-center justify-center p-4 text-center text-gray-500 font-mono text-xs">
+                <Radio className="w-8 h-8 text-gray-600 mb-2" />
+                <span>Paste a valid YouTube link to preview the live broadcast player.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Points Table Console */}
       <div className="glass-panel p-6 rounded-2xl border border-cyber-border space-y-4">

@@ -39,6 +39,8 @@ export interface Event {
   status: EventStatus;
   is_published: boolean;
   registration_form_id?: string;
+  stream_url?: string;
+  is_stream_live?: boolean;
   created_at?: string;
   updated_at?: string;
 }

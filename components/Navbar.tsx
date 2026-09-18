@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Menu, X, Shield, Radio, Trophy, Calendar, UserCheck, Flame } from 'lucide-react';
+import { Menu, X, Shield, Radio, Trophy, Calendar, UserCheck, Flame, Search } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,6 +20,7 @@ export default function Navbar() {
       badge: 'LIVE' 
     },
     { name: 'REGISTRATION', href: '/registration', icon: UserCheck, highlight: true },
+    { name: 'FIND REGISTRATION', href: '/find-registration', icon: Search },
     { name: 'ABOUT', href: '/about' },
     { name: 'CONTACT', href: '/contact' },
   ];

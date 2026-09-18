@@ -137,3 +137,47 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #00ff9d;
 }
+
+/* =========================================================
+   SINGLE-PAGE PRINT RECEIPT STYLING
+   Forces clean high-contrast single A4 sheet output
+   ========================================================= */
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide everything except printable receipt */
+  nav, footer, .screen-only, header, aside, button, .btn-cyber-primary, .btn-cyber-secondary {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
