@@ -72,6 +72,16 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: dataStore.getSiteSettings() });
       case 'admins':
         return NextResponse.json({ success: true, data: dataStore.getAdmins() });
+      case 'status':
+        return NextResponse.json({
+          success: true,
+          commit: 'c7-live',
+          supabaseConfigured: isSupabaseConfigured,
+          hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+          hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+          hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+          hasResendKey: Boolean(process.env.RESEND_API_KEY)
+        });
       default: {
         let registrations = dataStore.getRegistrations();
         if (isSupabaseConfigured) {
