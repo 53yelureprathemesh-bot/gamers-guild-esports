@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dataStore } from '@/lib/dataStore';
 import { formStore } from '@/lib/defaultForm';
+import { sendRegistrationConfirmationEmail } from '@/lib/email';
 import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
@@ -77,12 +78,14 @@ export async function GET(req: NextRequest) {
       case 'status':
         return NextResponse.json({
           success: true,
-          commit: 'c9-verified-cloud',
+          commit: 'c10-smtp-support',
           supabaseConfigured: isSupabaseConfigured,
           hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
           hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
           hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-          hasResendKey: Boolean(process.env.RESEND_API_KEY)
+          hasResendKey: Boolean(process.env.RESEND_API_KEY),
+          hasSmtp: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS),
+          smtpUser: process.env.SMTP_USER ? process.env.SMTP_USER.replace(/(.{2})(.*)(@.*)/, '$1***$3') : null
         });
       default: {
         let registrations = dataStore.getRegistrations();
@@ -232,6 +235,27 @@ export async function POST(req: NextRequest) {
       case 'save-admin': {
         const adm = dataStore.saveAdmin(payload);
         return NextResponse.json({ success: true, data: adm });
+      }
+      case 'send-test-email': {
+        const targetEmail = payload.to;
+        if (!targetEmail) {
+          return NextResponse.json({ success: false, error: 'Target email is required.' }, { status: 400 });
+        }
+        const result = await sendRegistrationConfirmationEmail({
+          to: targetEmail,
+          playerName: payload.playerName || 'Participant Player',
+          registrationCode: 'MH-TEST',
+          eventName: 'Gamers Guild Championship (Test Dispatch)',
+          state: 'Maharashtra',
+          teamName: 'TEST SQUAD',
+          status: 'VERIFIED (Test Approved)',
+          submissionDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+        });
+        return NextResponse.json({
+          success: result.success,
+          message: result.success ? `Test email successfully dispatched directly to ${targetEmail}!` : 'Failed to dispatch test email.',
+          error: result.error
+        });
       }
       default:
         return NextResponse.json({ success: false, error: 'Unrecognized action.' }, { status: 400 });
