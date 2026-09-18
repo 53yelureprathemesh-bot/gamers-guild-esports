@@ -7,7 +7,7 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
   try {
     const cleanKey = (str?: string) => (str || '').trim().split(/[\r\n]+/)[0].trim();
     const smtpUser = cleanKey(process.env.SMTP_USER);
-    const smtpPass = cleanKey(process.env.SMTP_PASS);
+    const smtpPass = cleanKey(process.env.SMTP_PASS).replace(/\s+/g, '');
     const smtpHost = cleanKey(process.env.SMTP_HOST) || 'smtp.gmail.com';
     const smtpPort = parseInt(cleanKey(process.env.SMTP_PORT) || '465', 10);
     const resendApiKey = cleanKey(process.env.RESEND_API_KEY);
