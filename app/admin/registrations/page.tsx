@@ -185,13 +185,23 @@ export default function AdminRegistrationsPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="btn-cyber-secondary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5 self-start sm:self-auto"
-        >
-          <Download className="w-4 h-4 text-neon-cyan" />
-          <span>EXPORT AS CSV</span>
-        </button>
+        <div className="flex items-center space-x-2 self-start sm:self-auto">
+          <button
+            onClick={fetchRegistrations}
+            className="btn-cyber-secondary px-3 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
+            title="Refresh database records from cloud"
+          >
+            <RotateCw className="w-4 h-4 text-neon-emerald" />
+            <span>REFRESH</span>
+          </button>
+          <button
+            onClick={handleExportCSV}
+            className="btn-cyber-secondary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
+          >
+            <Download className="w-4 h-4 text-neon-cyan" />
+            <span>EXPORT AS CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Action Notification Banner */}

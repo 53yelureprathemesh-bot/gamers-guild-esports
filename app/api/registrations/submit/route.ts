@@ -58,11 +58,15 @@ export async function POST(req: NextRequest) {
             publicCode = codeResult;
           }
 
+          // Validate UUID format for event_id in PostgreSQL
+          const isValidUuid = (str?: string) => Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+          const cleanEventId = isValidUuid(eventId) ? eventId : null;
+
           const { data: regData, error: regErr } = await supabase
             .from('registrations')
             .insert({
               public_code: publicCode,
-              event_id: eventId || null,
+              event_id: cleanEventId,
               player_name: playerName,
               email: email,
               phone: phone,
@@ -84,7 +88,7 @@ export async function POST(req: NextRequest) {
             .single();
 
           if (regErr) {
-            console.warn('Supabase insert warning (falling back to memory store):', regErr.message);
+            console.error('Supabase registration insert error:', regErr);
           } else if (regData) {
             registrationId = regData.id;
 
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
               const answerRows = Object.entries(answers).map(([key, val]) => ({
                 registration_id: registrationId,
                 field_label: key,
-                value: val
+                value: typeof val === 'object' ? val : JSON.stringify(val)
               }));
               await supabase.from('registration_answers').insert(answerRows);
             }
@@ -110,14 +114,14 @@ export async function POST(req: NextRequest) {
               await supabase.from('registration_files').insert(fileRows);
             }
 
-            if (eventId) {
-              const { data: eventData } = await supabase.from('events').select('title').eq('id', eventId).single();
+            if (cleanEventId) {
+              const { data: eventData } = await supabase.from('events').select('title').eq('id', cleanEventId).single();
               if (eventData) eventTitle = eventData.title;
             }
           }
         }
       } catch (sbError: any) {
-        console.warn('Supabase connection caught error:', sbError.message);
+        console.error('Supabase submission caught exception:', sbError);
       }
     }
 
