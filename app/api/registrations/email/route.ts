@@ -50,10 +50,24 @@ export async function POST(req: NextRequest) {
       submissionDate: new Date(registration.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     });
 
+    if (isSupabaseConfigured && registrationId) {
+      try {
+        const supabase = getServiceSupabase();
+        if (supabase) {
+          await supabase
+            .from('registrations')
+            .update({ email_status: emailResult.success ? 'SENT' : 'FAILED' })
+            .eq('id', registrationId);
+        }
+      } catch (sbErr) {
+        console.warn('Could not update email_status in Supabase:', sbErr);
+      }
+    }
+
     return NextResponse.json({
       success: emailResult.success,
       message: emailResult.success 
-        ? `Confirmation email successfully resent to ${registration.email} with code ${registration.public_code}!` 
+        ? `Confirmation email successfully dispatched to ${registration.email} [Code: ${registration.public_code}]!` 
         : 'Failed to dispatch email.',
       error: emailResult.error
     });

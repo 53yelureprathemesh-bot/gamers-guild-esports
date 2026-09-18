@@ -165,11 +165,27 @@ export async function POST(req: NextRequest) {
       submissionDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     });
 
+    // Update Supabase email_status if available
+    if (isSupabaseConfigured && registrationId) {
+      try {
+        const supabase = getServiceSupabase();
+        if (supabase) {
+          await supabase
+            .from('registrations')
+            .update({ email_status: emailResult.success ? 'SENT' : 'FAILED' })
+            .eq('id', registrationId);
+        }
+      } catch (sbErr) {
+        console.warn('Could not update email_status in Supabase:', sbErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       publicCode: publicCode,
       registrationId: registrationId,
       emailSent: emailResult.success,
+      emailError: emailResult.error || null,
       message: 'Registration successfully recorded!'
     });
   } catch (error: any) {

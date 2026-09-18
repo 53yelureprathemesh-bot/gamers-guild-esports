@@ -55,8 +55,9 @@ export const DEFAULT_EMAIL_TEMPLATE = `
 
 export async function sendRegistrationConfirmationEmail(payload: EmailPayload): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.EMAIL_FROM || 'Gamers Guild Esports <onboarding@resend.dev>';
+    const cleanKey = (str?: string) => (str || '').trim().split(/[\r\n]+/)[0].trim();
+    const resendApiKey = cleanKey(process.env.RESEND_API_KEY);
+    const fromEmail = cleanKey(process.env.EMAIL_FROM) || 'Gamers Guild Esports <onboarding@resend.dev>';
 
     const html = renderEmailTemplate(DEFAULT_EMAIL_TEMPLATE, {
       player_name: payload.playerName,
