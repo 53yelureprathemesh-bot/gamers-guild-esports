@@ -147,6 +147,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: deleted });
       }
       case 'update-registration-status': {
+        let regRecord: any = null;
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
@@ -155,12 +156,60 @@ export async function POST(req: NextRequest) {
                 .from('registrations')
                 .update({ status: payload.status, admin_notes: payload.notes })
                 .or(`id.eq.${payload.id},public_code.eq.${payload.id}`);
+
+              const { data } = await supabase
+                .from('registrations')
+                .select('*, events(title)')
+                .or(`id.eq.${payload.id},public_code.eq.${payload.id}`)
+                .single();
+              if (data) regRecord = data;
             }
           } catch (e) {
             console.warn('Supabase update registration status error:', e);
           }
         }
         const updated = dataStore.updateRegistrationStatus(payload.id, payload.status, payload.notes);
+        if (!regRecord && updated) {
+          regRecord = updated;
+        }
+
+        // Automatically dispatch status update email to the participant (Pending, Approved, etc.)
+        if (regRecord && regRecord.email) {
+          try {
+            const emailRes = await sendRegistrationConfirmationEmail({
+              to: regRecord.email,
+              playerName: regRecord.player_name,
+              registrationCode: regRecord.public_code,
+              eventName: regRecord.events?.title || regRecord.event_title || 'Gamers Guild Esports Championship',
+              game: regRecord.game || 'BGMI (Battlegrounds Mobile India)',
+              inGameName: regRecord.in_game_name || 'N/A',
+              playerUid: regRecord.player_uid || 'N/A',
+              teamName: regRecord.team_name || 'N/A',
+              teamRole: regRecord.team_role || 'Player',
+              state: regRecord.state,
+              district: regRecord.district || '',
+              city: regRecord.city || '',
+              phone: regRecord.phone || '',
+              gamingExperience: regRecord.gaming_experience || '',
+              status: payload.status,
+              submissionDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+              adminNotes: payload.notes || ''
+            });
+
+            if (isSupabaseConfigured && regRecord.id) {
+              const supabase = getServiceSupabase();
+              if (supabase) {
+                await supabase
+                  .from('registrations')
+                  .update({ email_status: emailRes.success ? 'SENT' : 'FAILED' })
+                  .eq('id', regRecord.id);
+              }
+            }
+          } catch (mailErr) {
+            console.error('Auto status email dispatch error:', mailErr);
+          }
+        }
+
         return NextResponse.json({ success: Boolean(updated), data: updated });
       }
       case 'delete-registration': {

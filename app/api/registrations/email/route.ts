@@ -38,16 +38,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Registration record not found.' }, { status: 404 });
     }
 
-    // Send confirmation email keeping exact same registration code
+    // Send confirmation email keeping exact same registration code and all player details
     const emailResult = await sendRegistrationConfirmationEmail({
       to: registration.email,
       playerName: registration.player_name,
       registrationCode: registration.public_code,
       eventName: registration.event_title || 'Gamers Guild Championship',
+      game: registration.game || 'BGMI (Battlegrounds Mobile India)',
+      inGameName: registration.in_game_name || 'N/A',
+      playerUid: registration.player_uid || 'N/A',
+      teamName: registration.team_name || 'N/A',
+      teamRole: registration.team_role || 'Player',
       state: registration.state,
-      teamName: registration.team_name,
+      district: registration.district || '',
+      city: registration.city || '',
+      phone: registration.phone || '',
+      gamingExperience: registration.gaming_experience || '',
       status: registration.status,
-      submissionDate: new Date(registration.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+      submissionDate: new Date(registration.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      adminNotes: registration.admin_notes || ''
     });
 
     if (isSupabaseConfigured && registrationId) {

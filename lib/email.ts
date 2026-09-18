@@ -1,7 +1,11 @@
 import nodemailer from 'nodemailer';
 
 export * from './emailTemplates';
-import { EmailPayload, renderEmailTemplate, DEFAULT_EMAIL_TEMPLATE } from './emailTemplates';
+import { 
+  EmailPayload, 
+  buildRegistrationEmailHtml, 
+  buildRegistrationEmailText 
+} from './emailTemplates';
 
 export async function sendRegistrationConfirmationEmail(payload: EmailPayload): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
@@ -11,36 +15,25 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
     const smtpHost = cleanKey(process.env.SMTP_HOST) || 'smtp.gmail.com';
     const smtpPort = parseInt(cleanKey(process.env.SMTP_PORT) || '465', 10);
     const resendApiKey = cleanKey(process.env.RESEND_API_KEY);
-    const fromEmail = cleanKey(process.env.EMAIL_FROM) || (smtpUser ? `Gamers Guild Esports <${smtpUser}>` : 'Gamers Guild Esports <onboarding@resend.dev>');
 
-    const html = renderEmailTemplate(DEFAULT_EMAIL_TEMPLATE, {
-      player_name: payload.playerName,
-      registration_code: payload.registrationCode,
-      event_name: payload.eventName,
-      state: payload.state,
-      team_name: payload.teamName,
-      status: payload.status,
-      submission_date: payload.submissionDate,
-    });
+    const defaultFrom = smtpUser 
+      ? `"Gamers Guild Esports" <${smtpUser}>` 
+      : '"Gamers Guild Esports" <onboarding@resend.dev>';
+    const fromEmail = cleanKey(process.env.EMAIL_FROM) || defaultFrom;
+    const replyToEmail = smtpUser || 'gamersguildesports12@gmail.com';
 
-    const plainText = 
-`GAMERS GUILD ESPORTS — REGISTRATION CONFIRMED
+    // Dynamic subject line reflecting exact status (PENDING vs APPROVED vs REJECTED)
+    const isApproved = payload.status.toUpperCase().includes('APPROV');
+    const isRejected = payload.status.toUpperCase().includes('REJECT');
+    let subject = `Gamers Guild Esports — Application Received [PENDING] - Code: ${payload.registrationCode}`;
+    if (isApproved) {
+      subject = `Gamers Guild Esports — Registration APPROVED [${payload.registrationCode}]`;
+    } else if (isRejected) {
+      subject = `Gamers Guild Esports — Registration Update [REJECTED] - Code: ${payload.registrationCode}`;
+    }
 
-Hello ${payload.playerName},
-Your tournament registration with Gamers Guild Esports has been successfully received.
-
-YOUR OFFICIAL STATE REGISTRATION CODE: ${payload.registrationCode}
-
-Tournament: ${payload.eventName}
-State: ${payload.state}
-Team: ${payload.teamName}
-Status: ${payload.status}
-Timestamp: ${payload.submissionDate}
-
-Please keep this registration code safe for bracket verification and custom room coordination.
-
-Gamers Guild Esports Organization • Nagpur, Maharashtra, India
-Support: gamersguildesports12@gmail.com`;
+    const html = buildRegistrationEmailHtml(payload);
+    const plainText = buildRegistrationEmailText(payload);
 
     // 1. Prioritize SMTP (Gmail App Password or custom SMTP) if configured
     if (smtpUser && smtpPass) {
@@ -69,12 +62,16 @@ Support: gamersguildesports12@gmail.com`;
         const info = await transporter.sendMail({
           from: fromEmail,
           to: payload.to,
-          subject: `Gamers Guild Esports — Registration Confirmed [${payload.registrationCode}]`,
+          replyTo: replyToEmail,
+          subject: subject,
           text: plainText,
           html: html,
+          headers: {
+            'X-Entity-Ref-ID': payload.registrationCode,
+          }
         });
 
-        console.log(`[SMTP] Email successfully dispatched to participant: ${payload.to} (${info.messageId})`);
+        console.log(`[SMTP] Email successfully dispatched to participant: ${payload.to} (${info.messageId}) [Status: ${payload.status}]`);
         return { success: true, messageId: info.messageId };
       } catch (smtpErr: any) {
         console.error('SMTP email error:', smtpErr);
@@ -98,7 +95,9 @@ Support: gamersguildesports12@gmail.com`;
         body: JSON.stringify({
           from: fromEmail,
           to: [payload.to],
-          subject: `Gamers Guild Esports — Registration Confirmed [${payload.registrationCode}]`,
+          reply_to: replyToEmail,
+          subject: subject,
+          text: plainText,
           html: html,
         }),
       });
@@ -116,7 +115,7 @@ Support: gamersguildesports12@gmail.com`;
       }
 
       const result = await response.json();
-      console.log(`[Resend] Email successfully dispatched to participant: ${payload.to} (${result.id})`);
+      console.log(`[Resend] Email successfully dispatched to participant: ${payload.to} (${result.id}) [Status: ${payload.status}]`);
       return { success: true, messageId: result.id };
     }
 

@@ -153,15 +153,25 @@ export async function POST(req: NextRequest) {
     registrationId = reg.id;
     eventTitle = eventTitle || reg.event_title || 'Gamers Guild Championship';
 
-    // Automatically send confirmation email
+    // Automatically send confirmation email with complete player details
     const emailResult = await sendRegistrationConfirmationEmail({
       to: email,
       playerName: playerName,
       registrationCode: publicCode,
       eventName: eventTitle || 'Gamers Guild Esports Championship',
-      state: state,
+      game: game || 'BGMI (Battlegrounds Mobile India)',
+      inGameName: inGameName,
+      playerUid: playerUid,
       teamName: teamName,
-      status: 'PENDING (Verification in Progress)',
+      teamRole: teamRole || 'Player',
+      state: state,
+      district: district,
+      city: city,
+      phone: phone,
+      gamingExperience: gamingExperience || '',
+      dateOfBirth: dateOfBirth || '',
+      gender: gender || '',
+      status: 'PENDING (Under Review)',
       submissionDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
     });
 

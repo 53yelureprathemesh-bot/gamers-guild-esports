@@ -223,6 +223,26 @@ function RegistrationFormContent() {
     return (
       <div className="min-h-screen cyber-bg py-12 sm:py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          
+          {/* Automated Email Confirmation Banner */}
+          <div className="mb-6 p-4 sm:p-5 rounded-xl border border-neon-emerald/50 bg-cyber-dark/95 backdrop-blur-md shadow-neon-glow flex items-start space-x-3 screen-only">
+            <div className="w-9 h-9 rounded-full bg-neon-emerald/10 border border-neon-emerald flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Mail className="w-5 h-5 text-neon-emerald animate-pulse" />
+            </div>
+            <div className="flex-1 text-xs">
+              <div className="text-neon-emerald font-black font-mono tracking-wider uppercase flex items-center space-x-2">
+                <span>AUTOMATIC EMAIL DISPATCHED</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-neon-emerald animate-ping" />
+              </div>
+              <p className="text-slate-300 mt-1 leading-relaxed text-sm">
+                Official tournament receipt has been automatically generated and sent to <span className="text-neon-cyan font-bold font-mono">{submissionSuccess.email}</span>.
+              </p>
+              <p className="text-amber-400/90 mt-2 font-medium leading-relaxed bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20">
+                ⚠️ <strong className="text-white">Notice for Gmail users:</strong> If not immediately visible in your Primary inbox, please check your <strong className="text-white">Spam</strong> or <strong className="text-white">Promotions</strong> folder and click <strong className="text-white">&quot;Report not spam&quot;</strong> so you never miss custom room ID/passwords on tournament day.
+              </p>
+            </div>
+          </div>
+
           <PrintableReceipt data={submissionSuccess} />
 
           {/* Action Links */}
