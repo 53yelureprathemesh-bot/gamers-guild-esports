@@ -522,8 +522,8 @@ class DataStore {
     });
   }
 
-  public createRegistration(data: Omit<Registration, 'id' | 'public_code' | 'created_at' | 'status' | 'email_status'>): Registration {
-    const publicCode = this.generateStateCode(data.state);
+  public createRegistration(data: Omit<Registration, 'id' | 'public_code' | 'created_at' | 'status' | 'email_status'> & { id?: string; public_code?: string }): Registration {
+    const publicCode = data.public_code || this.generateStateCode(data.state);
     const event = this.getEventById(data.event_id);
     
     // Increment slot count
@@ -533,10 +533,10 @@ class DataStore {
 
     const newReg: Registration = {
       ...data,
-      id: `reg-${Date.now()}`,
+      id: data.id || `reg-${Date.now()}`,
       public_code: publicCode,
       status: 'PENDING',
-      email_status: 'SENT', // simulated automatic confirmation
+      email_status: 'SENT',
       created_at: new Date().toISOString(),
       event_title: event?.title || 'Tournament'
     };

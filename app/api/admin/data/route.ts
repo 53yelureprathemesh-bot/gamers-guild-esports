@@ -37,8 +37,29 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: dataStore.getPointsTable(searchParams.get('eventId') || undefined) });
       case 'matches':
         return NextResponse.json({ success: true, data: dataStore.getMatches(searchParams.get('eventId') || undefined) });
-      case 'registrations':
+      case 'registrations': {
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: dbData } = await supabase
+                .from('registrations')
+                .select('*, events(title)')
+                .order('created_at', { ascending: false });
+              if (dbData && dbData.length > 0) {
+                const mapped = dbData.map((d: any) => ({
+                  ...d,
+                  event_title: d.events?.title || 'Gamers Guild Tournament'
+                }));
+                return NextResponse.json({ success: true, data: mapped });
+              }
+            }
+          } catch (e) {
+            console.warn('Supabase fetch registrations warning:', e);
+          }
+        }
         return NextResponse.json({ success: true, data: dataStore.getRegistrations() });
+      }
       case 'form-fields':
         return NextResponse.json({ success: true, data: formStore.getFields() });
       case 'announcements':
@@ -51,12 +72,32 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: dataStore.getSiteSettings() });
       case 'admins':
         return NextResponse.json({ success: true, data: dataStore.getAdmins() });
-      default:
+      default: {
+        let registrations = dataStore.getRegistrations();
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: dbData } = await supabase
+                .from('registrations')
+                .select('*, events(title)')
+                .order('created_at', { ascending: false });
+              if (dbData && dbData.length > 0) {
+                registrations = dbData.map((d: any) => ({
+                  ...d,
+                  event_title: d.events?.title || 'Gamers Guild Tournament'
+                }));
+              }
+            }
+          } catch (e) {
+            console.warn('Supabase fetch registrations in default:', e);
+          }
+        }
         return NextResponse.json({
           success: true,
           data: {
             events: dataStore.getEvents(),
-            registrations: dataStore.getRegistrations(),
+            registrations: registrations,
             settings: dataStore.getSiteSettings(),
             formFields: formStore.getFields(),
             announcements: dataStore.getAnnouncements(),
@@ -65,6 +106,7 @@ export async function GET(req: NextRequest) {
             admins: dataStore.getAdmins()
           }
         });
+      }
     }
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -90,10 +132,36 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: deleted });
       }
       case 'update-registration-status': {
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              await supabase
+                .from('registrations')
+                .update({ status: payload.status, admin_notes: payload.notes })
+                .or(`id.eq.${payload.id},public_code.eq.${payload.id}`);
+            }
+          } catch (e) {
+            console.warn('Supabase update registration status error:', e);
+          }
+        }
         const updated = dataStore.updateRegistrationStatus(payload.id, payload.status, payload.notes);
         return NextResponse.json({ success: Boolean(updated), data: updated });
       }
       case 'delete-registration': {
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              await supabase
+                .from('registrations')
+                .delete()
+                .or(`id.eq.${payload.id},public_code.eq.${payload.id}`);
+            }
+          } catch (e) {
+            console.warn('Supabase delete registration error:', e);
+          }
+        }
         const deleted = dataStore.deleteRegistration(payload.id);
         return NextResponse.json({ success: deleted });
       }
