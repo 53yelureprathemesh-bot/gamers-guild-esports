@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       case 'status':
         return NextResponse.json({
           success: true,
-          commit: 'c7-live',
+          commit: 'c8-production',
           supabaseConfigured: isSupabaseConfigured,
           hasSupabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
           hasAnonKey: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
