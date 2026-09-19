@@ -72,12 +72,22 @@ export async function GET(req: NextRequest) {
             if (supabase) {
               const { data: dbData } = await supabase
                 .from('registrations')
-                .select('*, events(title)')
+                .select('*, events(title), registration_files(*)')
                 .order('created_at', { ascending: false });
               if (dbData && dbData.length > 0) {
                 const mapped = dbData.map((d: any) => ({
                   ...d,
-                  event_title: d.events?.title || 'Gamers Guild Tournament'
+                  event_title: d.events?.title || 'Gamers Guild Tournament',
+                  files: (d.registration_files && Array.isArray(d.registration_files) && d.registration_files.length > 0)
+                    ? d.registration_files.map((rf: any) => ({
+                        id: rf.id,
+                        file_name: rf.file_name,
+                        file_url: rf.file_url,
+                        mime_type: rf.mime_type,
+                        file_size: rf.file_size,
+                        is_private: rf.is_private
+                      }))
+                    : (d.files || [])
                 }));
                 return NextResponse.json({ success: true, data: mapped });
               }
@@ -125,12 +135,22 @@ export async function GET(req: NextRequest) {
             if (supabase) {
               const { data: dbData } = await supabase
                 .from('registrations')
-                .select('*, events(title)')
+                .select('*, events(title), registration_files(*)')
                 .order('created_at', { ascending: false });
               if (dbData && dbData.length > 0) {
                 registrations = dbData.map((d: any) => ({
                   ...d,
-                  event_title: d.events?.title || 'Gamers Guild Tournament'
+                  event_title: d.events?.title || 'Gamers Guild Tournament',
+                  files: (d.registration_files && Array.isArray(d.registration_files) && d.registration_files.length > 0)
+                    ? d.registration_files.map((rf: any) => ({
+                        id: rf.id,
+                        file_name: rf.file_name,
+                        file_url: rf.file_url,
+                        mime_type: rf.mime_type,
+                        file_size: rf.file_size,
+                        is_private: rf.is_private
+                      }))
+                    : (d.files || [])
                 }));
               }
             }
@@ -148,7 +168,7 @@ export async function GET(req: NextRequest) {
             announcements: dataStore.getAnnouncements(),
             gallery: dataStore.getGallery(),
             sponsors: dataStore.getSponsors(),
-            admins: dataStore.getAdmins()
+            admins: dataStore.getAdmins().map(({ password, ...rest }) => ({ ...rest, has_password: Boolean(password) }))
           }
         });
       }

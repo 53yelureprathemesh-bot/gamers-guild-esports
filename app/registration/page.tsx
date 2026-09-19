@@ -96,33 +96,103 @@ function RegistrationFormContent() {
     setCustomAnswers(prev => ({ ...prev, [fieldId]: value }));
   };
 
-  // Handle file uploads with validation (JPG, PNG, PDF <= 5MB)
+  // Handle file uploads with validation and Base64 compression
   const handleFileUpload = (fieldKey: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      setErrorMsg('Invalid file format. Only JPG, PNG, and PDF files are permitted.');
+      setErrorMsg('Invalid file format. Only JPG, PNG, WEBP, and PDF files are permitted.');
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('File size exceeds 5MB limit. Please upload a smaller file.');
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg('File size exceeds 10MB limit. Please upload a smaller file.');
       return;
     }
 
     setErrorMsg(null);
-    const mockUrl = URL.createObjectURL(file);
-    setUploadedFiles(prev => ({
-      ...prev,
-      [fieldKey]: {
-        name: file.name,
-        url: mockUrl,
-        size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-        type: file.type
-      }
-    }));
+
+    // If it's an image, read, resize and compress via canvas
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const rawDataUrl = loadEvt.target?.result as string;
+        const img = new window.Image();
+        img.onload = () => {
+          const maxDim = 1400;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressedUrl = canvas.toDataURL('image/jpeg', 0.82);
+            setUploadedFiles(prev => ({
+              ...prev,
+              [fieldKey]: {
+                name: file.name,
+                url: compressedUrl,
+                size: `${Math.round((compressedUrl.length * 0.75) / 1024)} KB`,
+                type: 'image/jpeg'
+              }
+            }));
+          } else {
+            setUploadedFiles(prev => ({
+              ...prev,
+              [fieldKey]: {
+                name: file.name,
+                url: rawDataUrl,
+                size: `${Math.round(file.size / 1024)} KB`,
+                type: file.type
+              }
+            }));
+          }
+        };
+        img.onerror = () => {
+          setUploadedFiles(prev => ({
+            ...prev,
+            [fieldKey]: {
+              name: file.name,
+              url: rawDataUrl,
+              size: `${Math.round(file.size / 1024)} KB`,
+              type: file.type
+            }
+          }));
+        };
+        img.src = rawDataUrl;
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // PDF document
+      const reader = new FileReader();
+      reader.onload = (loadEvt) => {
+        const dataUrl = loadEvt.target?.result as string;
+        setUploadedFiles(prev => ({
+          ...prev,
+          [fieldKey]: {
+            name: file.name,
+            url: dataUrl,
+            size: `${Math.round(file.size / 1024)} KB`,
+            type: file.type
+          }
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeFile = (fieldKey: string) => {
@@ -629,10 +699,16 @@ function RegistrationFormContent() {
 
                 {uploadedFiles['f-doc-id'] ? (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
-                    <div className="flex items-center space-x-2">
-                      <FileCheck className="w-4 h-4 text-neon-emerald" />
-                      <span className="text-white truncate max-w-[200px] sm:max-w-xs">{uploadedFiles['f-doc-id'].name}</span>
-                      <span className="text-gray-400">({uploadedFiles['f-doc-id'].size})</span>
+                    <div className="flex items-center space-x-2.5">
+                      {uploadedFiles['f-doc-id'].type.startsWith('image/') ? (
+                        <img src={uploadedFiles['f-doc-id'].url} alt="ID preview" className="w-10 h-10 object-cover rounded border border-cyber-border flex-shrink-0" />
+                      ) : (
+                        <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
+                      )}
+                      <div>
+                        <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles['f-doc-id'].name}</span>
+                        <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles['f-doc-id'].size})</span>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -671,10 +747,16 @@ function RegistrationFormContent() {
 
                 {uploadedFiles['f-doc-photo'] ? (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
-                    <div className="flex items-center space-x-2">
-                      <FileCheck className="w-4 h-4 text-neon-emerald" />
-                      <span className="text-white truncate max-w-[200px] sm:max-w-xs">{uploadedFiles['f-doc-photo'].name}</span>
-                      <span className="text-gray-400">({uploadedFiles['f-doc-photo'].size})</span>
+                    <div className="flex items-center space-x-2.5">
+                      {uploadedFiles['f-doc-photo'].type.startsWith('image/') ? (
+                        <img src={uploadedFiles['f-doc-photo'].url} alt="Photo preview" className="w-10 h-10 object-cover rounded-full border border-neon-cyan flex-shrink-0" />
+                      ) : (
+                        <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
+                      )}
+                      <div>
+                        <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles['f-doc-photo'].name}</span>
+                        <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles['f-doc-photo'].size})</span>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -713,9 +795,16 @@ function RegistrationFormContent() {
 
                 {uploadedFiles['f-doc-payment'] ? (
                   <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
-                    <div className="flex items-center space-x-2">
-                      <FileCheck className="w-4 h-4 text-neon-emerald" />
-                      <span className="text-white truncate max-w-[200px] sm:max-w-xs">{uploadedFiles['f-doc-payment'].name}</span>
+                    <div className="flex items-center space-x-2.5">
+                      {uploadedFiles['f-doc-payment'].type.startsWith('image/') ? (
+                        <img src={uploadedFiles['f-doc-payment'].url} alt="Payment preview" className="w-10 h-10 object-cover rounded border border-cyber-border flex-shrink-0" />
+                      ) : (
+                        <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
+                      )}
+                      <div>
+                        <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles['f-doc-payment'].name}</span>
+                        <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles['f-doc-payment'].size})</span>
+                      </div>
                     </div>
                     <button
                       type="button"

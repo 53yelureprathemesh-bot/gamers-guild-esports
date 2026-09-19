@@ -17,7 +17,9 @@ import {
   Lock,
   ExternalLink,
   RotateCw,
-  AlertTriangle
+  AlertTriangle,
+  ZoomIn,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Registration, RegistrationStatus } from '@/lib/types';
 import { INITIAL_REGISTRATIONS } from '@/lib/dataStore';
@@ -28,6 +30,15 @@ export default function AdminRegistrationsPage() {
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+
+  const isImageFile = (file: { mime_type?: string; file_url?: string; file_name?: string }) => {
+    if (file.mime_type?.startsWith('image/')) return true;
+    if (file.file_url?.startsWith('data:image/')) return true;
+    if (/\.(jpe?g|png|webp|gif|svg)($|\?)/i.test(file.file_url || '')) return true;
+    if (/\.(jpe?g|png|webp|gif|svg)($|\?)/i.test(file.file_name || '')) return true;
+    return false;
+  };
 
   // Filters & State Drilldown
   const [searchQuery, setSearchQuery] = useState('');
@@ -477,40 +488,117 @@ export default function AdminRegistrationsPage() {
               </div>
             </div>
 
-            {/* UPLOADED DOCUMENTS (PRIVATE STORAGE ACCESS) */}
+            {/* UPLOADED DOCUMENTS & IDENTITY PROOFS (ARBITER VAULT) */}
             <div className="mt-6 p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border">
               <div className="flex items-center justify-between border-b border-cyber-border pb-2 mb-3">
                 <span className="text-xs font-mono font-bold text-white uppercase flex items-center space-x-2">
                   <FileText className="w-4 h-4 text-neon-cyan" />
                   <span>UPLOADED IDENTITY & PROOF DOCUMENTS</span>
                 </span>
-                <span className="text-[10px] font-mono text-neon-gold">Private Vault</span>
+                <span className="text-[10px] font-mono text-neon-gold bg-neon-gold/10 px-2 py-0.5 rounded border border-neon-gold/30">
+                  ARBITER VERIFICATION VAULT
+                </span>
               </div>
 
               {selectedReg.files && selectedReg.files.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {selectedReg.files.map((file, idx) => (
-                    <div key={idx} className="p-3 rounded-lg bg-cyber-black border border-cyber-border flex items-center justify-between text-xs font-mono">
-                      <div className="truncate max-w-[180px]">
-                        <span className="text-white block font-semibold truncate">{file.file_name}</span>
-                        <span className="text-[10px] text-gray-400">{file.mime_type || 'Document'}</span>
-                      </div>
-                      <a
-                        href={file.file_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1 rounded bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40 text-[10px] font-bold flex items-center space-x-1"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {selectedReg.files.map((file, idx) => {
+                    const isImg = isImageFile(file);
+                    return (
+                      <div 
+                        key={idx} 
+                        className="p-3 rounded-xl bg-cyber-black border border-cyber-border/80 flex flex-col justify-between space-y-3 hover:border-neon-cyan/40 transition-colors"
                       >
-                        <span>VIEW</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  ))}
+                        {/* File Header */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-white block font-semibold text-xs font-mono truncate" title={file.file_name}>
+                              {file.file_name}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-mono">
+                              {file.mime_type || (isImg ? 'Image document' : 'Document')}
+                              {file.file_size ? ` • ${(file.file_size / 1024).toFixed(0)} KB` : ''}
+                            </span>
+                          </div>
+                          <span className={`px-2 py-0.5 text-[9px] font-mono font-bold rounded uppercase ${isImg ? 'bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30' : 'bg-neon-gold/10 text-neon-gold border border-neon-gold/30'}`}>
+                            {isImg ? 'IMAGE' : 'PDF/DOC'}
+                          </span>
+                        </div>
+
+                        {/* Image Preview Thumbnail or PDF icon */}
+                        {isImg ? (
+                          <div 
+                            className="relative group cursor-pointer overflow-hidden rounded-lg border border-cyber-border bg-black/70 aspect-video sm:h-40 flex items-center justify-center"
+                            onClick={() => setPreviewImage({ url: file.file_url, title: file.file_name })}
+                            title="Click to zoom in and verify"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img 
+                              src={file.file_url} 
+                              alt={file.file_name} 
+                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-1.5 text-neon-cyan font-mono text-xs font-bold">
+                              <ZoomIn className="w-4 h-4" />
+                              <span>INSPECT / ZOOM</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-lg bg-cyber-dark/50 border border-cyber-border flex items-center space-x-3">
+                            <FileText className="w-8 h-8 text-neon-gold flex-shrink-0" />
+                            <div className="text-xs font-mono text-gray-300 truncate">
+                              <span>Non-image verification document</span>
+                              <div className="text-[10px] text-gray-400">Click below to open or download.</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="flex items-center space-x-2 pt-1 border-t border-cyber-border/40">
+                          {isImg ? (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewImage({ url: file.file_url, title: file.file_name })}
+                              className="flex-1 py-1.5 rounded bg-neon-cyan/20 hover:bg-neon-cyan/30 text-neon-cyan border border-neon-cyan/40 text-[11px] font-mono font-bold flex items-center justify-center space-x-1"
+                            >
+                              <ZoomIn className="w-3.5 h-3.5" />
+                              <span>INSPECT FULLSCREEN</span>
+                            </button>
+                          ) : (
+                            <a
+                              href={file.file_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-1 py-1.5 rounded bg-neon-cyan/20 hover:bg-neon-cyan/30 text-neon-cyan border border-neon-cyan/40 text-[11px] font-mono font-bold flex items-center justify-center space-x-1"
+                            >
+                              <span>OPEN DOCUMENT</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                          <a
+                            href={file.file_url}
+                            download={file.file_name}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded bg-cyber-dark hover:bg-cyber-dark/80 text-gray-300 hover:text-white border border-cyber-border text-[11px] font-mono font-bold flex items-center justify-center"
+                            title="Download file"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <p className="text-xs font-mono text-gray-400">
-                  Document proofs submitted directly via mobile upload. No external file attachments.
-                </p>
+                <div className="p-4 rounded-lg bg-cyber-black/50 border border-cyber-border text-center space-y-1">
+                  <p className="text-xs font-mono text-gray-400">
+                    No proof files uploaded with this registration.
+                  </p>
+                  <p className="text-[10px] font-mono text-gray-400">
+                    Applicant may have registered under direct spot-entry or without document attachments.
+                  </p>
+                </div>
               )}
             </div>
 
@@ -567,6 +655,68 @@ export default function AdminRegistrationsPage() {
         </div>
       )}
 
+      {/* FULLSCREEN LIGHTBOX IMAGE INSPECTOR */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-6"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="relative max-w-5xl w-full max-h-[92vh] flex flex-col items-center glass-hud border-2 border-neon-cyan/60 rounded-2xl p-4 sm:p-5 overflow-hidden shadow-2xl shadow-neon-cyan/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Lightbox Header */}
+            <div className="w-full flex items-center justify-between pb-3 border-b border-cyber-border mb-3">
+              <div className="flex items-center space-x-2 truncate">
+                <ImageIcon className="w-4 h-4 text-neon-cyan flex-shrink-0" />
+                <span className="text-xs sm:text-sm font-mono font-bold text-white uppercase truncate">
+                  {previewImage.title}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <a
+                  href={previewImage.url}
+                  download={previewImage.title || 'document-proof'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-1.5 rounded bg-neon-cyan/20 hover:bg-neon-cyan/30 text-neon-cyan border border-neon-cyan/40 text-xs font-mono font-bold flex items-center space-x-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">DOWNLOAD PROOF</span>
+                </a>
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="p-1.5 rounded-lg bg-cyber-dark text-gray-400 hover:text-white border border-cyber-border hover:border-neon-red transition-colors"
+                  title="Close viewer (Esc)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* High-Resolution Document Image */}
+            <div className="w-full flex-1 flex items-center justify-center overflow-auto max-h-[76vh] p-2 bg-black/80 rounded-xl border border-cyber-border/60">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={previewImage.url} 
+                alt={previewImage.title}
+                className="max-w-full max-h-[72vh] object-contain rounded shadow-2xl" 
+              />
+            </div>
+
+            {/* Lightbox Footer */}
+            <div className="w-full flex items-center justify-between pt-3 text-[11px] font-mono text-gray-400">
+              <span>Arbiter Verification Console • High-Resolution Document Inspector</span>
+              <span className="text-neon-emerald flex items-center space-x-1 font-bold">
+                <Check className="w-3.5 h-3.5" />
+                <span>Document Active</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
