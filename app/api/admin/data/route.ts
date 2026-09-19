@@ -13,25 +13,50 @@ export async function GET(req: NextRequest) {
 
     switch (type) {
       case 'find-registration': {
-        const query = searchParams.get('query') || '';
+        const rawPhone = (searchParams.get('phone') || searchParams.get('query') || '').trim();
+        const rawCode = (searchParams.get('code') || '').trim().replace(/^#/, '');
+
+        const cleanDigits = rawPhone.replace(/\D/g, '');
+        // Require at least 10 digits for mobile verification to prevent unauthorized scraping
+        if (cleanDigits.length < 10) {
+          return NextResponse.json({
+            success: false,
+            error: 'Please enter your full 10-digit registered mobile number to verify your registration.'
+          }, { status: 400 });
+        }
+
+        const last10 = cleanDigits.slice(-10);
+
         if (isSupabaseConfigured) {
           const supabase = getServiceSupabase();
           if (supabase) {
-            const cleanQuery = query.trim().replace(/^#/, '');
-            const { data: dbData } = await supabase
+            let query = supabase
               .from('registrations')
-              .select('*, events(title)')
-              .or(`public_code.ilike.%${cleanQuery}%,email.ilike.%${cleanQuery}%,phone.ilike.%${cleanQuery}%,player_name.ilike.%${cleanQuery}%,team_name.ilike.%${cleanQuery}%,player_uid.ilike.%${cleanQuery}%`);
+              .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_title, state, district, city, phone, email, status, created_at, events(title)')
+              .ilike('phone', `%${last10}%`);
+
+            if (rawCode) {
+              query = query.ilike('public_code', rawCode);
+            }
+
+            const { data: dbData } = await query;
             if (dbData && dbData.length > 0) {
               const mapped = dbData.map((d: any) => ({
                 ...d,
-                event_title: d.events?.title || 'Gamers Guild Tournament'
+                event_title: d.events?.title || d.event_title || 'Gamers Guild Tournament',
+                files: undefined,
+                answers: undefined
               }));
               return NextResponse.json({ success: true, data: mapped });
             }
           }
         }
-        const results = dataStore.findRegistrations(query);
+
+        const results = dataStore.findRegistrationsByPhone(rawPhone, rawCode).map(r => ({
+          ...r,
+          files: undefined,
+          answers: undefined
+        }));
         return NextResponse.json({ success: true, data: results });
       }
       case 'events':

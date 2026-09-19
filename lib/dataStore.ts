@@ -537,21 +537,22 @@ class DataStore {
     return this.registrations.find(r => r.public_code.toLowerCase() === code.toLowerCase().replace(/^#/, ''));
   }
 
-  public findRegistrations(query: string): Registration[] {
-    const q = query.trim().toLowerCase().replace(/^#/, '');
-    if (!q) return [];
-    const cleanDigits = q.replace(/\D/g, '');
+  public findRegistrationsByPhone(phone: string, code?: string): Registration[] {
+    const cleanDigits = phone.replace(/\D/g, '').slice(-10);
+    if (cleanDigits.length < 10) return [];
+    const cleanCode = code ? code.trim().toLowerCase().replace(/^#/, '') : '';
     
     return this.registrations.filter(r => {
-      const codeMatch = r.public_code.toLowerCase() === q;
-      const emailMatch = r.email.toLowerCase() === q;
-      const nameMatch = r.player_name.toLowerCase().includes(q) || r.in_game_name.toLowerCase().includes(q);
-      const teamMatch = r.team_name.toLowerCase().includes(q);
-      const uidMatch = Boolean(cleanDigits && r.player_uid.replace(/\D/g, '').includes(cleanDigits));
-      const phoneMatch = Boolean(cleanDigits && r.phone.replace(/\D/g, '').includes(cleanDigits));
-      
-      return codeMatch || emailMatch || nameMatch || teamMatch || uidMatch || phoneMatch;
+      const rDigits = r.phone.replace(/\D/g, '').slice(-10);
+      const phoneMatch = rDigits === cleanDigits;
+      if (!phoneMatch) return false;
+      if (cleanCode && r.public_code.toLowerCase() !== cleanCode) return false;
+      return true;
     });
+  }
+
+  public findRegistrations(query: string): Registration[] {
+    return this.findRegistrationsByPhone(query);
   }
 
   public createRegistration(data: Omit<Registration, 'id' | 'public_code' | 'created_at' | 'status' | 'email_status'> & { id?: string; public_code?: string }): Registration {
