@@ -263,10 +263,42 @@ export const INITIAL_SPONSORS: Sponsor[] = [
 ];
 
 export const INITIAL_ADMINS: AdminUser[] = [
-  { id: "adm-1", email: "53yelureprathemesh@gmail.com", full_name: "Prathamesh (Super Admin)", role: "SUPER_ADMIN", is_active: true, created_at: "2026-01-01" },
-  { id: "adm-2", email: "events@gamersguild.gg", full_name: "Aman Sharma (Event Admin)", role: "EVENT_ADMIN", is_active: true, created_at: "2026-02-01" },
-  { id: "adm-3", email: "registrations@gamersguild.gg", full_name: "Pooja Verma (Reg Manager)", role: "REGISTRATION_MANAGER", is_active: true, created_at: "2026-02-15" },
-  { id: "adm-4", email: "content@gamersguild.gg", full_name: "Rohan Deshmukh (Content Editor)", role: "CONTENT_EDITOR", is_active: true, created_at: "2026-03-01" }
+  { 
+    id: "adm-1", 
+    email: "53yelureprathemesh@gmail.com", 
+    password: "Prathamesh@27",
+    full_name: "Prathamesh (Super Admin)", 
+    role: "SUPER_ADMIN", 
+    is_active: true, 
+    created_at: "2026-01-01" 
+  },
+  { 
+    id: "adm-2", 
+    email: "admineventgge@gmail.com", 
+    password: "gamresguildesp@21",
+    full_name: "Event Administrator", 
+    role: "EVENT_ADMIN", 
+    is_active: true, 
+    created_at: "2026-09-20" 
+  },
+  { 
+    id: "adm-3", 
+    email: "eventregester@gge.com", 
+    password: "gamersguildesports@22",
+    full_name: "Registration Manager", 
+    role: "REGISTRATION_MANAGER", 
+    is_active: true, 
+    created_at: "2026-09-20" 
+  },
+  { 
+    id: "adm-4", 
+    email: "managercontantgge@gge.com", 
+    password: "gamersguildesp@ggesports",
+    full_name: "Content Manager", 
+    role: "CONTENT_EDITOR", 
+    is_active: true, 
+    created_at: "2026-09-20" 
+  }
 ];
 
 export const INITIAL_REGISTRATIONS: Registration[] = [
@@ -654,18 +686,32 @@ class DataStore {
   }
 
   // Admins
-  public getAdmins(): AdminUser[] { return this.admins; }
-  public saveAdmin(admin: Partial<AdminUser> & { email: string; full_name: string; role: AdminUser['role'] }): AdminUser {
-    if (admin.id) {
-      const idx = this.admins.findIndex(a => a.id === admin.id);
-      if (idx !== -1) {
-        this.admins[idx] = { ...this.admins[idx], ...admin };
-        return this.admins[idx];
-      }
+  public getAdmins(): AdminUser[] { 
+    return this.admins; 
+  }
+
+  public saveAdmin(admin: Partial<AdminUser> & { email: string; full_name: string; role: AdminUser['role']; password?: string }): AdminUser {
+    const cleanEmail = admin.email.trim().toLowerCase();
+    
+    // Check by ID or Email
+    const existingIdx = this.admins.findIndex(a => 
+      (admin.id && a.id === admin.id) || a.email.toLowerCase() === cleanEmail
+    );
+
+    if (existingIdx !== -1) {
+      this.admins[existingIdx] = { 
+        ...this.admins[existingIdx], 
+        ...admin,
+        email: cleanEmail,
+        password: admin.password || this.admins[existingIdx].password
+      };
+      return this.admins[existingIdx];
     }
+
     const newAdmin: AdminUser = {
-      id: `adm-${Date.now()}`,
-      email: admin.email,
+      id: admin.id || `adm-${Date.now()}`,
+      email: cleanEmail,
+      password: admin.password || 'GGEsports@2026',
       full_name: admin.full_name,
       role: admin.role,
       is_active: admin.is_active ?? true,
@@ -673,6 +719,32 @@ class DataStore {
     };
     this.admins.push(newAdmin);
     return newAdmin;
+  }
+
+  public deleteAdmin(id: string): boolean {
+    const target = this.admins.find(a => a.id === id);
+    if (!target) return false;
+    // Protect the primary Super Admin
+    if (target.email.toLowerCase() === '53yelureprathemesh@gmail.com') {
+      return false;
+    }
+    this.admins = this.admins.filter(a => a.id !== id);
+    return true;
+  }
+
+  public authenticateAdmin(email: string, password: string): AdminUser | null {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = password.trim();
+
+    const user = this.admins.find(a => 
+      a.email.toLowerCase() === cleanEmail && a.is_active !== false
+    );
+
+    if (user && user.password === cleanPass) {
+      return user;
+    }
+
+    return null;
   }
 }
 

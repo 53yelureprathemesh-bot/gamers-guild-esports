@@ -54,7 +54,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     try {
       const parsed = JSON.parse(stored);
-      if (parsed && parsed.email?.toLowerCase() === '53yelureprathemesh@gmail.com') {
+      const validRoles: AdminRole[] = ['SUPER_ADMIN', 'EVENT_ADMIN', 'REGISTRATION_MANAGER', 'CONTENT_EDITOR'];
+      if (parsed && parsed.email && validRoles.includes(parsed.role)) {
         setAdmin(parsed);
         setIsAuthorized(true);
       } else {
@@ -262,7 +263,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto min-h-screen">
-        {children}
+        {(() => {
+          const currentNav = navItems.find(item => item.href === pathname);
+          const isPageAllowed = !currentNav || currentNav.allowed.includes(role);
+
+          if (!isPageAllowed) {
+            return (
+              <div className="min-h-[60vh] flex items-center justify-center">
+                <div className="glass-hud p-8 rounded-2xl border border-neon-red/40 max-w-md w-full text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-neon-red/10 border border-neon-red flex items-center justify-center mx-auto text-neon-red">
+                    <ShieldAlert className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black font-mono text-white uppercase tracking-wider">RESTRICTED PRIVILEGES</h2>
+                    <p className="text-xs text-gray-400 font-mono mt-1 leading-relaxed">
+                      Your designated role (<span className="text-neon-cyan font-bold">{role.replace('_', ' ')}</span>) does not have authorization to view or modify this sector.
+                    </p>
+                  </div>
+                  <Link href="/admin" className="btn-cyber-primary inline-flex px-5 py-2.5 rounded text-xs font-mono font-bold uppercase">
+                    Return to Authorized Dashboard
+                  </Link>
+                </div>
+              </div>
+            );
+          }
+
+          return children;
+        })()}
       </main>
 
     </div>

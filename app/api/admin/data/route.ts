@@ -285,6 +285,10 @@ export async function POST(req: NextRequest) {
         const adm = dataStore.saveAdmin(payload);
         return NextResponse.json({ success: true, data: adm });
       }
+      case 'delete-admin': {
+        const res = dataStore.deleteAdmin(payload.id);
+        return NextResponse.json({ success: res });
+      }
       case 'send-test-email': {
         const targetEmail = payload.to;
         if (!targetEmail) {

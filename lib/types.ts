@@ -3,6 +3,7 @@ export type AdminRole = 'SUPER_ADMIN' | 'EVENT_ADMIN' | 'REGISTRATION_MANAGER' |
 export interface AdminUser {
   id: string;
   email: string;
+  password?: string;
   full_name: string;
   role: AdminRole;
   is_active: boolean;
