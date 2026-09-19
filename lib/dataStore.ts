@@ -703,7 +703,7 @@ class DataStore {
         ...this.admins[existingIdx], 
         ...admin,
         email: cleanEmail,
-        password: admin.password || this.admins[existingIdx].password
+        password: (admin.password && admin.password.trim()) ? admin.password.trim() : this.admins[existingIdx].password
       };
       return this.admins[existingIdx];
     }

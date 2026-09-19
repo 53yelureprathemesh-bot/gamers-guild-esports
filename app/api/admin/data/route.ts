@@ -73,8 +73,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: dataStore.getSponsors() });
       case 'settings':
         return NextResponse.json({ success: true, data: dataStore.getSiteSettings() });
-      case 'admins':
-        return NextResponse.json({ success: true, data: dataStore.getAdmins() });
+      case 'admins': {
+        const safeAdmins = dataStore.getAdmins().map(({ password, ...rest }) => ({
+          ...rest,
+          has_password: Boolean(password)
+        }));
+        return NextResponse.json({ success: true, data: safeAdmins });
+      }
       case 'status':
         return NextResponse.json({
           success: true,
@@ -283,7 +288,8 @@ export async function POST(req: NextRequest) {
       }
       case 'save-admin': {
         const adm = dataStore.saveAdmin(payload);
-        return NextResponse.json({ success: true, data: adm });
+        const { password, ...safeAdm } = adm;
+        return NextResponse.json({ success: true, data: safeAdm });
       }
       case 'delete-admin': {
         const res = dataStore.deleteAdmin(payload.id);

@@ -20,13 +20,11 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { AdminUser, AdminRole } from '@/lib/types';
-import { INITIAL_ADMINS } from '@/lib/dataStore';
 
 export default function AdminUsersPage() {
-  const [admins, setAdmins] = useState<AdminUser[]>(INITIAL_ADMINS);
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [editingAdmin, setEditingAdmin] = useState<Partial<AdminUser> | null>(null);
   const [showModalPassword, setShowModalPassword] = useState(false);
-  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
@@ -60,10 +58,6 @@ export default function AdminUsersPage() {
     fetchAdmins();
   }, []);
 
-  const toggleReveal = (id: string) => {
-    setRevealedPasswords(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -76,27 +70,39 @@ export default function AdminUsersPage() {
       return;
     }
 
-    if (!editingAdmin.password || editingAdmin.password.trim().length < 6) {
+    // If new admin, password is required
+    if (!editingAdmin.id && (!editingAdmin.password || editingAdmin.password.trim().length < 6)) {
+      alert('Password is required and must be at least 6 characters.');
+      return;
+    }
+
+    // If editing existing admin and password provided, validate length
+    if (editingAdmin.password && editingAdmin.password.trim().length < 6) {
       alert('Password must be at least 6 characters.');
       return;
     }
 
     try {
+      const payload: any = {
+        ...editingAdmin,
+        email: editingAdmin.email.trim().toLowerCase(),
+      };
+
+      if (editingAdmin.password && editingAdmin.password.trim()) {
+        payload.password = editingAdmin.password.trim();
+      }
+
       const res = await fetch('/api/admin/data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'save-admin',
-          payload: {
-            ...editingAdmin,
-            email: editingAdmin.email.trim().toLowerCase(),
-            password: editingAdmin.password.trim()
-          }
+          payload
         })
       });
       const data = await res.json();
       if (data.success) {
-        setNotice(`Credentials for "${editingAdmin.full_name}" saved successfully!`);
+        setNotice(`Admin settings for "${editingAdmin.full_name}" saved successfully!`);
         fetchAdmins();
         setEditingAdmin(null);
         setTimeout(() => setNotice(null), 4000);
@@ -208,14 +214,11 @@ export default function AdminUsersPage() {
           </div>
           <div className="text-xs font-mono font-bold text-white truncate">53yelureprathemesh@gmail.com</div>
           <div className="text-[11px] font-mono text-gray-400 flex items-center justify-between pt-1 border-t border-cyber-border">
-            <span>Pass: <code className="text-neon-cyan font-bold">Prathamesh@27</code></span>
-            <button 
-              onClick={() => copyToClipboard('Prathamesh@27', 'copy-super')} 
-              className="text-gray-400 hover:text-white"
-              title="Copy Password"
-            >
-              {copiedId === 'copy-super' ? <Check className="w-3.5 h-3.5 text-neon-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <span className="flex items-center space-x-1.5 text-neon-emerald">
+              <Lock className="w-3 h-3" />
+              <span className="font-bold tracking-wider">PROTECTED KEY</span>
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyber-dark text-neon-gold border border-neon-gold/30 font-bold uppercase">ROOT</span>
           </div>
           <div className="text-[10px] text-gray-400 font-sans">Full Root Access to All Settings & Data</div>
         </div>
@@ -228,14 +231,11 @@ export default function AdminUsersPage() {
           </div>
           <div className="text-xs font-mono font-bold text-white truncate">admineventgge@gmail.com</div>
           <div className="text-[11px] font-mono text-gray-400 flex items-center justify-between pt-1 border-t border-cyber-border">
-            <span>Pass: <code className="text-neon-cyan font-bold">gamresguildesp@21</code></span>
-            <button 
-              onClick={() => copyToClipboard('gamresguildesp@21', 'copy-event')} 
-              className="text-gray-400 hover:text-white"
-              title="Copy Password"
-            >
-              {copiedId === 'copy-event' ? <Check className="w-3.5 h-3.5 text-neon-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <span className="flex items-center space-x-1.5 text-neon-emerald">
+              <Lock className="w-3 h-3" />
+              <span className="font-bold tracking-wider">PROTECTED KEY</span>
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyber-dark text-neon-cyan border border-neon-cyan/30 font-bold uppercase">EVENTS</span>
           </div>
           <div className="text-[10px] text-gray-400 font-sans">Tournaments, Matches & Standings</div>
         </div>
@@ -248,14 +248,11 @@ export default function AdminUsersPage() {
           </div>
           <div className="text-xs font-mono font-bold text-white truncate">eventregester@gge.com</div>
           <div className="text-[11px] font-mono text-gray-400 flex items-center justify-between pt-1 border-t border-cyber-border">
-            <span>Pass: <code className="text-neon-cyan font-bold">gamersguildesports@22</code></span>
-            <button 
-              onClick={() => copyToClipboard('gamersguildesports@22', 'copy-reg')} 
-              className="text-gray-400 hover:text-white"
-              title="Copy Password"
-            >
-              {copiedId === 'copy-reg' ? <Check className="w-3.5 h-3.5 text-neon-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <span className="flex items-center space-x-1.5 text-neon-emerald">
+              <Lock className="w-3 h-3" />
+              <span className="font-bold tracking-wider">PROTECTED KEY</span>
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyber-dark text-neon-emerald border border-neon-emerald/30 font-bold uppercase">REGISTRATIONS</span>
           </div>
           <div className="text-[10px] text-gray-400 font-sans">Registrations, Forms & Approvals</div>
         </div>
@@ -268,14 +265,11 @@ export default function AdminUsersPage() {
           </div>
           <div className="text-xs font-mono font-bold text-white truncate">managercontantgge@gge.com</div>
           <div className="text-[11px] font-mono text-gray-400 flex items-center justify-between pt-1 border-t border-cyber-border">
-            <span>Pass: <code className="text-neon-cyan font-bold">gamersguildesp@ggesports</code></span>
-            <button 
-              onClick={() => copyToClipboard('gamersguildesp@ggesports', 'copy-content')} 
-              className="text-gray-400 hover:text-white"
-              title="Copy Password"
-            >
-              {copiedId === 'copy-content' ? <Check className="w-3.5 h-3.5 text-neon-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <span className="flex items-center space-x-1.5 text-neon-emerald">
+              <Lock className="w-3 h-3" />
+              <span className="font-bold tracking-wider">PROTECTED KEY</span>
+            </span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyber-dark text-neon-purple border border-neon-purple/30 font-bold uppercase">CONTENT</span>
           </div>
           <div className="text-[10px] text-gray-400 font-sans">Homepage, Media, Sponsors & News</div>
         </div>
@@ -306,7 +300,7 @@ export default function AdminUsersPage() {
             <tr className="border-b border-cyber-border text-gray-400 uppercase bg-cyber-dark/80">
               <th className="py-3.5 px-4">ADMINISTRATOR</th>
               <th className="py-3.5 px-4">EMAIL (LOGIN ID)</th>
-              <th className="py-3.5 px-4">PASSWORD</th>
+              <th className="py-3.5 px-4">CREDENTIAL KEY</th>
               <th className="py-3.5 px-4">ROLE</th>
               <th className="py-3.5 px-4">PERMISSIONS SCOPE</th>
               <th className="py-3.5 px-4">STATUS</th>
@@ -315,7 +309,6 @@ export default function AdminUsersPage() {
           </thead>
           <tbody className="divide-y divide-cyber-border">
             {filteredAdmins.map((adm) => {
-              const isRevealed = revealedPasswords[adm.id] || false;
               const isSuper = adm.email.toLowerCase() === '53yelureprathemesh@gmail.com';
 
               return (
@@ -343,32 +336,14 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
 
-                  {/* Password Column with Reveal & Copy */}
+                  {/* Protected Credential Key Column */}
                   <td className="py-3.5 px-4">
                     <div className="inline-flex items-center space-x-2 bg-cyber-dark/80 px-2.5 py-1 rounded border border-cyber-border">
-                      <span className="font-mono font-bold tracking-wider text-neon-cyan text-[11px]">
-                        {isRevealed ? (adm.password || '••••••••') : '••••••••••••'}
+                      <Lock className="w-3.5 h-3.5 text-neon-emerald" />
+                      <span className="font-mono text-gray-400 text-xs tracking-widest">••••••••</span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-neon-emerald/10 text-neon-emerald border border-neon-emerald/30 font-bold uppercase">
+                        PROTECTED
                       </span>
-                      
-                      <button
-                        type="button"
-                        onClick={() => toggleReveal(adm.id)}
-                        className="text-gray-400 hover:text-white focus:outline-none"
-                        title={isRevealed ? 'Hide password' : 'Show password'}
-                      >
-                        {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-
-                      {adm.password && (
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(adm.password || '', `pass-${adm.id}`)}
-                          className="text-gray-400 hover:text-white focus:outline-none"
-                          title="Copy password"
-                        >
-                          {copiedId === `pass-${adm.id}` ? <Check className="w-3.5 h-3.5 text-neon-emerald" /> : <Copy className="w-3.5 h-3.5" />}
-                        </button>
-                      )}
                     </div>
                   </td>
 
@@ -402,7 +377,7 @@ export default function AdminUsersPage() {
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => {
-                          setEditingAdmin(adm);
+                          setEditingAdmin({ ...adm, password: '' });
                           setShowModalPassword(false);
                         }}
                         className="p-1.5 rounded hover:bg-white/10 text-gray-300 hover:text-neon-cyan transition-colors"
@@ -468,7 +443,9 @@ export default function AdminUsersPage() {
             {/* Password Field with Generator & Toggle */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-gray-300 font-bold">Password *</label>
+                <label className="text-gray-300 font-bold">
+                  {editingAdmin.id ? 'Reset Access Password (optional)' : 'Access Password *'}
+                </label>
                 <button
                   type="button"
                   onClick={generateRandomPassword}
@@ -481,11 +458,11 @@ export default function AdminUsersPage() {
               <div className="relative">
                 <input
                   type={showModalPassword ? 'text' : 'password'}
-                  required
+                  required={!editingAdmin.id}
                   value={editingAdmin.password || ''}
                   onChange={(e) => setEditingAdmin({ ...editingAdmin, password: e.target.value })}
                   className="w-full pl-3 pr-9 py-2 bg-cyber-dark border border-cyber-border rounded text-white focus:outline-none focus:border-neon-cyan"
-                  placeholder="Set password for this admin..."
+                  placeholder={editingAdmin.id ? 'Leave blank to keep current secret password...' : 'Enter strong password (min 6 chars)...'}
                 />
                 <button
                   type="button"
@@ -495,7 +472,11 @@ export default function AdminUsersPage() {
                   {showModalPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-gray-500 mt-1">Share this email and password with the team member to grant access.</p>
+              <p className="text-[10px] text-gray-500 mt-1">
+                {editingAdmin.id 
+                  ? 'Keep blank to preserve the existing password, or enter a new one to reset access.'
+                  : 'Share this email and password privately with the team member to grant access.'}
+              </p>
             </div>
 
             <div>
