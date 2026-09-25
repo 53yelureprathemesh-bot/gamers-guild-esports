@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/image';
+import Link from 'next/link';
 import { 
   Radio, 
   Trophy, 
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Event, TournamentMatch, PointsTableEntry } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES } from '@/lib/dataStore';
+import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/components/GamingVisualEffects';
 
 function getYouTubeVideoId(url?: string): string | null {
   if (!url) return null;
@@ -52,45 +53,54 @@ export default function OngoingEventsPage() {
   const currentMatches = matches.filter(m => m.event_id === currentEvent?.id);
 
   return (
-    <div className="min-h-screen cyber-bg py-12 sm:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen gaming-arena-bg py-12 sm:py-16 relative overflow-hidden font-rajdhani">
+      {/* Ambient floating glowing embers */}
+      <GamingEmberParticles />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header Title with Live Pulse */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-red/10 border border-neon-red/40 text-neon-red text-xs font-mono font-bold uppercase mb-3">
+        <div className="text-center max-w-3xl mx-auto mb-8">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-neon-red/15 border border-neon-red/40 text-neon-red text-xs font-orbitron font-bold uppercase mb-3">
             <span className="w-2 h-2 rounded-full bg-neon-red animate-ping"></span>
             <span>LIVE MATCH BROADCAST & LEADERBOARDS</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white font-mono uppercase tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
             ONGOING CHAMPIONSHIPS
           </h1>
-          <p className="mt-4 text-sm sm:text-base text-gray-400 font-sans">
+          <p className="mt-4 text-base text-gray-300 font-rajdhani font-semibold">
             Real-time battleground status, match round progressions, team kill counters, and official points tables.
           </p>
+        </div>
+
+        {/* Live Telemetry Bar */}
+        <div className="mb-10 rounded-xl overflow-hidden border border-cyber-border">
+          <LiveTelemetryTicker />
         </div>
 
         {/* Selected Event Banner */}
         {currentEvent && (
           <div className="relative glass-hud rounded-2xl overflow-hidden border-2 border-neon-cyan/40 p-6 sm:p-8 mb-10 shadow-hud">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <HudCornerBrackets color="red" />
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
               
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
-                  <span className="flex items-center gap-1 text-[11px] font-black uppercase px-2 py-0.5 rounded bg-neon-red text-black font-mono">
+                  <span className="flex items-center gap-1 text-[11px] font-black uppercase px-2.5 py-0.5 rounded bg-neon-red text-black font-orbitron">
                     <Radio className="w-3.5 h-3.5 animate-pulse" />
                     LIVE ON STAGE
                   </span>
-                  <span className="text-xs font-mono text-neon-cyan font-bold">
+                  <span className="text-xs font-orbitron text-neon-cyan font-bold">
                     {currentEvent.game}
                   </span>
                 </div>
 
-                <h2 className="text-2xl sm:text-3xl font-black text-white font-mono uppercase">
+                <h2 className="text-2xl sm:text-4xl font-black text-white font-orbitron uppercase">
                   {currentEvent.title}
                 </h2>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-gray-300 pt-1">
-                  <span className="text-neon-gold font-bold">Prize: {currentEvent.prize_pool}</span>
+                  <span className="text-neon-gold font-bold text-sm">Prize: {currentEvent.prize_pool}</span>
                   <span>&bull;</span>
                   <span>Venue: {currentEvent.venue}</span>
                   <span>&bull;</span>
@@ -104,7 +114,7 @@ export default function OngoingEventsPage() {
                   href={currentEvent.stream_url || "https://youtube.com"}
                   target="_blank"
                   rel="noreferrer"
-                  className="btn-cyber-primary px-6 py-3 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2 shadow-neon-emerald"
+                  className="btn-cyber-primary clip-esports-btn px-6 py-3.5 text-xs font-black font-orbitron uppercase flex items-center justify-center space-x-2 shadow-neon-emerald"
                 >
                   <Play className="w-4 h-4 text-cyber-black fill-current" />
                   <span>WATCH ON YOUTUBE</span>

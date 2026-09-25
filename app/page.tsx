@@ -21,10 +21,15 @@ import {
   Megaphone,
   ShieldAlert,
   Send,
-  ExternalLink
+  ExternalLink,
+  Swords,
+  Shield,
+  Zap,
+  Crosshair
 } from 'lucide-react';
 import { Event, Announcement, GalleryItem, Sponsor, SiteSettings, PointsTableEntry } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_SITE_SETTINGS, INITIAL_ANNOUNCEMENTS, INITIAL_GALLERY, INITIAL_SPONSORS, INITIAL_POINTS_TABLE } from '@/lib/dataStore';
+import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/components/GamingVisualEffects';
 
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
@@ -56,22 +61,22 @@ export default function HomePage() {
   const featuredEvent = upcomingEvents[0] || events[0];
 
   return (
-    <div className="min-h-screen cyber-bg">
+    <div className="min-h-screen gaming-arena-bg relative selection:bg-neon-emerald selection:text-black">
       
       {/* 1. ANNOUNCEMENT LIVE TICKER */}
       {announcements.length > 0 && (
-        <div className="bg-gradient-to-r from-neon-cyan/20 via-cyber-dark to-neon-emerald/20 border-b border-neon-cyan/30 py-2.5 px-4 overflow-hidden">
+        <div className="bg-gradient-to-r from-neon-cyan/25 via-cyber-dark to-neon-emerald/25 border-b border-neon-cyan/30 py-2.5 px-4 overflow-hidden relative z-20">
           <div className="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono">
             <div className="flex items-center space-x-2 text-neon-emerald font-bold tracking-wider flex-shrink-0">
               <Megaphone className="w-4 h-4 animate-bounce" />
-              <span className="hidden sm:inline">OFFICIAL DISPATCH:</span>
+              <span className="hidden sm:inline font-orbitron text-[11px]">OFFICIAL DISPATCH:</span>
             </div>
             <div className="truncate px-3 text-gray-200">
               <span className="font-semibold text-neon-cyan">{announcements[0].title}</span> — {announcements[0].content}
             </div>
             <Link 
               href={announcements[0].link || '/upcoming-events'}
-              className="text-neon-emerald hover:text-white flex items-center space-x-1 flex-shrink-0 font-bold"
+              className="text-neon-emerald hover:text-white flex items-center space-x-1 flex-shrink-0 font-bold font-rajdhani text-sm"
             >
               <span>DETAILS</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -80,65 +85,80 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 2. HERO SECTION */}
+      {/* 2. LIVE ESPORTS TELEMETRY STATUS BAR */}
+      <LiveTelemetryTicker />
+
+      {/* 3. HERO SECTION WITH ARENA STADIUM ATMOSPHERE & EMBERS */}
       <section className="relative pt-12 pb-24 lg:pt-20 lg:pb-32 overflow-hidden">
+        {/* Arena Stadium Visual Backdrop */}
+        <div 
+          className="absolute inset-0 z-0 opacity-20 bg-cover bg-center mix-blend-luminosity pointer-events-none" 
+          style={{ backgroundImage: "url('/images/characters/arena_banner.jpg')" }}
+        ></div>
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-cyber-black/80 via-transparent to-cyber-black pointer-events-none"></div>
+
+        {/* Ambient floating glowing embers */}
+        <GamingEmberParticles />
+
         {/* Futuristic glowing radial orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-neon-emerald/10 blur-[130px] rounded-full pointer-events-none"></div>
-        <div className="absolute top-1/3 right-10 w-[400px] h-[400px] bg-neon-cyan/10 blur-[120px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-neon-emerald/15 blur-[140px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-neon-cyan/15 blur-[130px] rounded-full pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col items-center text-center">
             
             {/* OFFICIAL LOGO BADGE */}
             <div className="relative mb-8 group">
-              <div className="absolute -inset-2 bg-gradient-to-r from-neon-emerald via-neon-cyan to-cyber-gold rounded-2xl blur-xl opacity-50 group-hover:opacity-80 transition duration-500"></div>
-              <div className="relative w-32 h-32 sm:w-40 sm:h-40 p-2 rounded-2xl bg-cyber-dark border-2 border-neon-emerald/50 flex items-center justify-center shadow-hud">
+              <div className="absolute -inset-2 bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-gold rounded-2xl blur-xl opacity-60 group-hover:opacity-90 transition duration-500"></div>
+              <div className="relative w-32 h-32 sm:w-40 sm:h-40 p-2 rounded-2xl bg-cyber-dark/95 border-2 border-neon-emerald/60 flex items-center justify-center shadow-hud">
                 <Image
                   src={settings.hero.logo_url || '/images/logo.png'}
                   alt="Gamers Guild Esports Logo"
                   width={140}
                   height={140}
-                  className="object-contain drop-shadow-[0_0_15px_rgba(0,255,157,0.5)] transition-transform duration-500 group-hover:scale-105"
+                  className="object-contain drop-shadow-[0_0_20px_rgba(0,255,157,0.6)] transition-transform duration-500 group-hover:scale-105"
                   priority
                 />
               </div>
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-cyber-black border border-neon-emerald text-[10px] font-black tracking-widest text-neon-emerald uppercase font-mono shadow-sm">
-                VERIFIED ESPORTS ORG
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-cyber-black border border-neon-emerald text-[10px] font-black tracking-widest text-neon-emerald uppercase font-orbitron shadow-lg">
+                VERIFIED ESPORTS CIRCUIT
               </div>
             </div>
 
             {/* Brand Title */}
-            <h2 className="text-sm sm:text-base font-black tracking-[0.3em] text-neon-cyan uppercase font-mono mb-3">
-              GAMERS GUILD ESPORTS
+            <h2 className="text-sm sm:text-base font-black tracking-[0.35em] text-neon-cyan uppercase font-orbitron mb-3 flex items-center space-x-2">
+              <Crosshair className="w-4 h-4 text-neon-emerald animate-spin" />
+              <span>GAMERS GUILD ESPORTS</span>
+              <Crosshair className="w-4 h-4 text-neon-emerald animate-spin" />
             </h2>
 
-            {/* Main Tagline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight text-white uppercase max-w-4xl leading-none font-mono">
+            {/* Main Tagline in Orbitron */}
+            <h1 className="text-3xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white uppercase max-w-4xl leading-tight font-orbitron">
               ENTER THE ARENA.<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-gold">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-gold drop-shadow-[0_0_35px_rgba(0,255,157,0.4)]">
                 BUILD YOUR LEGACY.
               </span>
             </h1>
 
-            {/* Subheading */}
-            <p className="mt-6 text-base sm:text-lg text-gray-300 max-w-2xl font-sans leading-relaxed">
+            {/* Subheading in Rajdhani */}
+            <p className="mt-6 text-base sm:text-xl text-gray-300 max-w-2xl font-rajdhani font-semibold leading-relaxed">
               {settings.hero.subheading}
             </p>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons with Chamfered Clips */}
             <div className="mt-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full max-w-md justify-center">
               <Link
                 href={settings.hero.cta_primary_link || '/registration'}
-                className="btn-cyber-primary w-full sm:w-auto px-8 py-4 rounded-lg text-sm font-extrabold flex items-center justify-center space-x-2 shadow-neon-emerald"
+                className="btn-cyber-primary clip-esports-btn w-full sm:w-auto px-8 py-4 text-sm font-black flex items-center justify-center space-x-2 shadow-neon-emerald"
               >
-                <Flame className="w-5 h-5 text-cyber-black fill-current" />
+                <Flame className="w-5 h-5 text-cyber-black fill-current animate-pulse" />
                 <span>{settings.hero.cta_primary_text || 'REGISTER NOW'}</span>
                 <ArrowRight className="w-4 h-4 text-cyber-black" />
               </Link>
 
               <Link
                 href={settings.hero.cta_secondary_link || '/upcoming-events'}
-                className="btn-cyber-secondary w-full sm:w-auto px-8 py-4 rounded-lg text-sm font-bold flex items-center justify-center space-x-2"
+                className="btn-cyber-secondary clip-esports-btn w-full sm:w-auto px-8 py-4 text-sm font-bold flex items-center justify-center space-x-2"
               >
                 <Calendar className="w-5 h-5 text-neon-cyan" />
                 <span>{settings.hero.cta_secondary_text || 'VIEW EVENTS'}</span>
@@ -147,22 +167,23 @@ export default function HomePage() {
 
             {/* FEATURED TOURNAMENT BANNER HUD */}
             {featuredEvent && (
-              <div className="mt-16 w-full max-w-3xl glass-hud rounded-xl p-5 sm:p-6 text-left border border-neon-cyan/40 shadow-hud">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="mt-16 w-full max-w-3xl glass-hud rounded-xl p-5 sm:p-6 text-left border border-neon-cyan/50 shadow-hud relative overflow-hidden">
+                <HudCornerBrackets color="emerald" />
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-neon-emerald/20 text-neon-emerald border border-neon-emerald/40 font-mono">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-neon-emerald/20 text-neon-emerald border border-neon-emerald/40 font-orbitron">
                         FEATURED TOURNAMENT
                       </span>
                       <span className="text-xs font-mono text-gray-400">
                         {featuredEvent.game}
                       </span>
                     </div>
-                    <h3 className="text-lg sm:text-xl font-black text-white mt-1 font-mono">
+                    <h3 className="text-xl sm:text-2xl font-black text-white mt-1.5 font-orbitron">
                       {featuredEvent.title}
                     </h3>
                     <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-300 font-mono">
-                      <span className="text-neon-gold font-bold">Prize: {featuredEvent.prize_pool}</span>
+                      <span className="text-neon-gold font-bold text-sm">Prize: {featuredEvent.prize_pool}</span>
                       <span>&bull;</span>
                       <span className="text-neon-cyan">Date: {featuredEvent.date}</span>
                       <span>&bull;</span>
@@ -172,7 +193,7 @@ export default function HomePage() {
 
                   <Link
                     href={`/registration?event=${featuredEvent.id}`}
-                    className="btn-cyber-primary px-5 py-2.5 rounded text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 self-stretch md:self-auto justify-center"
+                    className="btn-cyber-primary clip-esports-btn px-6 py-3 text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 self-stretch md:self-auto justify-center"
                   >
                     <span>CLAIM SLOT</span>
                     <ArrowRight className="w-3.5 h-3.5 text-cyber-black" />
@@ -182,6 +203,147 @@ export default function HomePage() {
             )}
 
           </div>
+        </div>
+      </section>
+
+      {/* 4. OFFICIAL TOURNAMENT DISCIPLINES & GAMING CHARACTERS SHOWCASE */}
+      <section className="py-20 relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto mb-14">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-orbitron font-bold uppercase mb-3">
+            <Swords className="w-4 h-4 text-neon-cyan" />
+            <span>OFFICIAL DISCIPLINES</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
+            CHOOSE YOUR BATTLEGROUND
+          </h2>
+          <p className="mt-3 text-base text-gray-300 font-rajdhani font-medium max-w-xl mx-auto">
+            From tactical battle royale survival to lightning-fast neon duels, register your squad in national tournament circuits.
+          </p>
+        </div>
+
+        {/* 3 Discipline Character Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          {/* Card 1: BGMI Operator */}
+          <div className="gaming-battle-card rounded-2xl p-4 border border-neon-emerald/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl">
+            <HudCornerBrackets color="emerald" />
+            <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
+              <Image
+                src="/images/characters/bgmi_operator.jpg"
+                alt="BGMI Tactical Operator"
+                fill
+                className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-emerald/50 text-[10px] font-black uppercase text-neon-emerald font-orbitron">
+                BATTLE ROYALE • SQUAD
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 text-left">
+                <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
+                <div className="text-2xl font-black text-white font-orbitron">₹2,50,000 INR</div>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-2 pb-2">
+              <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-emerald transition-colors">
+                BGMI CHAMPIONSHIP
+              </h3>
+              <p className="text-xs text-gray-400 font-rajdhani font-semibold">
+                Custom competitive rooms, Level-3 loot distribution, Erangel & Miramar state qualifiers.
+              </p>
+              <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
+                <span>FORMAT: 4v4 Squad</span>
+                <span className="text-neon-emerald font-bold">SLOTS ACTIVE</span>
+              </div>
+              <Link
+                href="/registration?game=BGMI"
+                className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
+              >
+                ENLIST BGMI SQUAD
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2: Free Fire Ninja */}
+          <div className="gaming-battle-card rounded-2xl p-4 border border-neon-gold/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl">
+            <HudCornerBrackets color="gold" />
+            <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
+              <Image
+                src="/images/characters/freefire_ninja.jpg"
+                alt="Free Fire Cyber Ninja"
+                fill
+                className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-gold/50 text-[10px] font-black uppercase text-neon-gold font-orbitron">
+                SURVIVAL CLASH • SPEED
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 text-left">
+                <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
+                <div className="text-2xl font-black text-white font-orbitron">₹1,50,000 INR</div>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-2 pb-2">
+              <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-gold transition-colors">
+                FREE FIRE ROYALE
+              </h3>
+              <p className="text-xs text-gray-400 font-rajdhani font-semibold">
+                High-speed Bermuda rush battles, Purgatory qualifiers, and national champion ring.
+              </p>
+              <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
+                <span>FORMAT: Squad Rush</span>
+                <span className="text-neon-gold font-bold">OPEN REGISTRATION</span>
+              </div>
+              <Link
+                href="/registration?game=FreeFire"
+                className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
+              >
+                JOIN FREE FIRE SQUAD
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3: Valorant Tactical Duelist */}
+          <div className="gaming-battle-card rounded-2xl p-4 border border-neon-cyan/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl">
+            <HudCornerBrackets color="cyan" />
+            <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
+              <Image
+                src="/images/characters/valorant_duelist.jpg"
+                alt="Valorant Tactical Duelist"
+                fill
+                className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
+              <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-cyan/50 text-[10px] font-black uppercase text-neon-cyan font-orbitron">
+                TACTICAL FPS • 5v5
+              </div>
+              <div className="absolute bottom-3 left-3 right-3 text-left">
+                <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
+                <div className="text-2xl font-black text-white font-orbitron">₹1,00,000 INR</div>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-2 pb-2">
+              <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-cyan transition-colors">
+                VALORANT PREMIER LAN
+              </h3>
+              <p className="text-xs text-gray-400 font-rajdhani font-semibold">
+                128-tick private Indian match servers, Spike plant & defusal tournament brackets.
+              </p>
+              <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
+                <span>FORMAT: 5v5 Tactical</span>
+                <span className="text-neon-cyan font-bold">BRACKET LIVE</span>
+              </div>
+              <Link
+                href="/registration?game=Valorant"
+                className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
+              >
+                ENTER VALORANT LAN
+              </Link>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -470,19 +632,23 @@ export default function HomePage() {
           </div>
 
           <div className="relative">
-            <div className="relative h-[420px] rounded-2xl overflow-hidden border border-neon-emerald/30 glass-hud p-2">
+            <div className="relative h-[480px] rounded-2xl overflow-hidden border border-neon-gold/50 glass-hud p-2 shadow-2xl">
+              <HudCornerBrackets color="gold" />
               <Image
-                src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1000&q=80"
-                alt="Gamers Guild Arena"
+                src="/images/characters/esports_trophy.jpg"
+                alt="Gamers Guild Championship Trophy"
                 fill
-                className="object-cover rounded-xl opacity-80"
+                className="object-cover rounded-xl"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
               
-              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-cyber-black/80 backdrop-blur-md border border-cyber-border">
-                <div className="text-xs font-mono text-neon-emerald font-bold">STATE RECOGNITION</div>
-                <div className="text-sm font-black text-white font-mono mt-1">
-                  Pioneering Tier-1 Esports Infrastructure in Central India
+              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-cyber-black/90 backdrop-blur-md border border-neon-gold/40">
+                <div className="text-xs font-orbitron text-neon-gold font-bold flex items-center space-x-1.5">
+                  <Trophy className="w-4 h-4 text-neon-gold" />
+                  <span>NATIONAL CHAMPIONSHIP CIRCUIT</span>
+                </div>
+                <div className="text-sm font-black text-white font-orbitron mt-1">
+                  Pioneering Tier-1 Esports Infrastructure & LAN Tournaments Across India
                 </div>
               </div>
             </div>

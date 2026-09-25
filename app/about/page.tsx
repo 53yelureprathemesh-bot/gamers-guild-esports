@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
+import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
 
 export default function AboutPage() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
@@ -32,19 +33,22 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="min-h-screen cyber-bg py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen gaming-arena-bg py-16 relative overflow-hidden font-rajdhani">
+      {/* Ambient floating glowing embers */}
+      <GamingEmberParticles />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Hero Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-emerald/10 border border-neon-emerald/30 text-neon-emerald text-xs font-mono font-bold uppercase mb-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-neon-emerald/15 border border-neon-emerald/40 text-neon-emerald text-xs font-orbitron font-bold uppercase mb-3">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>ORGANIZATION BLUEPRINT</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white font-mono uppercase tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
             ABOUT GAMERS GUILD ESPORTS
           </h1>
-          <p className="mt-4 text-sm sm:text-base text-gray-300 font-sans leading-relaxed">
+          <p className="mt-4 text-base sm:text-lg text-gray-300 font-rajdhani font-semibold leading-relaxed">
             {settings.about.description}
           </p>
         </div>
@@ -52,26 +56,28 @@ export default function AboutPage() {
         {/* Mission & Vision Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
           
-          <div className="glass-hud p-8 rounded-2xl border border-neon-cyan/40 relative">
+          <div className="glass-hud p-8 rounded-2xl border border-neon-cyan/50 relative overflow-hidden">
+            <HudCornerBrackets color="cyan" />
             <div className="w-12 h-12 rounded-xl bg-neon-cyan/20 border border-neon-cyan/50 flex items-center justify-center text-neon-cyan mb-4">
               <Target className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-black text-white font-mono uppercase mb-2">
+            <h3 className="text-2xl font-black text-white font-orbitron uppercase mb-2">
               OUR MISSION
             </h3>
-            <p className="text-sm text-gray-300 font-sans leading-relaxed">
+            <p className="text-base text-gray-300 font-rajdhani font-medium leading-relaxed">
               {settings.about.mission}
             </p>
           </div>
 
-          <div className="glass-hud p-8 rounded-2xl border border-neon-gold/40 relative">
+          <div className="glass-hud p-8 rounded-2xl border border-neon-gold/50 relative overflow-hidden">
+            <HudCornerBrackets color="gold" />
             <div className="w-12 h-12 rounded-xl bg-neon-gold/20 border border-neon-gold/50 flex items-center justify-center text-neon-gold mb-4">
               <Eye className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-black text-white font-mono uppercase mb-2">
+            <h3 className="text-2xl font-black text-white font-orbitron uppercase mb-2">
               OUR VISION
             </h3>
-            <p className="text-sm text-gray-300 font-sans leading-relaxed">
+            <p className="text-base text-gray-300 font-rajdhani font-medium leading-relaxed">
               {settings.about.vision}
             </p>
           </div>

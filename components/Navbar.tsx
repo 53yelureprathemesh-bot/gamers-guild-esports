@@ -26,51 +26,51 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-cyber-black/90 backdrop-blur-md border-b border-cyber-border/80">
+    <nav className="sticky top-0 z-50 w-full bg-cyber-black/95 backdrop-blur-md border-b border-cyber-border/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
           {/* Logo & Brand Name */}
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center p-0.5 rounded-lg bg-cyber-dark/50 border border-neon-emerald/30 group-hover:border-neon-emerald transition-all duration-300">
+            <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center p-0.5 rounded-lg bg-cyber-dark/80 border border-neon-emerald/40 group-hover:border-neon-emerald transition-all duration-300 shadow-[0_0_15px_rgba(0,255,157,0.2)]">
               <Image
                 src="/images/logo.png"
                 alt="Gamers Guild Esports Logo"
                 width={46}
                 height={46}
-                className="object-contain drop-shadow-[0_0_10px_rgba(0,255,157,0.4)] transition-transform duration-300 group-hover:scale-105"
+                className="object-contain drop-shadow-[0_0_10px_rgba(0,255,157,0.5)] transition-transform duration-300 group-hover:scale-105"
                 priority
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-lg md:text-xl font-black tracking-widest text-white group-hover:text-neon-emerald transition-colors font-mono">
+              <span className="text-lg md:text-xl font-black tracking-widest text-white group-hover:text-neon-emerald transition-colors font-orbitron">
                 GAMERS GUILD
               </span>
-              <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-neon-cyan uppercase">
-                ESPORTS ARENA
+              <span className="text-[10px] md:text-xs font-bold tracking-[0.25em] text-neon-cyan uppercase font-rajdhani">
+                ESPORTS ARENA • INDIA
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden lg:flex items-center space-x-1 xl:space-x-2">
+          <div className="hidden lg:flex items-center space-x-1 xl:space-x-2 font-rajdhani">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`relative px-3 py-2 text-xs xl:text-sm font-bold tracking-wider rounded-md transition-all duration-200 flex items-center space-x-1.5 ${
+                  className={`relative px-3 py-2 text-xs xl:text-sm font-bold tracking-wider uppercase transition-all duration-200 flex items-center space-x-1.5 ${
                     link.highlight
-                      ? 'bg-neon-emerald/10 text-neon-emerald border border-neon-emerald/40 hover:bg-neon-emerald/20 hover:shadow-neon-emerald'
+                      ? 'bg-neon-emerald/15 text-neon-emerald border border-neon-emerald/50 hover:bg-neon-emerald/25 hover:shadow-neon-emerald rounded'
                       : isActive
-                      ? 'text-neon-emerald bg-white/5 border border-neon-emerald/30'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
+                      ? 'text-neon-emerald bg-white/5 border-b-2 border-neon-emerald font-extrabold'
+                      : 'text-gray-300 hover:text-white hover:bg-white/5 rounded'
                   }`}
                 >
                   <span>{link.name}</span>
                   {link.badge && (
-                    <span className="flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-neon-red/20 text-neon-red border border-neon-red/40 animate-pulse">
+                    <span className="flex items-center gap-1 text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-neon-red/20 text-neon-red border border-neon-red/50 animate-pulse font-mono">
                       <span className="w-1.5 h-1.5 rounded-full bg-neon-red"></span>
                       {link.badge}
                     </span>
@@ -81,10 +81,10 @@ export default function Navbar() {
           </div>
 
           {/* Admin Login & Action CTA */}
-          <div className="hidden sm:flex items-center space-x-3">
+          <div className="hidden sm:flex items-center space-x-3 font-rajdhani">
             <Link
               href="/admin/login"
-              className="px-3.5 py-2 text-xs font-bold tracking-wider text-gray-300 hover:text-neon-cyan border border-cyber-border hover:border-neon-cyan/50 rounded bg-cyber-dark/80 transition-all flex items-center space-x-1.5"
+              className="px-3.5 py-2 text-xs font-bold tracking-wider uppercase text-gray-300 hover:text-neon-cyan border border-cyber-border hover:border-neon-cyan/50 rounded bg-cyber-dark/80 transition-all flex items-center space-x-1.5"
             >
               <Shield className="w-3.5 h-3.5 text-neon-cyan" />
               <span>ADMIN</span>
@@ -92,9 +92,9 @@ export default function Navbar() {
 
             <Link
               href="/registration"
-              className="btn-cyber-primary px-4 py-2 text-xs font-extrabold rounded flex items-center space-x-1.5 shadow-neon-emerald"
+              className="btn-cyber-primary clip-esports-btn px-5 py-2.5 text-xs font-black tracking-widest flex items-center space-x-2 shadow-neon-emerald"
             >
-              <Flame className="w-3.5 h-3.5 text-cyber-black fill-current" />
+              <Flame className="w-4 h-4 text-cyber-black fill-current animate-pulse" />
               <span>JOIN TOURNAMENT</span>
             </Link>
           </div>
@@ -166,6 +166,7 @@ export default function Navbar() {
           </div>
         </div>
       )}
+      <div className="laser-line"></div>
     </nav>
   );
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Shield, Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -51,12 +52,14 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen cyber-bg flex items-center justify-center p-4">
-      <div className="max-w-md w-full glass-hud p-8 rounded-2xl border-2 border-neon-cyan/40 shadow-hud relative">
+    <div className="min-h-screen gaming-arena-bg flex items-center justify-center p-4 relative overflow-hidden font-rajdhani">
+      <GamingEmberParticles count={15} />
+      <div className="max-w-md w-full glass-hud p-8 rounded-2xl border-2 border-neon-cyan/40 shadow-[0_0_40px_rgba(0,242,254,0.15)] relative overflow-hidden z-10">
+        <HudCornerBrackets color="cyan" />
         
         {/* Logo & Header */}
         <div className="text-center mb-6">
-          <div className="relative w-20 h-20 mx-auto p-1.5 rounded-2xl bg-cyber-dark border border-neon-emerald/40 flex items-center justify-center mb-3">
+          <div className="relative w-20 h-20 mx-auto p-1.5 rounded-2xl bg-cyber-dark/90 border border-neon-emerald/50 flex items-center justify-center mb-3 shadow-[0_0_20px_rgba(10,255,10,0.2)]">
             <Image
               src="/images/logo.png"
               alt="Gamers Guild Logo"
@@ -65,13 +68,13 @@ export default function AdminLoginPage() {
               className="object-contain"
             />
           </div>
-          <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-neon-emerald font-bold">
+          <span className="text-[10px] font-orbitron uppercase tracking-[0.25em] text-neon-emerald font-bold">
             RESTRICTED ACCESS
           </span>
-          <h1 className="text-2xl font-black text-white font-mono uppercase mt-0.5">
-            ADMIN CONTROL GRID
+          <h1 className="text-2xl font-black text-white font-orbitron uppercase mt-1 tracking-wide">
+            ADMIN <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-neon-emerald">CONTROL GRID</span>
           </h1>
-          <p className="text-xs text-gray-400 font-sans mt-1">
+          <p className="text-xs text-gray-300 font-rajdhani mt-1 font-medium">
             Enter authorized administrator credentials to access your control sector.
           </p>
         </div>
@@ -125,7 +128,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="btn-cyber-primary w-full py-3 rounded-lg text-xs font-black font-mono uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-6"
+            className="btn-cyber-primary clip-esports-btn w-full py-3.5 text-xs font-black font-orbitron uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-6 cursor-pointer"
           >
             <Shield className="w-4 h-4 text-cyber-black" />
             <span>{loading ? 'AUTHENTICATING CREDENTIALS...' : 'AUTHORIZE LOGIN'}</span>

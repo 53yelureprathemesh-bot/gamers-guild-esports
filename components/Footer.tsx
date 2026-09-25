@@ -5,17 +5,18 @@ import { Shield, Mail, Phone, MapPin, Disc as Discord, Instagram, Youtube, Twitt
 
 export default function Footer() {
   return (
-    <footer className="relative bg-cyber-black border-t border-cyber-border text-gray-400 overflow-hidden">
+    <footer className="relative bg-cyber-black border-t border-cyber-border text-gray-400 overflow-hidden font-rajdhani">
+      <div className="laser-line"></div>
       {/* Ambient background glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-24 bg-neon-emerald/5 blur-3xl pointer-events-none"></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-28 bg-neon-emerald/10 blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           
           {/* Col 1 & 2: Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center space-x-3 group">
-              <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center p-1 rounded-lg bg-cyber-dark border border-neon-emerald/30">
+              <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center p-1 rounded-lg bg-cyber-dark border border-neon-emerald/40 group-hover:border-neon-emerald transition-all duration-300 shadow-[0_0_12px_rgba(0,255,157,0.3)]">
                 <Image
                   src="/images/logo.png"
                   alt="Gamers Guild Esports Logo"
@@ -25,11 +26,11 @@ export default function Footer() {
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-black tracking-widest text-white font-mono">
+                <span className="text-xl font-black tracking-widest text-white font-orbitron">
                   GAMERS GUILD
                 </span>
                 <span className="text-[10px] font-bold tracking-[0.25em] text-neon-cyan uppercase">
-                  ESPORTS ORGANIZATION
+                  ESPORTS ORGANIZATION • INDIA
                 </span>
               </div>
             </Link>
@@ -38,7 +39,7 @@ export default function Footer() {
               India’s premier competitive gaming organization. Empowering underground warriors, organizing broadcast-grade championships, and setting new benchmarks in Indian esports.
             </p>
 
-            <div className="pt-2 text-xs font-mono text-neon-emerald tracking-wider font-semibold">
+            <div className="pt-2 text-xs font-orbitron text-neon-emerald tracking-wider font-bold">
               ENTER THE ARENA. BUILD YOUR LEGACY.
             </div>
 

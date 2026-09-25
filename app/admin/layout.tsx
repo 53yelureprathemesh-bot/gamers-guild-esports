@@ -170,13 +170,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-cyber-black text-white flex flex-col md:flex-row">
+    <div className="min-h-screen gaming-arena-bg text-white flex flex-col md:flex-row font-rajdhani">
       
       {/* Mobile Top Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-cyber-dark border-b border-cyber-border">
+      <div className="md:hidden flex items-center justify-between p-4 bg-cyber-dark/95 border-b border-cyber-border">
         <div className="flex items-center space-x-2">
           <Image src="/images/logo.png" alt="Logo" width={32} height={32} />
-          <span className="font-mono font-bold text-sm text-neon-emerald">ADMIN PANEL</span>
+          <span className="font-orbitron font-bold text-sm text-neon-emerald">ADMIN PANEL</span>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -187,26 +187,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* Sidebar Navigation */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-cyber-dark border-r border-cyber-border flex flex-col justify-between transition-transform duration-300 md:static md:translate-x-0 ${
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-cyber-dark/95 backdrop-blur-md border-r border-cyber-border/70 flex flex-col justify-between transition-transform duration-300 md:static md:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div>
           {/* Logo & Identity */}
-          <div className="p-5 border-b border-cyber-border flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg bg-cyber-black border border-neon-emerald/30 p-1 flex items-center justify-center flex-shrink-0">
+          <div className="p-5 border-b border-cyber-border/70 flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-lg bg-cyber-black border border-neon-emerald/40 p-1 flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(10,255,10,0.2)]">
               <Image src="/images/logo.png" alt="Logo" width={34} height={34} className="object-contain" />
             </div>
             <div>
-              <div className="font-mono font-black text-xs tracking-wider text-white">GAMERS GUILD</div>
-              <div className="text-[10px] font-mono font-bold text-neon-cyan uppercase">CONTROL CENTER</div>
+              <div className="font-orbitron font-black text-xs tracking-wider text-white">GAMERS GUILD</div>
+              <div className="text-[10px] font-orbitron font-bold text-neon-cyan uppercase">CONTROL CENTER</div>
             </div>
           </div>
 
           {/* Active Admin Profile Tag */}
-          <div className="px-5 py-3 bg-cyber-black/50 border-b border-cyber-border">
-            <div className="text-[11px] font-mono text-gray-400">LOGGED IN AS:</div>
-            <div className="text-xs font-mono font-bold text-white truncate">{admin?.name || 'Administrator'}</div>
-            <div className="mt-1 inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-neon-emerald/10 border border-neon-emerald/40 text-[10px] font-mono text-neon-emerald font-bold uppercase">
+          <div className="px-5 py-3 bg-cyber-black/70 border-b border-cyber-border/70">
+            <div className="text-[10px] font-mono text-gray-400">LOGGED IN AS:</div>
+            <div className="text-xs font-orbitron font-bold text-white truncate">{admin?.name || 'Administrator'}</div>
+            <div className="mt-1 inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-neon-emerald/10 border border-neon-emerald/40 text-[10px] font-orbitron text-neon-emerald font-bold uppercase">
               <ShieldCheck className="w-3 h-3" />
               <span>{role.replace('_', ' ')}</span>
             </div>

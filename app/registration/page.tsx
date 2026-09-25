@@ -27,6 +27,7 @@ import { DEFAULT_FORM_FIELDS } from '@/lib/defaultForm';
 import { Event, RegistrationField } from '@/lib/types';
 import { INITIAL_EVENTS } from '@/lib/dataStore';
 import PrintableReceipt from '@/components/PrintableReceipt';
+import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
 
 function RegistrationFormContent() {
   const searchParams = useSearchParams();
@@ -340,36 +341,42 @@ function RegistrationFormContent() {
 
   // STANDARD FORM VIEW
   return (
-    <div className="min-h-screen cyber-bg py-12 sm:py-16">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen gaming-arena-bg py-12 sm:py-16 relative overflow-hidden font-rajdhani">
+      {/* Ambient floating glowing embers */}
+      <GamingEmberParticles />
+
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 relative z-10">
         
-        {/* Form Title Banner (Google Forms Style) */}
-        <div className="glass-hud rounded-2xl border-t-4 border-t-neon-emerald border-x border-b border-cyber-border p-6 sm:p-8 mb-8 shadow-hud">
+        {/* Form Title Banner with Tactical Operator Badge & HUD Brackets */}
+        <div className="glass-hud rounded-2xl border-t-4 border-t-neon-emerald border-x border-b border-cyber-border p-6 sm:p-8 mb-8 shadow-hud relative overflow-hidden">
+          <HudCornerBrackets color="emerald" />
           <div className="flex items-center justify-between pb-4 border-b border-cyber-border">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-cyber-dark border border-neon-emerald/40 p-1 flex items-center justify-center">
-                <Image src="/images/logo.png" alt="Logo" width={32} height={32} className="object-contain" />
+              <div className="relative w-12 h-12 rounded-lg bg-cyber-dark border border-neon-emerald/50 p-1 flex items-center justify-center overflow-hidden">
+                <Image src="/images/characters/bgmi_operator.jpg" alt="Tactical Operator" fill className="object-cover" />
               </div>
               <div>
-                <span className="text-[10px] font-mono uppercase text-neon-emerald font-black tracking-widest">
-                  GAMERS GUILD OFFICIAL
+                <span className="text-[10px] font-orbitron uppercase text-neon-emerald font-black tracking-widest flex items-center space-x-1">
+                  <span>GAMERS GUILD ESPORTS</span>
+                  <span>•</span>
+                  <span className="text-neon-cyan">OFFICIAL ENLISTMENT</span>
                 </span>
-                <h1 className="text-xl sm:text-2xl font-black text-white font-mono uppercase">
-                  PLAYER & SQUAD REGISTRATION
+                <h1 className="text-xl sm:text-2xl font-black text-white font-orbitron uppercase">
+                  OPERATOR & SQUAD REGISTRATION
                 </h1>
               </div>
             </div>
-            <span className="hidden sm:inline-block px-2.5 py-1 rounded bg-neon-emerald/10 text-neon-emerald border border-neon-emerald/30 text-xs font-mono font-bold">
-              PORTAL 2026
+            <span className="hidden sm:inline-block px-3 py-1 rounded bg-neon-emerald/10 text-neon-emerald border border-neon-emerald/40 text-xs font-orbitron font-bold">
+              CIRCUIT 2026
             </span>
           </div>
 
-          <p className="mt-4 text-xs sm:text-sm text-gray-300 font-sans leading-relaxed">
-            Welcome to the official registration gateway for Gamers Guild Esports tournaments. Fill in accurate player and gaming credentials. Once submitted, our state code engine will assign your permanent bracket identification (e.g. MH27).
+          <p className="mt-4 text-xs sm:text-sm text-gray-300 font-rajdhani font-semibold leading-relaxed">
+            Welcome to the official tactical registration portal for Gamers Guild Esports national tournaments. Enter verified player and in-game credentials. Upon completion, our state code engine will generate your immutable bracket identification (e.g. #MH27).
           </p>
 
           <div className="mt-4 pt-3 border-t border-cyber-border flex items-center text-xs font-mono text-neon-red space-x-1">
-            <span>* Indicates required question</span>
+            <span>* Mandatory tournament fields required for bracket validation</span>
           </div>
         </div>
 
@@ -836,13 +843,13 @@ function RegistrationFormContent() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn-cyber-primary w-full py-4 rounded-xl text-sm font-black font-mono uppercase tracking-widest flex items-center justify-center space-x-2 shadow-neon-emerald disabled:opacity-50"
+              className="btn-cyber-primary clip-esports-btn w-full py-4 text-sm font-black font-orbitron uppercase tracking-widest flex items-center justify-center space-x-2 shadow-neon-emerald disabled:opacity-50"
             >
               {isSubmitting ? (
                 <span>ALLOCATING STATE CODE & VERIFYING...</span>
               ) : (
                 <>
-                  <Flame className="w-5 h-5 text-cyber-black fill-current" />
+                  <Flame className="w-5 h-5 text-cyber-black fill-current animate-pulse" />
                   <span>SUBMIT REGISTRATION & RECEIVE CODE</span>
                 </>
               )}

@@ -18,6 +18,7 @@ import {
   Lock
 } from 'lucide-react';
 import PrintableReceipt, { PrintableReceiptProps } from '@/components/PrintableReceipt';
+import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
 
 function FindRegistrationContent() {
   const searchParams = useSearchParams();
@@ -128,38 +129,42 @@ function FindRegistrationContent() {
   };
 
   return (
-    <div className="min-h-screen cyber-bg py-12 sm:py-20">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen gaming-arena-bg py-12 sm:py-20 relative overflow-hidden font-rajdhani">
+      {/* Ambient floating glowing embers */}
+      <GamingEmberParticles />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         {/* Header Banner */}
         <div className="text-center max-w-2xl mx-auto mb-10 screen-only">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/40 text-neon-cyan text-xs font-mono font-bold uppercase mb-3">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-neon-cyan/15 border border-neon-cyan/40 text-neon-cyan text-xs font-orbitron font-bold uppercase mb-3">
             <ShieldCheck className="w-4 h-4 text-neon-emerald" />
-            <span>SECURE PLAYER VERIFICATION PORTAL</span>
+            <span>SECURE ARBITER VERIFICATION PORTAL</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white font-mono uppercase tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
             CHECK YOUR REGISTRATION
           </h1>
 
-          <p className="mt-3 text-xs sm:text-sm text-gray-400 font-sans">
+          <p className="mt-3 text-base text-gray-300 font-rajdhani font-semibold">
             Enter your 10-digit registered mobile number to securely view your tournament status and print your official registration receipt.
           </p>
         </div>
 
         {/* Verification Form Card */}
         <div className="max-w-2xl mx-auto mb-12 screen-only">
-          <div className="glass-hud rounded-2xl p-6 sm:p-8 border-2 border-neon-cyan/40 shadow-hud">
-            <form onSubmit={handleSearch} className="space-y-4">
+          <div className="glass-hud rounded-2xl p-6 sm:p-8 border-2 border-neon-cyan/50 shadow-hud relative overflow-hidden">
+            <HudCornerBrackets color="cyan" />
+            <form onSubmit={handleSearch} className="space-y-4 relative z-10">
               
               {/* Mobile Number Field */}
               <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-200 flex items-center justify-between">
+                <label className="text-xs font-rajdhani font-bold uppercase text-gray-200 flex items-center justify-between">
                   <span className="flex items-center space-x-1.5">
                     <Phone className="w-3.5 h-3.5 text-neon-cyan" />
                     <span>Registered Mobile Number *</span>
                   </span>
-                  <span className="text-[10px] text-gray-400 font-normal">10-Digit Mobile</span>
+                  <span className="text-[10px] text-gray-400 font-normal font-mono">10-Digit Mobile</span>
                 </label>
 
                 <div className="relative flex items-center">
@@ -188,7 +193,7 @@ function FindRegistrationContent() {
 
               {/* Optional Registration Code Field */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-xs font-mono font-bold text-gray-300 flex items-center space-x-1.5">
+                <label className="text-xs font-rajdhani font-bold uppercase text-gray-300 flex items-center space-x-1.5">
                   <Hash className="w-3.5 h-3.5 text-neon-gold" />
                   <span>Registration Number (Optional)</span>
                 </label>
@@ -213,7 +218,7 @@ function FindRegistrationContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-cyber-primary w-full py-3.5 rounded-xl text-xs font-black font-mono uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-2"
+                className="btn-cyber-primary clip-esports-btn w-full py-3.5 text-xs font-black font-orbitron uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-2"
               >
                 {loading ? (
                   <>
