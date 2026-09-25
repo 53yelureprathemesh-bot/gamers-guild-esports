@@ -9,7 +9,16 @@
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background-color: #04060a;
+  background-image: 
+    linear-gradient(180deg, rgba(4, 6, 10, 0.78) 0%, rgba(4, 6, 10, 0.9) 35%, rgba(4, 6, 10, 0.96) 80%, #04060a 100%),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 240, 255, 0.2) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 40%, rgba(0, 255, 157, 0.15) 0%, transparent 60%),
+    url('/images/characters/arena_stage_bg.jpg');
+  background-size: 100% 100%, 100% 100%, 100% 100%, cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   font-family: var(--font-rajdhani), system-ui, sans-serif;
   overflow-x: hidden;
 }
@@ -29,32 +38,51 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =========================================================
-   IMMERSIVE GAMING BACKGROUNDS & ARENA TEXTURES
+   IMMERSIVE REAL GAMING BACKGROUNDS & ARENA TEXTURES
    ========================================================= */
 
-/* Primary Gaming Arena Background with Multi-Layered Atmosphere */
+/* Primary Gaming Arena Background with Real Esports Stadium & Volumetric Lighting */
 .gaming-arena-bg {
-  background-color: #040508;
+  background-color: #04060a;
   background-image: 
-    radial-gradient(circle at 50% -10%, rgba(0, 240, 255, 0.16) 0%, rgba(0, 255, 157, 0.08) 25%, transparent 60%),
-    radial-gradient(circle at 10% 40%, rgba(157, 78, 221, 0.1) 0%, transparent 40%),
-    radial-gradient(circle at 90% 60%, rgba(0, 240, 255, 0.08) 0%, transparent 40%),
-    linear-gradient(to right, rgba(0, 240, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 240, 255, 0.035) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    linear-gradient(180deg, rgba(4, 6, 10, 0.76) 0%, rgba(4, 6, 10, 0.88) 45%, rgba(4, 6, 10, 0.95) 85%, #04060a 100%),
+    radial-gradient(circle at 50% 0%, rgba(0, 255, 157, 0.22) 0%, transparent 65%),
+    radial-gradient(circle at 85% 25%, rgba(0, 240, 255, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 15% 75%, rgba(255, 42, 85, 0.12) 0%, transparent 45%),
+    url('/images/characters/arena_stage_bg.jpg');
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+/* Tactical Combat Battleground Background with Operators and Lasers */
+.gaming-battle-bg {
+  background-color: #04060a;
+  background-image: 
+    linear-gradient(180deg, rgba(4, 6, 10, 0.78) 0%, rgba(4, 6, 10, 0.9) 45%, rgba(4, 6, 10, 0.96) 100%),
+    radial-gradient(circle at 50% 10%, rgba(255, 42, 85, 0.2) 0%, transparent 65%),
+    radial-gradient(circle at 80% 30%, rgba(0, 240, 255, 0.18) 0%, transparent 50%),
+    url('/images/characters/tactical_battle_bg.jpg');
+  background-size: 100% 100%, 100% 100%, 100% 100%, cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   position: relative;
 }
 
 /* Upgraded Cyber Grid & Battlefield Mesh */
 .cyber-bg {
-  background-color: #040508;
+  background-color: #04060a;
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(0, 255, 157, 0.12) 0%, rgba(0, 240, 255, 0.06) 30%, transparent 75%),
-    radial-gradient(circle at 85% 20%, rgba(255, 184, 0, 0.06) 0%, transparent 35%),
-    radial-gradient(circle at 15% 80%, rgba(255, 42, 85, 0.05) 0%, transparent 40%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    linear-gradient(180deg, rgba(4, 6, 10, 0.78) 0%, rgba(4, 6, 10, 0.9) 50%, rgba(4, 6, 10, 0.96) 100%),
+    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.2) 0%, transparent 70%),
+    url('/images/characters/arena_stage_bg.jpg');
+  background-size: 100% 100%, 100% 100%, cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 /* Combat Hexagonal Grid Overlay */

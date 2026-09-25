@@ -92,17 +92,17 @@ export default function HomePage() {
       <section className="relative pt-12 pb-24 lg:pt-20 lg:pb-32 overflow-hidden">
         {/* Arena Stadium Visual Backdrop */}
         <div 
-          className="absolute inset-0 z-0 opacity-20 bg-cover bg-center mix-blend-luminosity pointer-events-none" 
-          style={{ backgroundImage: "url('/images/characters/arena_banner.jpg')" }}
+          className="absolute inset-0 z-0 opacity-60 bg-cover bg-center pointer-events-none" 
+          style={{ backgroundImage: "url('/images/characters/arena_stage_bg.jpg')" }}
         ></div>
-        <div className="absolute inset-0 z-0 bg-gradient-to-b from-cyber-black/80 via-transparent to-cyber-black pointer-events-none"></div>
+        <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#04060a]/85 via-[#04060a]/50 to-[#04060a] pointer-events-none"></div>
 
         {/* Ambient floating glowing embers */}
         <GamingEmberParticles />
 
         {/* Futuristic glowing radial orbs */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-neon-emerald/15 blur-[140px] rounded-full pointer-events-none"></div>
-        <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-neon-cyan/15 blur-[130px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-neon-emerald/20 blur-[150px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-1/3 right-10 w-[500px] h-[500px] bg-neon-cyan/20 blur-[140px] rounded-full pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col items-center text-center">
@@ -201,6 +201,54 @@ export default function HomePage() {
                 </div>
               </div>
             )}
+            {/* APEX CHAMPIONS SQUAD HERO SHOWCASE */}
+            <div className="mt-14 w-full max-w-4xl relative group">
+              <div className="absolute -inset-1.5 bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-gold rounded-3xl blur-xl opacity-50 group-hover:opacity-85 transition duration-500"></div>
+              <div className="relative rounded-2xl overflow-hidden border-2 border-neon-cyan/60 bg-cyber-dark/90 shadow-[0_0_40px_rgba(0,242,254,0.2)]">
+                <HudCornerBrackets color="cyan" />
+                <div className="relative h-64 sm:h-80 md:h-[420px] w-full">
+                  <Image
+                    src="/images/characters/hero_squad.jpg"
+                    alt="Gamers Guild Champions Squad"
+                    fill
+                    priority
+                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-cyber-black/20 to-transparent"></div>
+                  
+                  {/* Top Live Badge */}
+                  <div className="absolute top-4 left-4 flex items-center space-x-2">
+                    <span className="px-3.5 py-1 rounded-full bg-neon-emerald/30 border border-neon-emerald text-neon-emerald font-orbitron font-bold text-xs uppercase flex items-center gap-2 backdrop-blur-md shadow-[0_0_15px_rgba(10,255,10,0.3)]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-neon-emerald animate-ping"></span>
+                      NATIONAL ROSTER • APEX CHAMPIONS
+                    </span>
+                  </div>
+
+                  {/* Bottom Squad Banner Bar */}
+                  <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-cyber-black/90 backdrop-blur-md border border-neon-cyan/30">
+                    <div>
+                      <div className="text-[11px] font-mono text-neon-cyan font-bold tracking-widest uppercase">
+                        DOMINATING ALL DISCIPLINES
+                      </div>
+                      <div className="text-lg sm:text-2xl font-black text-white font-orbitron uppercase tracking-wide">
+                        BGMI • FREE FIRE • VALORANT
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-6 text-xs font-mono">
+                      <div>
+                        <span className="text-gray-400 block text-[10px] uppercase">Total Prize Circuit</span>
+                        <span className="text-neon-gold font-bold font-orbitron text-sm sm:text-base">₹5,00,000+</span>
+                      </div>
+                      <div className="h-8 w-px bg-white/20"></div>
+                      <div>
+                        <span className="text-gray-400 block text-[10px] uppercase">Battleground Status</span>
+                        <span className="text-neon-emerald font-bold font-orbitron text-sm sm:text-base">LIVE TOURNAMENTS</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
           </div>
         </div>
