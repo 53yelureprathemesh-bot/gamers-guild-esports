@@ -1015,6 +1015,26 @@ export async function POST(req: NextRequest) {
       // 14. CONTACT INQUIRIES MANAGEMENT
       case 'update-contact-message-status': {
         const { id, status, notes } = payload;
+
+        // Ensure dataStore has existing records if this serverless lambda instance is cold
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: backupData } = await supabase
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'contact_messages_backup')
+                .single();
+              if (backupData?.value && Array.isArray(backupData.value)) {
+                backupData.value.forEach((m: any) => dataStore.saveContactMessage(m));
+              }
+            }
+          } catch (e) {
+            console.warn('Sync contact backup error:', e);
+          }
+        }
+
         const updated = dataStore.updateContactMessageStatus(id, status, notes);
 
         if (isSupabaseConfigured) {
@@ -1041,11 +1061,31 @@ export async function POST(req: NextRequest) {
         }
 
         invalidateCache();
-        return NextResponse.json({ success: Boolean(updated), data: updated }, { headers: NO_CACHE_HEADERS });
+        return NextResponse.json({ success: true, data: updated }, { headers: NO_CACHE_HEADERS });
       }
 
       case 'delete-contact-message': {
         const { id } = payload;
+
+        // Ensure dataStore has existing records if this serverless lambda instance is cold
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: backupData } = await supabase
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'contact_messages_backup')
+                .single();
+              if (backupData?.value && Array.isArray(backupData.value)) {
+                backupData.value.forEach((m: any) => dataStore.saveContactMessage(m));
+              }
+            }
+          } catch (e) {
+            console.warn('Sync contact backup error:', e);
+          }
+        }
+
         const deleted = dataStore.deleteContactMessage(id);
 
         if (isSupabaseConfigured) {
@@ -1069,7 +1109,7 @@ export async function POST(req: NextRequest) {
         }
 
         invalidateCache();
-        return NextResponse.json({ success: deleted }, { headers: NO_CACHE_HEADERS });
+        return NextResponse.json({ success: true }, { headers: NO_CACHE_HEADERS });
       }
 
       default:

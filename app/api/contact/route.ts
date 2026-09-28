@@ -47,6 +47,25 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString()
     };
 
+    // Pre-sync existing messages from Supabase backup if this serverless lambda is fresh
+    if (isSupabaseConfigured) {
+      try {
+        const supabase = getServiceSupabase();
+        if (supabase) {
+          const { data: backupData } = await supabase
+            .from('site_settings')
+            .select('value')
+            .eq('key', 'contact_messages_backup')
+            .single();
+          if (backupData?.value && Array.isArray(backupData.value)) {
+            backupData.value.forEach((m: any) => dataStore.saveContactMessage(m));
+          }
+        }
+      } catch (e) {
+        console.warn('Pre-sync contact backup error:', e);
+      }
+    }
+
     // 1. Store in memory
     const saved = dataStore.saveContactMessage(newMessage);
 
