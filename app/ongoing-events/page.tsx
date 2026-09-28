@@ -29,11 +29,11 @@ function getYouTubeVideoId(url?: string): string | null {
 }
 
 export default function OngoingEventsPage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
-  const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>(INITIAL_POINTS_TABLE);
-  const [matches, setMatches] = useState<TournamentMatch[]>(INITIAL_MATCHES);
-  const [selectedEventId, setSelectedEventId] = useState<string>('evt-002');
+  const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>([]);
+  const [matches, setMatches] = useState<TournamentMatch[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'standings' | 'schedule' | 'qualified'>('standings');
 
   useEffect(() => {

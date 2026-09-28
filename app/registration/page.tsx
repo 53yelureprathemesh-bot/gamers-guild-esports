@@ -34,8 +34,8 @@ function RegistrationFormContent() {
   const searchParams = useSearchParams();
   const preselectedEventId = searchParams.get('event');
 
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
-  const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || 'evt-001');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || '');
   const [formFields, setFormFields] = useState<RegistrationField[]>(DEFAULT_FORM_FIELDS);
 
   // Form State
@@ -75,8 +75,8 @@ function RegistrationFormContent() {
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          if (res.data.events?.length) setEvents(res.data.events);
-          if (res.data.formFields?.length) setFormFields(res.data.formFields);
+          if (Array.isArray(res.data.events)) setEvents(res.data.events);
+          if (Array.isArray(res.data.formFields)) setFormFields(res.data.formFields);
           if (res.data.settings) setSiteSettings(res.data.settings);
         }
       })

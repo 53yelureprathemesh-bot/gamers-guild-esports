@@ -38,7 +38,7 @@ import { INITIAL_EVENTS, INITIAL_SITE_SETTINGS, INITIAL_ANNOUNCEMENTS, INITIAL_G
 import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/components/GamingVisualEffects';
 
 export default function HomePage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
   const [gallery, setGallery] = useState<GalleryItem[]>(INITIAL_GALLERY);
@@ -65,6 +65,10 @@ export default function HomePage() {
   const upcomingEvents = events.filter(e => e.status === 'UPCOMING' && e.is_published);
   const ongoingEvents = events.filter(e => e.status === 'ONGOING' && e.is_published);
   const featuredEvent = upcomingEvents[0] || events[0];
+
+  const hasBgmi = events.some(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING') && (e.game.toLowerCase().includes('bgmi') || e.game.toLowerCase().includes('battlegrounds')));
+  const hasFreeFire = events.some(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING') && (e.game.toLowerCase().includes('free fire') || e.game.toLowerCase().includes('freefire')));
+  const hasValorant = events.some(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING') && e.game.toLowerCase().includes('valorant'));
 
   return (
     <div className="min-h-screen gaming-arena-bg relative selection:bg-neon-emerald selection:text-black">
@@ -172,7 +176,7 @@ export default function HomePage() {
             </div>
 
             {/* FEATURED TOURNAMENT BANNER HUD */}
-            {featuredEvent && (
+            {featuredEvent ? (
               <div className="mt-16 w-full max-w-3xl glass-hud rounded-xl p-5 sm:p-6 text-left border border-neon-cyan/50 shadow-hud relative overflow-hidden">
                 <HudCornerBrackets color="emerald" />
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
@@ -203,6 +207,36 @@ export default function HomePage() {
                   >
                     <span>CLAIM SLOT</span>
                     <ArrowRight className="w-3.5 h-3.5 text-cyber-black" />
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-16 w-full max-w-3xl glass-hud rounded-xl p-5 sm:p-6 text-left border border-neon-cyan/30 shadow-hud relative overflow-hidden">
+                <HudCornerBrackets color="cyan" />
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-black uppercase bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40 font-orbitron">
+                        CIRCUIT RADAR ACTIVE
+                      </span>
+                      <span className="text-xs font-mono text-gray-400">
+                        COMMUNITY & BRACKET HUB
+                      </span>
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-black text-white mt-1.5 font-orbitron">
+                      GAMERS GUILD ESPORTS ARENA
+                    </h3>
+                    <p className="text-xs text-gray-300 font-rajdhani font-semibold mt-1">
+                      Standby for upcoming championship registrations. Join our community to receive first access.
+                    </p>
+                  </div>
+
+                  <Link
+                    href="/upcoming-events"
+                    className="btn-cyber-secondary clip-esports-btn px-6 py-3 text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 self-stretch md:self-auto justify-center"
+                  >
+                    <span>VIEW SCHEDULE</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-neon-cyan" />
                   </Link>
                 </div>
               </div>
@@ -248,7 +282,9 @@ export default function HomePage() {
                       <div className="h-8 w-px bg-white/20"></div>
                       <div>
                         <span className="text-gray-400 block text-[10px] uppercase">Battleground Status</span>
-                        <span className="text-neon-emerald font-bold font-orbitron text-sm sm:text-base">LIVE TOURNAMENTS</span>
+                        <span className="text-neon-emerald font-bold font-orbitron text-sm sm:text-base">
+                          {upcomingEvents.length > 0 || ongoingEvents.length > 0 ? 'LIVE TOURNAMENTS' : 'CIRCUIT STANDBY'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -307,13 +343,15 @@ export default function HomePage() {
               </p>
               <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
                 <span>FORMAT: 4v4 Squad</span>
-                <span className="text-neon-emerald font-bold">SLOTS ACTIVE</span>
+                <span className={hasBgmi ? "text-neon-emerald font-bold" : "text-neon-cyan font-bold"}>
+                  {hasBgmi ? "SLOTS ACTIVE" : "CIRCUIT STANDBY"}
+                </span>
               </div>
               <Link
-                href="/registration?game=BGMI"
+                href={hasBgmi ? "/registration?game=BGMI" : "/upcoming-events"}
                 className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
               >
-                ENLIST BGMI SQUAD
+                {hasBgmi ? "ENLIST BGMI SQUAD" : "VIEW BGMI SCHEDULE"}
               </Link>
             </div>
           </div>
@@ -347,13 +385,15 @@ export default function HomePage() {
               </p>
               <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
                 <span>FORMAT: Squad Rush</span>
-                <span className="text-neon-gold font-bold">OPEN REGISTRATION</span>
+                <span className={hasFreeFire ? "text-neon-gold font-bold" : "text-neon-cyan font-bold"}>
+                  {hasFreeFire ? "OPEN REGISTRATION" : "CIRCUIT STANDBY"}
+                </span>
               </div>
               <Link
-                href="/registration?game=FreeFire"
+                href={hasFreeFire ? "/registration?game=FreeFire" : "/upcoming-events"}
                 className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
               >
-                JOIN FREE FIRE SQUAD
+                {hasFreeFire ? "JOIN FREE FIRE SQUAD" : "VIEW FREE FIRE SCHEDULE"}
               </Link>
             </div>
           </div>
@@ -387,13 +427,15 @@ export default function HomePage() {
               </p>
               <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
                 <span>FORMAT: 5v5 Tactical</span>
-                <span className="text-neon-cyan font-bold">BRACKET LIVE</span>
+                <span className={hasValorant ? "text-neon-cyan font-bold" : "text-neon-cyan font-bold"}>
+                  {hasValorant ? "BRACKET LIVE" : "CIRCUIT STANDBY"}
+                </span>
               </div>
               <Link
-                href="/registration?game=Valorant"
+                href={hasValorant ? "/registration?game=Valorant" : "/upcoming-events"}
                 className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
               >
-                ENTER VALORANT LAN
+                {hasValorant ? "ENTER VALORANT LAN" : "VIEW VALORANT SCHEDULE"}
               </Link>
             </div>
           </div>
@@ -444,69 +486,105 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {upcomingEvents.slice(0, 3).map((event) => (
-            <div
-              key={event.id}
-              className="glass-panel rounded-xl overflow-hidden flex flex-col border border-cyber-border hover:border-neon-cyan/50 hover:shadow-neon-cyan transition-all duration-300 group"
-            >
-              <div className="relative h-48 w-full overflow-hidden bg-cyber-dark">
-                <Image
-                  src={event.poster_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80'}
-                  alt={event.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                />
-                <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-cyber-black/80 backdrop-blur-md border border-cyber-border text-[10px] font-black uppercase text-neon-cyan font-mono">
-                  {event.game}
-                </div>
-                <div className="absolute top-3 right-3 px-2.5 py-1 rounded bg-neon-emerald/20 backdrop-blur-md border border-neon-emerald/40 text-[10px] font-black uppercase text-neon-emerald font-mono">
-                  {event.mode}
-                </div>
-              </div>
-
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <h3 className="text-lg font-black text-white font-mono group-hover:text-neon-cyan transition-colors">
-                    {event.title}
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-2 line-clamp-2">
-                    {event.description}
-                  </p>
-                </div>
-
-                <div className="space-y-2 border-t border-cyber-border pt-4 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Prize Pool:</span>
-                    <span className="text-neon-gold font-bold">{event.prize_pool}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Date & Time:</span>
-                    <span className="text-white">{event.date} &bull; {event.time}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Slots:</span>
-                    <span className="text-neon-emerald font-bold">{event.filled_slots}/{event.total_slots} Filled</span>
-                  </div>
-                  {/* Slots Progress Bar */}
-                  <div className="w-full h-1.5 bg-cyber-dark rounded-full overflow-hidden border border-cyber-border">
-                    <div 
-                      className="h-full bg-gradient-to-r from-neon-emerald to-neon-cyan" 
-                      style={{ width: `${Math.min(100, (event.filled_slots / event.total_slots) * 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                <Link
-                  href={`/registration?event=${event.id}`}
-                  className="btn-cyber-primary w-full py-2.5 rounded text-xs font-extrabold text-center uppercase tracking-wider block"
-                >
-                  REGISTER SQUAD
-                </Link>
-              </div>
+        {upcomingEvents.length === 0 ? (
+          <div className="glass-hud p-8 sm:p-14 rounded-2xl border-2 border-neon-cyan/40 text-center relative overflow-hidden shadow-hud">
+            <HudCornerBrackets color="cyan" />
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-neon-cyan/15 border border-neon-cyan/40 text-neon-cyan text-xs font-mono font-bold uppercase mb-4 shadow-[0_0_15px_rgba(0,242,254,0.2)]">
+              <Calendar className="w-3.5 h-3.5 text-neon-cyan" />
+              <span>CIRCUIT RADAR • CALENDAR CLEAR</span>
             </div>
-          ))}
-        </div>
+            <h3 className="text-2xl sm:text-4xl font-black text-white font-orbitron uppercase tracking-wide">
+              NO UPCOMING TOURNAMENTS SCHEDULED
+            </h3>
+            <p className="mt-3 text-sm sm:text-base text-gray-300 font-rajdhani font-semibold max-w-xl mx-auto leading-relaxed">
+              All past tournament stages have concluded. New championship circuits, qualifiers, and custom scrims are currently being curated. Join our Discord or follow us on Instagram for the next official drop!
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+              <a 
+                href={settings.contact.discord || "https://discord.gg/gamersguild"} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="btn-cyber-primary clip-esports-btn px-6 py-3 text-xs font-black uppercase tracking-wider inline-flex items-center space-x-2"
+              >
+                <Discord className="w-4 h-4 text-cyber-black" />
+                <span>JOIN DISCORD FOR UPDATES</span>
+              </a>
+              <a 
+                href={settings.contact.instagram || "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=="} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="btn-cyber-secondary clip-esports-btn px-6 py-3 text-xs font-black uppercase tracking-wider inline-flex items-center space-x-2"
+              >
+                <Instagram className="w-4 h-4 text-neon-pink" />
+                <span>FOLLOW INSTAGRAM</span>
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {upcomingEvents.slice(0, 3).map((event) => (
+              <div
+                key={event.id}
+                className="glass-panel rounded-xl overflow-hidden flex flex-col border border-cyber-border hover:border-neon-cyan/50 hover:shadow-neon-cyan transition-all duration-300 group"
+              >
+                <div className="relative h-48 w-full overflow-hidden bg-cyber-dark">
+                  <Image
+                    src={event.poster_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80'}
+                    alt={event.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                  />
+                  <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-cyber-black/80 backdrop-blur-md border border-cyber-border text-[10px] font-black uppercase text-neon-cyan font-mono">
+                    {event.game}
+                  </div>
+                  <div className="absolute top-3 right-3 px-2.5 py-1 rounded bg-neon-emerald/20 backdrop-blur-md border border-neon-emerald/40 text-[10px] font-black uppercase text-neon-emerald font-mono">
+                    {event.mode}
+                  </div>
+                </div>
+
+                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <h3 className="text-lg font-black text-white font-mono group-hover:text-neon-cyan transition-colors">
+                      {event.title}
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-2 line-clamp-2">
+                      {event.description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 border-t border-cyber-border pt-4 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Prize Pool:</span>
+                      <span className="text-neon-gold font-bold">{event.prize_pool}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Date & Time:</span>
+                      <span className="text-white">{event.date} &bull; {event.time}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Slots:</span>
+                      <span className="text-neon-emerald font-bold">{event.filled_slots}/{event.total_slots} Filled</span>
+                    </div>
+                    {/* Slots Progress Bar */}
+                    <div className="w-full h-1.5 bg-cyber-dark rounded-full overflow-hidden border border-cyber-border">
+                      <div 
+                        className="h-full bg-gradient-to-r from-neon-emerald to-neon-cyan" 
+                        style={{ width: `${Math.min(100, (event.filled_slots / event.total_slots) * 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={`/registration?event=${event.id}`}
+                    className="btn-cyber-primary w-full py-2.5 rounded text-xs font-extrabold text-center uppercase tracking-wider block"
+                  >
+                    REGISTER SQUAD
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 5. ONGOING EVENTS PULSE & LIVE POINTS TABLE PREVIEW */}

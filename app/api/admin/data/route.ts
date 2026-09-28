@@ -407,9 +407,9 @@ export async function GET(req: NextRequest) {
                 settings = { ...settings, ...(sysEvRes.data.rules as any) };
                 dataStore.updateSiteSettings(settings);
               }
-              if (anRes.data && anRes.data.length > 0) announcements = anRes.data;
-              if (galRes.data && galRes.data.length > 0) gallery = galRes.data;
-              if (spRes.data && spRes.data.length > 0) sponsors = spRes.data;
+              if (!anRes.error && Array.isArray(anRes.data)) announcements = anRes.data;
+              if (!galRes.error && Array.isArray(galRes.data)) gallery = galRes.data;
+              if (!spRes.error && Array.isArray(spRes.data)) sponsors = spRes.data;
             }
           } catch (e) {
             console.warn('Supabase bundle fetch warning:', e);
@@ -556,17 +556,20 @@ export async function POST(req: NextRequest) {
       }
 
       case 'delete-event': {
+        let deleted = false;
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('events').delete().eq('id', payload.id);
+              const { error } = await supabase.from('events').delete().eq('id', payload.id);
+              if (!error) deleted = true;
             }
           } catch (e) {
             console.warn('Supabase delete event error:', e);
           }
         }
-        const deleted = dataStore.deleteEvent(payload.id);
+        const memoryDeleted = dataStore.deleteEvent(payload.id);
+        deleted = deleted || memoryDeleted;
         invalidateCache();
         return NextResponse.json({ success: deleted }, { headers: NO_CACHE_HEADERS });
       }

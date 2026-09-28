@@ -20,7 +20,7 @@ import { Event, EventStatus, EventMode } from '@/lib/types';
 import { INITIAL_EVENTS } from '@/lib/dataStore';
 
 export default function AdminUpcomingEventsPage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [editingEvent, setEditingEvent] = useState<Partial<Event> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export default function AdminUpcomingEventsPage() {
     fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && res.data) setEvents(res.data);
+        if (res.success && Array.isArray(res.data)) setEvents(res.data);
       })
       .catch(() => console.log('Using initial events.'));
   };
@@ -154,76 +154,93 @@ export default function AdminUpcomingEventsPage() {
       )}
 
       {/* Events Table / Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className="glass-panel rounded-xl overflow-hidden border border-cyber-border flex flex-col justify-between"
-          >
-            <div className="relative h-44 w-full bg-cyber-dark">
-              <Image
-                src={event.poster_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80'}
-                alt={event.title}
-                fill
-                className="object-cover"
-              />
-              <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-cyber-black/80 text-[10px] font-mono text-neon-cyan font-bold uppercase">
-                {event.game}
-              </div>
-              <div className={`absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                event.status === 'ONGOING' ? 'bg-neon-red text-black animate-pulse' :
-                event.status === 'COMPLETED' ? 'bg-gray-700 text-gray-300' :
-                'bg-neon-emerald/20 text-neon-emerald border border-neon-emerald/40'
-              }`}>
-                {event.status}
-              </div>
-            </div>
-
-            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-              <div>
-                <h3 className="text-sm font-black text-white font-mono">{event.title}</h3>
-                <div className="mt-2 text-xs font-mono text-gray-300 space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Prize Pool:</span>
-                    <span className="text-neon-gold font-bold">{event.prize_pool}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Date:</span>
-                    <span>{event.date} ({event.time})</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Slots:</span>
-                    <span className="text-neon-emerald font-bold">{event.filled_slots} / {event.total_slots}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-cyber-border flex items-center justify-between">
-                <span className="text-[10px] font-mono text-gray-400">
-                  {event.is_published ? '🟢 Published' : '⚪ Draft Hidden'}
-                </span>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => { setEditingEvent(event); setIsNew(false); }}
-                    className="p-1.5 rounded bg-cyber-dark hover:bg-neon-cyan/20 text-gray-300 hover:text-neon-cyan border border-cyber-border"
-                    title="Edit Tournament"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(event.id)}
-                    className="p-1.5 rounded bg-cyber-dark hover:bg-neon-red/20 text-gray-300 hover:text-neon-red border border-cyber-border"
-                    title="Delete Tournament"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
+      {events.length === 0 ? (
+        <div className="glass-panel p-12 text-center rounded-2xl border border-cyber-border space-y-4">
+          <Calendar className="w-12 h-12 text-gray-500 mx-auto" />
+          <div>
+            <h3 className="text-base font-black text-white font-mono uppercase">NO TOURNAMENTS CONFIGURED</h3>
+            <p className="text-xs text-gray-400 font-mono mt-1">All events have been deleted or none exist yet. The public site currently displays the clean standby HUD.</p>
           </div>
-        ))}
-      </div>
+          <button
+            onClick={handleOpenAdd}
+            className="btn-cyber-primary px-5 py-2.5 rounded text-xs font-mono font-bold uppercase inline-flex items-center space-x-1.5"
+          >
+            <Plus className="w-4 h-4 text-cyber-black" />
+            <span>CREATE FIRST TOURNAMENT</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event) => (
+            <div
+              key={event.id}
+              className="glass-panel rounded-xl overflow-hidden border border-cyber-border flex flex-col justify-between"
+            >
+              <div className="relative h-44 w-full bg-cyber-dark">
+                <Image
+                  src={event.poster_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80'}
+                  alt={event.title}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-cyber-black/80 text-[10px] font-mono text-neon-cyan font-bold uppercase">
+                  {event.game}
+                </div>
+                <div className={`absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                  event.status === 'ONGOING' ? 'bg-neon-red text-black animate-pulse' :
+                  event.status === 'COMPLETED' ? 'bg-gray-700 text-gray-300' :
+                  'bg-neon-emerald/20 text-neon-emerald border border-neon-emerald/40'
+                }`}>
+                  {event.status}
+                </div>
+              </div>
+
+              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div>
+                  <h3 className="text-sm font-black text-white font-mono">{event.title}</h3>
+                  <div className="mt-2 text-xs font-mono text-gray-300 space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Prize Pool:</span>
+                      <span className="text-neon-gold font-bold">{event.prize_pool}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Date:</span>
+                      <span>{event.date} ({event.time})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Slots:</span>
+                      <span className="text-neon-emerald font-bold">{event.filled_slots} / {event.total_slots}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-cyber-border flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-gray-400">
+                    {event.is_published ? '🟢 Published' : '⚪ Draft Hidden'}
+                  </span>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => { setEditingEvent(event); setIsNew(false); }}
+                      className="p-1.5 rounded bg-cyber-dark hover:bg-neon-cyan/20 text-gray-300 hover:text-neon-cyan border border-cyber-border"
+                      title="Edit Tournament"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(event.id)}
+                      className="p-1.5 rounded bg-cyber-dark hover:bg-neon-red/20 text-gray-300 hover:text-neon-red border border-cyber-border"
+                      title="Delete Tournament"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* EDIT / CREATE MODAL */}
       {editingEvent && (

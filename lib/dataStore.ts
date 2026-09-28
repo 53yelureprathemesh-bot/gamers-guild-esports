@@ -14,101 +14,12 @@ import {
 } from './types';
 import { getStateCode } from './stateCodes';
 
-// Initial Demo Seed Data
-export const INITIAL_EVENTS: Event[] = [
-  {
-    id: "evt-001",
-    slug: "neural-nexus-2k26",
-    title: "NEURAL NEXUS 2K26 — BGMI CHAMPIONSHIP",
-    game: "BGMI (Battlegrounds Mobile India)",
-    poster_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80",
-    date: "2026-10-15",
-    time: "05:00 PM IST",
-    venue: "Online Custom Rooms & GG Esports Arena, Nagpur",
-    mode: "ONLINE",
-    prize_pool: "₹50,000",
-    entry_fee: "FREE ENTRY",
-    registration_deadline: "2026-10-12 23:59:59",
-    total_slots: 100,
-    filled_slots: 42,
-    description: "The premier battle royale tournament of the season. 100 squads drop into Erangel for high-octane competitive action and cash prizes.",
-    rules: [
-      "All squad players must have minimum account Level 35 in BGMI.",
-      "Emulators, iPad, and physical trigger accessories are strictly forbidden.",
-      "Full POV screen recording must be retained for top 3 finishes.",
-      "Tournament admin decisions are absolute and binding."
-    ],
-    status: "UPCOMING",
-    is_published: true,
-    registration_form_id: "form-default"
-  },
-  {
-    id: "evt-002",
-    slug: "free-fire-clash-of-titans",
-    title: "FREE FIRE CLASH OF TITANS: SEASON 4",
-    game: "Free Fire Max",
-    poster_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80",
-    date: "2026-09-28",
-    time: "06:30 PM IST",
-    venue: "Online Custom Lobby",
-    mode: "ONLINE",
-    prize_pool: "₹25,000",
-    entry_fee: "FREE ENTRY",
-    registration_deadline: "2026-09-26 23:59:59",
-    total_slots: 48,
-    filled_slots: 48,
-    description: "High-octane Bermuda showdown. 12 elite teams battle through 6 rounds of intense gunfights for state and national bragging rights.",
-    rules: [
-      "Mobile devices only. No emulators.",
-      "Gun attributes turned OFF for true competitive parity.",
-      "Teams failing to enter the room within 10 minutes of schedule forfeit their slot."
-    ],
-    status: "ONGOING",
-    is_published: true,
-    registration_form_id: "form-default",
-    stream_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-    is_stream_live: true
-  },
-  {
-    id: "evt-003",
-    slug: "valorant-cyber-strike-lan",
-    title: "VALORANT CYBER STRIKE INVITATIONAL",
-    game: "Valorant",
-    poster_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80",
-    date: "2026-11-05",
-    time: "11:00 AM IST",
-    venue: "Gamers Guild Esports Arena, Nagpur, Maharashtra",
-    mode: "OFFLINE",
-    prize_pool: "₹1,00,000",
-    entry_fee: "₹500 / Team",
-    registration_deadline: "2026-10-30 23:59:59",
-    total_slots: 32,
-    filled_slots: 18,
-    description: "Premier 5v5 tactical shooter LAN championship featuring 240Hz monitors, noise-cancelling player booths, live stage commentary, and streaming.",
-    rules: [
-      "Standard Competitive 5v5 tournament format with overtime enabled.",
-      "Players may bring their own approved peripherals (mouse, keyboard, headset).",
-      "Valid physical government ID proof required at venue check-in."
-    ],
-    status: "UPCOMING",
-    is_published: true,
-    registration_form_id: "form-default"
-  }
-];
+// Initial Demo Seed Data - Default to empty so user deletion persists cleanly
+export const INITIAL_EVENTS: Event[] = [];
 
-export const INITIAL_POINTS_TABLE: PointsTableEntry[] = [
-  { id: "pt-1", event_id: "evt-002", rank: 1, team_name: "GODLIKE ESPORTS", matches_played: 4, wwcd: 2, placement_points: 40, kill_points: 34, total_points: 74 },
-  { id: "pt-2", event_id: "evt-002", rank: 2, team_name: "TEAM SOUL", matches_played: 4, wwcd: 1, placement_points: 32, kill_points: 28, total_points: 60 },
-  { id: "pt-3", event_id: "evt-002", rank: 3, team_name: "ORANGE ROCK", matches_played: 4, wwcd: 1, placement_points: 26, kill_points: 22, total_points: 48 },
-  { id: "pt-4", event_id: "evt-002", rank: 4, team_name: "BLIND ESPORTS", matches_played: 4, wwcd: 0, placement_points: 20, kill_points: 24, total_points: 44 },
-  { id: "pt-5", event_id: "evt-002", rank: 5, team_name: "HYDRA CLAN", matches_played: 4, wwcd: 0, placement_points: 16, kill_points: 18, total_points: 34 },
-  { id: "pt-6", event_id: "evt-002", rank: 6, team_name: "CYBER TITANS", matches_played: 4, wwcd: 0, placement_points: 12, kill_points: 14, total_points: 26 }
-];
+export const INITIAL_POINTS_TABLE: PointsTableEntry[] = [];
 
-export const INITIAL_MATCHES: TournamentMatch[] = [
-  { id: "m-1", event_id: "evt-002", round_name: "Semi-Finals", match_title: "Round 5 - Bermuda", scheduled_time: "07:15 PM IST", status: "LIVE", stream_url: "https://youtube.com", map_name: "Bermuda" },
-  { id: "m-2", event_id: "evt-002", round_name: "Grand Finals", match_title: "Round 6 - Purgatory", scheduled_time: "08:30 PM IST", status: "UPCOMING", stream_url: "https://youtube.com", map_name: "Purgatory" }
-];
+export const INITIAL_MATCHES: TournamentMatch[] = [];
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   hero: {
@@ -151,33 +62,23 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   {
     id: "ann-1",
-    title: "NEURAL NEXUS 2K26 REGISTRATIONS ARE OFFICIALLY LIVE!",
-    content: "The biggest BGMI mobile championship is accepting registrations. Squads must register before the cutoff date to secure their bracket seeding.",
-    priority: "URGENT",
-    image_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80",
-    link: "/registration",
+    title: "WELCOME TO GAMERS GUILD ESPORTS",
+    content: "India's premier competitive gaming organization. Join our community Discord & Instagram for upcoming tournament schedules and bracket updates.",
+    priority: "MEDIUM",
+    image_url: "/images/characters/arena_stage_bg.jpg",
+    link: "/upcoming-events",
     is_published: true,
-    created_at: "2026-09-15"
+    created_at: "2026-09-28"
   },
   {
     id: "ann-2",
-    title: "SPECTATOR PASSES: VALORANT CYBER STRIKE LAN IN NAGPUR",
-    content: "Come experience high-stakes LAN matches in person! Limited audience seats with live commentary and exclusive team jerseys.",
-    priority: "HIGH",
-    image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
-    link: "/upcoming-events",
-    is_published: true,
-    created_at: "2026-09-12"
-  },
-  {
-    id: "ann-3",
     title: "UPDATED TOURNAMENT ANTI-CHEAT POLICY",
     content: "Zero tolerance for aim assistance, hardware triggers, or suspicious emulator usage. POV recording will be verified for all final stages.",
     priority: "MEDIUM",
     image_url: "",
-    link: "",
+    link: "/about",
     is_published: true,
-    created_at: "2026-09-10"
+    created_at: "2026-09-20"
   }
 ];
 

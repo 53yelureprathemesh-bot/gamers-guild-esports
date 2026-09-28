@@ -32,7 +32,7 @@ function getGamePoster(game: string, posterUrl?: string): string {
 }
 
 export default function UpcomingEventsPage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [selectedGame, setSelectedGame] = useState<string>('ALL');
   const [selectedMode, setSelectedMode] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -42,7 +42,7 @@ export default function UpcomingEventsPage() {
     fetch('/api/admin/data?type=events')
       .then(res => res.json())
       .then(res => {
-        if (res.success && res.data?.length) {
+        if (res.success && Array.isArray(res.data)) {
           setEvents(res.data);
         }
       })
@@ -135,10 +135,18 @@ export default function UpcomingEventsPage() {
 
         {/* Events Grid */}
         {filteredEvents.length === 0 ? (
-          <div className="glass-panel p-12 text-center rounded-2xl border border-cyber-border">
-            <Calendar className="w-12 h-12 text-gray-500 mx-auto mb-3" />
-            <h3 className="text-lg font-black text-white font-orbitron uppercase">NO UPCOMING EVENTS FOUND</h3>
-            <p className="text-xs text-gray-400 mt-1 font-mono">Try adjusting your game or mode filters.</p>
+          <div className="glass-hud p-10 sm:p-14 text-center rounded-2xl border-2 border-neon-cyan/40 max-w-2xl mx-auto relative overflow-hidden shadow-hud">
+            <HudCornerBrackets color="cyan" />
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-neon-cyan/15 border border-neon-cyan/40 text-neon-cyan text-xs font-mono font-bold uppercase mb-4 shadow-[0_0_15px_rgba(0,242,254,0.2)]">
+              <Calendar className="w-3.5 h-3.5 text-neon-cyan" />
+              <span>CIRCUIT SCHEDULE • STANDBY</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white font-orbitron uppercase">
+              NO UPCOMING TOURNAMENTS FOUND
+            </h3>
+            <p className="text-sm text-gray-300 mt-2 font-rajdhani font-semibold max-w-md mx-auto leading-relaxed">
+              No tournaments currently scheduled or matching your filter. Stay tuned to our social channels for upcoming tournament releases.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

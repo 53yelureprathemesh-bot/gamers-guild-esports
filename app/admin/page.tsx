@@ -20,16 +20,16 @@ import { Registration, Event } from '@/lib/types';
 import { INITIAL_REGISTRATIONS, INITIAL_EVENTS } from '@/lib/dataStore';
 
 export default function AdminDashboardPage() {
-  const [registrations, setRegistrations] = useState<Registration[]>(INITIAL_REGISTRATIONS);
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
 
   useEffect(() => {
     fetch('/api/admin/data')
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          if (res.data.registrations) setRegistrations(res.data.registrations);
-          if (res.data.events) setEvents(res.data.events);
+          if (Array.isArray(res.data.registrations)) setRegistrations(res.data.registrations);
+          if (Array.isArray(res.data.events)) setEvents(res.data.events);
         }
       })
       .catch(() => console.log('Loaded initial dashboard metrics.'));

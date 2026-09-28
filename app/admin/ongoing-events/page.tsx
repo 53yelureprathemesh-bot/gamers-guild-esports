@@ -17,10 +17,10 @@ import { Event, PointsTableEntry, TournamentMatch, SiteSettings } from '@/lib/ty
 import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES, INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 
 export default function AdminOngoingEventsPage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
-  const [selectedEventId, setSelectedEventId] = useState<string>('evt-002');
-  const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>(INITIAL_POINTS_TABLE);
-  const [matches, setMatches] = useState<TournamentMatch[]>(INITIAL_MATCHES);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>([]);
+  const [matches, setMatches] = useState<TournamentMatch[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
 
   // Site Settings for Ongoing Tournaments State
@@ -66,9 +66,13 @@ export default function AdminOngoingEventsPage() {
     fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        if (res.success && Array.isArray(res.data)) {
           setEvents(res.data);
-          setSelectedEventId(res.data[0].id);
+          if (res.data.length > 0) {
+            setSelectedEventId(res.data[0].id);
+          } else {
+            setSelectedEventId('');
+          }
         }
       })
       .catch(() => {});
