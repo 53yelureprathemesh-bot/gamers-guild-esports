@@ -86,12 +86,12 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const { data: dbEvents } = await supabase
+              const { data: dbEvents, error: evError } = await supabase
                 .from('events')
                 .select('*')
                 .neq('slug', 'system-site-settings')
                 .order('date', { ascending: true });
-              if (dbEvents && dbEvents.length > 0) {
+              if (!evError && Array.isArray(dbEvents)) {
                 events = dbEvents.filter((e: any) => e.slug !== 'system-site-settings');
               }
             }
@@ -397,7 +397,9 @@ export async function GET(req: NextRequest) {
                 supabase.from('sponsors').select('*').order('tier', { ascending: true })
               ]);
 
-              if (evRes.data && evRes.data.length > 0) events = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
+              if (!evRes.error && Array.isArray(evRes.data)) {
+                events = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
+              }
               if (stRes.data && stRes.data.value) {
                 settings = { ...settings, ...stRes.data.value };
                 dataStore.updateSiteSettings(settings);

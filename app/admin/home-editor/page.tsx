@@ -45,7 +45,10 @@ export default function AdminHomeEditorPage() {
             contact: { ...INITIAL_SITE_SETTINGS.contact, ...(raw?.contact || {}) },
             statistics: Array.isArray(raw?.statistics) && raw.statistics.length > 0 ? raw.statistics : INITIAL_SITE_SETTINGS.statistics,
             registration_enabled: raw?.registration_enabled !== undefined ? Boolean(raw.registration_enabled) : true,
-            registration_closed_message: raw?.registration_closed_message || INITIAL_SITE_SETTINGS.registration_closed_message
+            registration_closed_message: raw?.registration_closed_message || INITIAL_SITE_SETTINGS.registration_closed_message,
+            ongoing_tournaments_active: raw?.ongoing_tournaments_active !== undefined ? Boolean(raw.ongoing_tournaments_active) : false,
+            no_ongoing_tournaments_title: raw?.no_ongoing_tournaments_title || INITIAL_SITE_SETTINGS.no_ongoing_tournaments_title,
+            no_ongoing_tournaments_message: raw?.no_ongoing_tournaments_message || INITIAL_SITE_SETTINGS.no_ongoing_tournaments_message
           });
         }
       })
@@ -363,6 +366,27 @@ export default function AdminHomeEditorPage() {
               type="text"
               value={settings?.contact?.instagram || ''}
               onChange={(e) => updateContact('instagram', e.target.value)}
+              placeholder="https://www.instagram.com/..."
+              className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-mono font-bold text-gray-300">YouTube Channel URL</label>
+            <input
+              type="text"
+              value={settings?.contact?.youtube || ''}
+              onChange={(e) => updateContact('youtube', e.target.value)}
+              placeholder="https://youtube.com/@..."
+              className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-mono font-bold text-gray-300">Twitter / X Profile URL</label>
+            <input
+              type="text"
+              value={settings?.contact?.twitter || ''}
+              onChange={(e) => updateContact('twitter', e.target.value)}
+              placeholder="https://twitter.com/..."
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
           </div>
@@ -399,6 +423,57 @@ export default function AdminHomeEditorPage() {
               onChange={(e) => setSettings(prev => ({ ...prev, registration_closed_message: e.target.value }))}
               placeholder="NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED"
               className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 6. ONGOING TOURNAMENTS SECTION CONTROLS */}
+      <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-neon-cyan/40 space-y-6 shadow-hud">
+        <h2 className="text-base font-black text-white font-mono uppercase border-b border-cyber-border pb-3 flex items-center justify-between">
+          <span>6. ONGOING TOURNAMENTS SECTION CONTROLS</span>
+          <span className="text-xs font-bold text-neon-cyan px-2 py-0.5 rounded bg-neon-cyan/15 border border-neon-cyan/40">
+            PUBLIC WEBSITE DISPLAY
+          </span>
+        </h2>
+
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border">
+            <input
+              type="checkbox"
+              id="ongoing_tournaments_active"
+              checked={settings?.ongoing_tournaments_active ?? false}
+              onChange={(e) => setSettings(prev => ({ ...prev, ongoing_tournaments_active: e.target.checked }))}
+              className="w-5 h-5 rounded bg-cyber-black border-cyber-border text-neon-cyan focus:ring-neon-cyan"
+            />
+            <label htmlFor="ongoing_tournaments_active" className="text-xs font-mono font-bold text-white cursor-pointer select-none">
+              ENABLE ONGOING TOURNAMENTS SECTION (If checked, shows live match broadcasts and leaderboards. If unchecked or if no events are ongoing, displays the custom "No Ongoing Tournaments" notice).
+            </label>
+          </div>
+
+          <div>
+            <label className="text-xs font-mono font-bold text-gray-300 block mb-1">
+              Custom "No Ongoing Tournaments" Heading
+            </label>
+            <input
+              type="text"
+              value={settings?.no_ongoing_tournaments_title || ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, no_ongoing_tournaments_title: e.target.value }))}
+              placeholder="NO ONGOING TOURNAMENTS AT THE MOMENT"
+              className="w-full px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-mono font-bold text-gray-300 block mb-1">
+              Custom "No Ongoing Tournaments" Description Notice
+            </label>
+            <textarea
+              rows={2}
+              value={settings?.no_ongoing_tournaments_message || ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, no_ongoing_tournaments_message: e.target.value }))}
+              placeholder="All live championship stages and match broadcasts have concluded. Check out our upcoming tournaments calendar to register and claim your slot!"
+              className="w-full px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
             />
           </div>
         </div>

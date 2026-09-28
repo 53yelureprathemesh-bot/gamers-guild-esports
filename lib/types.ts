@@ -221,6 +221,9 @@ export interface SiteSettings {
   };
   registration_enabled?: boolean;
   registration_closed_message?: string;
+  ongoing_tournaments_active?: boolean;
+  no_ongoing_tournaments_title?: string;
+  no_ongoing_tournaments_message?: string;
 }
 
 export interface EmailTemplate {

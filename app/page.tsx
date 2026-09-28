@@ -25,7 +25,13 @@ import {
   Swords,
   Shield,
   Zap,
-  Crosshair
+  Crosshair,
+  Instagram,
+  Disc as Discord,
+  Youtube,
+  Twitter,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { Event, Announcement, GalleryItem, Sponsor, SiteSettings, PointsTableEntry } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_SITE_SETTINGS, INITIAL_ANNOUNCEMENTS, INITIAL_GALLERY, INITIAL_SPONSORS, INITIAL_POINTS_TABLE } from '@/lib/dataStore';
@@ -46,11 +52,11 @@ export default function HomePage() {
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          if (res.data.events?.length) setEvents(res.data.events);
+          if (Array.isArray(res.data.events)) setEvents(res.data.events);
           if (res.data.settings) setSettings(res.data.settings);
-          if (res.data.announcements?.length) setAnnouncements(res.data.announcements);
-          if (res.data.gallery?.length) setGallery(res.data.gallery);
-          if (res.data.sponsors?.length) setSponsors(res.data.sponsors);
+          if (Array.isArray(res.data.announcements)) setAnnouncements(res.data.announcements);
+          if (Array.isArray(res.data.gallery)) setGallery(res.data.gallery);
+          if (Array.isArray(res.data.sponsors)) setSponsors(res.data.sponsors);
         }
       })
       .catch(err => console.log('Using default client store data.'));
@@ -525,112 +531,145 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Live Matches Card */}
-            <div className="lg:col-span-5 glass-hud p-6 rounded-xl border border-neon-cyan/40">
-              <div className="flex items-center justify-between border-b border-cyber-border pb-4">
-                <div className="flex items-center space-x-2">
-                  <Radio className="w-5 h-5 text-neon-red animate-pulse" />
-                  <span className="font-mono text-sm font-black text-white uppercase">MATCH BROADCAST</span>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon-red/20 text-neon-red border border-neon-red/40 font-bold">
-                  ROUND 5 / 6
-                </span>
+          {(ongoingEvents.length === 0 || settings.ongoing_tournaments_active === false) ? (
+            <div className="glass-hud p-8 sm:p-14 rounded-2xl border-2 border-neon-cyan/40 text-center relative overflow-hidden shadow-hud">
+              <HudCornerBrackets color="cyan" />
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-cyan/15 border border-neon-cyan/40 text-neon-cyan text-xs font-mono font-bold uppercase mb-4 shadow-[0_0_15px_rgba(0,242,254,0.2)]">
+                <Radio className="w-3.5 h-3.5 animate-pulse text-neon-cyan" />
+                <span>BROADCAST RADAR • ARENA STANDBY</span>
               </div>
-
-              <div className="mt-6 space-y-4">
-                <div className="p-4 rounded-lg bg-cyber-black/60 border border-cyber-border">
-                  <div className="flex justify-between text-xs font-mono text-gray-400">
-                    <span>Free Fire Max &bull; Bermuda</span>
-                    <span className="text-neon-emerald font-bold">IN PROGRESS</span>
-                  </div>
-                  <div className="text-base font-black text-white font-mono mt-2">
-                    Semi-Finals: Battle for Grand Finals Slot
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Top 6 squads advance to the LAN Grand Finals in Nagpur.
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-cyber-black/60 border border-cyber-border">
-                  <div className="flex justify-between text-xs font-mono text-gray-400">
-                    <span>Next Match Scheduled</span>
-                    <span className="text-neon-gold font-bold">08:30 PM IST</span>
-                  </div>
-                  <div className="text-base font-black text-white font-mono mt-2">
-                    Grand Finals — Round 6 (Purgatory Decider)
-                  </div>
-                </div>
-
+              <h3 className="text-2xl sm:text-4xl font-black text-white font-orbitron uppercase tracking-wide">
+                {settings.no_ongoing_tournaments_title || "NO ONGOING TOURNAMENTS AT THE MOMENT"}
+              </h3>
+              <p className="mt-4 text-sm sm:text-base text-gray-300 max-w-2xl mx-auto font-rajdhani font-semibold leading-relaxed">
+                {settings.no_ongoing_tournaments_message || "All live championship stages and match broadcasts have concluded. Check out our upcoming tournaments calendar to register and claim your slot!"}
+              </p>
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link
-                  href="/ongoing-events"
-                  className="btn-cyber-secondary w-full py-3 rounded text-xs font-bold text-center flex items-center justify-center space-x-2 block"
+                  href="/upcoming-events"
+                  className="btn-cyber-primary clip-esports-btn px-8 py-3.5 text-xs font-black uppercase tracking-wider flex items-center space-x-2 shadow-neon-emerald"
                 >
-                  <Radio className="w-4 h-4 text-neon-cyan" />
-                  <span>WATCH LIVE STREAM & STATS</span>
+                  <Calendar className="w-4 h-4 text-cyber-black" />
+                  <span>EXPLORE UPCOMING TOURNAMENTS</span>
+                  <ArrowRight className="w-4 h-4 text-cyber-black" />
+                </Link>
+                <Link
+                  href="/registration"
+                  className="btn-cyber-secondary clip-esports-btn px-8 py-3.5 text-xs font-bold uppercase tracking-wider flex items-center space-x-2"
+                >
+                  <Flame className="w-4 h-4 text-neon-cyan" />
+                  <span>REGISTER SQUAD</span>
                 </Link>
               </div>
             </div>
-
-            {/* Quick Points Table Preview */}
-            <div className="lg:col-span-7 glass-panel p-6 rounded-xl border border-cyber-border">
-              <div className="flex items-center justify-between border-b border-cyber-border pb-4">
-                <div className="flex items-center space-x-2">
-                  <Trophy className="w-5 h-5 text-neon-gold" />
-                  <span className="font-mono text-sm font-black text-white uppercase">LIVE LEADERBOARD PREVIEW</span>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* Live Matches Card */}
+              <div className="lg:col-span-5 glass-hud p-6 rounded-xl border border-neon-cyan/40">
+                <div className="flex items-center justify-between border-b border-cyber-border pb-4">
+                  <div className="flex items-center space-x-2">
+                    <Radio className="w-5 h-5 text-neon-red animate-pulse" />
+                    <span className="font-mono text-sm font-black text-white uppercase">MATCH BROADCAST</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neon-red/20 text-neon-red border border-neon-red/40 font-bold">
+                    ROUND 5 / 6
+                  </span>
                 </div>
-                <span className="text-xs font-mono text-gray-400">
-                  Updated Live
-                </span>
+
+                <div className="mt-6 space-y-4">
+                  <div className="p-4 rounded-lg bg-cyber-black/60 border border-cyber-border">
+                    <div className="flex justify-between text-xs font-mono text-gray-400">
+                      <span>Free Fire Max &bull; Bermuda</span>
+                      <span className="text-neon-emerald font-bold">IN PROGRESS</span>
+                    </div>
+                    <div className="text-base font-black text-white font-mono mt-2">
+                      Semi-Finals: Battle for Grand Finals Slot
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Top 6 squads advance to the LAN Grand Finals in Nagpur.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-cyber-black/60 border border-cyber-border">
+                    <div className="flex justify-between text-xs font-mono text-gray-400">
+                      <span>Next Match Scheduled</span>
+                      <span className="text-neon-gold font-bold">08:30 PM IST</span>
+                    </div>
+                    <div className="text-base font-black text-white font-mono mt-2">
+                      Grand Finals — Round 6 (Purgatory Decider)
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/ongoing-events"
+                    className="btn-cyber-secondary w-full py-3 rounded text-xs font-bold text-center flex items-center justify-center space-x-2 block"
+                  >
+                    <Radio className="w-4 h-4 text-neon-cyan" />
+                    <span>WATCH LIVE STREAM & STATS</span>
+                  </Link>
+                </div>
               </div>
 
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-cyber-border text-gray-400">
-                      <th className="py-2.5 px-3">#</th>
-                      <th className="py-2.5 px-3">TEAM</th>
-                      <th className="py-2.5 px-3 text-center">MATCHES</th>
-                      <th className="py-2.5 px-3 text-center">WWCD</th>
-                      <th className="py-2.5 px-3 text-right">TOTAL PTS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-cyber-border">
-                    {pointsTable.slice(0, 5).map((entry) => (
-                      <tr key={entry.id} className="hover:bg-white/5 transition-colors">
-                        <td className="py-3 px-3 font-black text-neon-gold">
-                          {entry.rank === 1 ? '🥇 #1' : entry.rank === 2 ? '🥈 #2' : entry.rank === 3 ? '🥉 #3' : `#${entry.rank}`}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-white">
-                          {entry.team_name}
-                        </td>
-                        <td className="py-3 px-3 text-center text-gray-300">
-                          {entry.matches_played}
-                        </td>
-                        <td className="py-3 px-3 text-center text-neon-emerald font-bold">
-                          {entry.wwcd}
-                        </td>
-                        <td className="py-3 px-3 text-right font-black text-neon-cyan text-sm">
-                          {entry.total_points}
-                        </td>
+              {/* Quick Points Table Preview */}
+              <div className="lg:col-span-7 glass-panel p-6 rounded-xl border border-cyber-border">
+                <div className="flex items-center justify-between border-b border-cyber-border pb-4">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-5 h-5 text-neon-gold" />
+                    <span className="font-mono text-sm font-black text-white uppercase">LIVE LEADERBOARD PREVIEW</span>
+                  </div>
+                  <span className="text-xs font-mono text-gray-400">
+                    Updated Live
+                  </span>
+                </div>
+
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-cyber-border text-gray-400">
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">TEAM</th>
+                        <th className="py-2.5 px-3 text-center">MATCHES</th>
+                        <th className="py-2.5 px-3 text-center">WWCD</th>
+                        <th className="py-2.5 px-3 text-right">TOTAL PTS</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-cyber-border">
+                      {pointsTable.slice(0, 5).map((entry) => (
+                        <tr key={entry.id} className="hover:bg-white/5 transition-colors">
+                          <td className="py-3 px-3 font-black text-neon-gold">
+                            {entry.rank === 1 ? '🥇 #1' : entry.rank === 2 ? '🥈 #2' : entry.rank === 3 ? '🥉 #3' : `#${entry.rank}`}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-white">
+                            {entry.team_name}
+                          </td>
+                          <td className="py-3 px-3 text-center text-gray-300">
+                            {entry.matches_played}
+                          </td>
+                          <td className="py-3 px-3 text-center text-neon-emerald font-bold">
+                            {entry.wwcd}
+                          </td>
+                          <td className="py-3 px-3 text-right font-black text-neon-cyan text-sm">
+                            {entry.total_points}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-cyber-border text-right">
+                  <Link
+                    href="/ongoing-events"
+                    className="text-xs font-bold text-neon-emerald hover:underline font-mono"
+                  >
+                    View Complete 16-Team Points Table &rarr;
+                  </Link>
+                </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-cyber-border text-right">
-                <Link
-                  href="/ongoing-events"
-                  className="text-xs font-bold text-neon-emerald hover:underline font-mono"
-                >
-                  View Complete 16-Team Points Table &rarr;
-                </Link>
-              </div>
             </div>
-
-          </div>
+          )}
         </div>
       </section>
 
@@ -831,26 +870,103 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 10. QUICK CONTACT SECTION */}
-      <section className="py-16 border-t border-cyber-border bg-cyber-dark/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 10. QUICK CONTACT & COMMUNITY NETWORKS */}
+      <section className="py-16 border-t border-cyber-border bg-cyber-dark/20 font-rajdhani">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="glass-panel p-6 rounded-xl border border-cyber-border">
-              <div className="text-neon-emerald font-black font-mono text-xs uppercase">DIRECT EMAIL</div>
-              <div className="text-white font-bold font-mono text-sm mt-1">{settings.contact.email}</div>
-              <p className="text-xs text-gray-400 mt-2">Sponsorships, complaints, and general tournament queries.</p>
+            <div className="glass-panel p-6 rounded-xl border border-cyber-border hover:border-neon-cyan/50 transition-colors">
+              <div className="flex items-center space-x-2 text-neon-emerald font-black font-orbitron text-xs uppercase">
+                <Mail className="w-4 h-4 text-neon-emerald" />
+                <span>OFFICIAL EMAIL</span>
+              </div>
+              <a 
+                href={`mailto:${settings.contact?.email || 'gamersgesports@gmail.com'}`}
+                className="text-white font-bold font-mono text-sm sm:text-base mt-2 block hover:text-neon-cyan transition-colors truncate"
+              >
+                {settings.contact?.email || 'gamersgesports@gmail.com'}
+              </a>
+              <p className="text-xs text-gray-400 mt-2 font-medium">Sponsorships, complaints, and general tournament queries.</p>
             </div>
-            <div className="glass-panel p-6 rounded-xl border border-cyber-border">
-              <div className="text-neon-cyan font-black font-mono text-xs uppercase">PLAYER HELPLINE</div>
-              <div className="text-white font-bold font-mono text-sm mt-1">{settings.contact.phone}</div>
-              <p className="text-xs text-gray-400 mt-2">WhatsApp room assistance & verification helpdesk.</p>
+
+            <div className="glass-panel p-6 rounded-xl border border-cyber-border hover:border-neon-emerald/50 transition-colors">
+              <div className="flex items-center space-x-2 text-neon-cyan font-black font-orbitron text-xs uppercase">
+                <Phone className="w-4 h-4 text-neon-cyan" />
+                <span>PLAYER HELPLINE & WHATSAPP</span>
+              </div>
+              <a 
+                href={`tel:${settings.contact?.phone || '+91 98765 43210'}`}
+                className="text-white font-bold font-mono text-sm sm:text-base mt-2 block hover:text-neon-emerald transition-colors"
+              >
+                {settings.contact?.phone || '+91 98765 43210'}
+              </a>
+              <p className="text-xs text-gray-400 mt-2 font-medium">WhatsApp room assistance & verification helpdesk.</p>
             </div>
-            <div className="glass-panel p-6 rounded-xl border border-cyber-border">
-              <div className="text-neon-gold font-black font-mono text-xs uppercase">HEADQUARTERS ARENA</div>
-              <div className="text-white font-bold font-mono text-sm mt-1">Nagpur, Maharashtra</div>
-              <p className="text-xs text-gray-400 mt-2">{settings.contact.address}</p>
+
+            <div className="glass-panel p-6 rounded-xl border border-cyber-border hover:border-neon-gold/50 transition-colors">
+              <div className="flex items-center space-x-2 text-neon-gold font-black font-orbitron text-xs uppercase">
+                <MapPin className="w-4 h-4 text-neon-gold" />
+                <span>HEADQUARTERS ARENA</span>
+              </div>
+              <div className="text-white font-bold font-mono text-sm sm:text-base mt-2">
+                Nagpur, Maharashtra
+              </div>
+              <p className="text-xs text-gray-400 mt-2 font-medium">{settings.contact?.address || 'Gamers Guild Esports, Nagpur, Maharashtra, India'}</p>
             </div>
           </div>
+
+          {/* Social Handles & Community Links Banner */}
+          <div className="glass-hud p-6 rounded-2xl border border-neon-cyan/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <div className="text-xs font-mono font-bold text-neon-cyan uppercase tracking-wider">
+                JOIN THE GAMERS GUILD COMMUNITY
+              </div>
+              <div className="text-sm sm:text-base font-black text-white font-orbitron uppercase mt-0.5">
+                OFFICIAL SOCIAL & DISPATCH CHANNELS
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={settings.contact?.instagram || "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=="}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-xl bg-cyber-dark border border-neon-pink/50 text-white hover:bg-neon-pink/20 hover:border-neon-pink text-xs font-mono font-bold flex items-center space-x-2 shadow-[0_0_15px_rgba(255,0,128,0.2)] transition-all"
+              >
+                <Instagram className="w-4 h-4 text-neon-pink" />
+                <span className="font-rajdhani font-bold">INSTAGRAM</span>
+              </a>
+
+              <a
+                href={settings.contact?.discord || "https://discord.gg/gamersguild"}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-xl bg-cyber-dark border border-cyber-border text-gray-300 hover:text-neon-cyan hover:border-neon-cyan/50 text-xs font-mono font-bold flex items-center space-x-2 transition-all"
+              >
+                <Discord className="w-4 h-4" />
+                <span className="font-rajdhani font-semibold">DISCORD</span>
+              </a>
+
+              <a
+                href={settings.contact?.youtube || "https://youtube.com/@gamersguildesports"}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-xl bg-cyber-dark border border-cyber-border text-gray-300 hover:text-neon-red hover:border-neon-red/50 text-xs font-mono font-bold flex items-center space-x-2 transition-all"
+              >
+                <Youtube className="w-4 h-4" />
+                <span className="font-rajdhani font-semibold">YOUTUBE</span>
+              </a>
+
+              <Link
+                href="/contact"
+                className="px-4 py-2 rounded-xl btn-cyber-secondary text-xs font-mono font-bold flex items-center space-x-1.5"
+              >
+                <span>OPEN CONTACT DESK</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
         </div>
       </section>
 

@@ -1,9 +1,34 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Shield, Mail, Phone, MapPin, Disc as Discord, Instagram, Youtube, Twitter, Trophy, ExternalLink } from 'lucide-react';
+import { SiteSettings } from '@/lib/types';
+import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 
 export default function Footer() {
+  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
+
+  useEffect(() => {
+    fetch('/api/admin/data?type=site-settings')
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && res.data) {
+          const raw = res.data.settings || res.data;
+          setSettings(prev => ({
+            ...prev,
+            ...raw,
+            contact: {
+              ...prev.contact,
+              ...(raw?.contact || {})
+            }
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <footer className="relative bg-cyber-black border-t border-cyber-border text-gray-400 overflow-hidden font-rajdhani">
       <div className="laser-line"></div>
@@ -18,7 +43,7 @@ export default function Footer() {
             <Link href="/" className="flex items-center space-x-3 group">
               <div className="relative w-12 h-12 flex-shrink-0 flex items-center justify-center p-1 rounded-lg bg-cyber-dark border border-neon-emerald/40 group-hover:border-neon-emerald transition-all duration-300 shadow-[0_0_12px_rgba(0,255,157,0.3)]">
                 <Image
-                  src="/images/logo.png"
+                  src={settings.hero?.logo_url || "/images/logo.png"}
                   alt="Gamers Guild Esports Logo"
                   width={44}
                   height={44}
@@ -46,7 +71,7 @@ export default function Footer() {
             {/* Social Icons */}
             <div className="flex items-center space-x-3 pt-3">
               <a
-                href="https://discord.gg"
+                href={settings.contact?.discord || "https://discord.gg/gamersguild"}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-cyan hover:border-neon-cyan/50 hover:shadow-neon-cyan transition-all"
@@ -55,16 +80,16 @@ export default function Footer() {
                 <Discord className="w-4 h-4" />
               </a>
               <a
-                href="https://instagram.com"
+                href={settings.contact?.instagram || "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=="}
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-pink hover:border-neon-pink/50 transition-all"
+                className="w-9 h-9 rounded-lg bg-cyber-dark border border-neon-pink/40 flex items-center justify-center text-neon-pink hover:text-white hover:bg-neon-pink/20 hover:border-neon-pink transition-all shadow-[0_0_10px_rgba(255,0,128,0.2)]"
                 aria-label="Instagram"
               >
                 <Instagram className="w-4 h-4" />
               </a>
               <a
-                href="https://youtube.com"
+                href={settings.contact?.youtube || "https://youtube.com/@gamersguildesports"}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-red hover:border-neon-red/50 transition-all"
@@ -73,7 +98,7 @@ export default function Footer() {
                 <Youtube className="w-4 h-4" />
               </a>
               <a
-                href="https://twitter.com"
+                href={settings.contact?.twitter || "https://twitter.com/gamersguildgg"}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all"
@@ -147,15 +172,19 @@ export default function Footer() {
             <div className="space-y-2.5 text-xs">
               <div className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 text-neon-gold flex-shrink-0 mt-0.5" />
-                <span>Cyber District, Nagpur, Maharashtra, India</span>
+                <span>{settings.contact?.address || 'Gamers Guild Esports, Nagpur, Maharashtra, India'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 text-neon-cyan flex-shrink-0" />
-                <a href="mailto:contact@gamersguild.gg" className="hover:text-white">contact@gamersguild.gg</a>
+                <a href={`mailto:${settings.contact?.email || 'gamersgesports@gmail.com'}`} className="hover:text-white transition-colors">
+                  {settings.contact?.email || 'gamersgesports@gmail.com'}
+                </a>
               </div>
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-neon-emerald flex-shrink-0" />
-                <span>+91 98765 43210</span>
+                <a href={`tel:${settings.contact?.phone || '+91 98765 43210'}`} className="hover:text-white transition-colors">
+                  {settings.contact?.phone || '+91 98765 43210'}
+                </a>
               </div>
             </div>
 

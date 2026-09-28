@@ -17,8 +17,8 @@ import {
   ShieldCheck,
   ChevronRight
 } from 'lucide-react';
-import { Event, TournamentMatch, PointsTableEntry } from '@/lib/types';
-import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES } from '@/lib/dataStore';
+import { Event, TournamentMatch, PointsTableEntry, SiteSettings } from '@/lib/types';
+import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES, INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/components/GamingVisualEffects';
 
 function getYouTubeVideoId(url?: string): string | null {
@@ -30,6 +30,7 @@ function getYouTubeVideoId(url?: string): string | null {
 
 export default function OngoingEventsPage() {
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>(INITIAL_POINTS_TABLE);
   const [matches, setMatches] = useState<TournamentMatch[]>(INITIAL_MATCHES);
   const [selectedEventId, setSelectedEventId] = useState<string>('evt-002');
@@ -40,14 +41,16 @@ export default function OngoingEventsPage() {
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          if (res.data.events?.length) setEvents(res.data.events);
+          if (Array.isArray(res.data.events)) setEvents(res.data.events);
+          if (res.data.settings) setSettings(res.data.settings);
         }
       })
       .catch(() => console.log('Using initial client data.'));
   }, []);
 
   const ongoingEvents = events.filter(e => e.status === 'ONGOING' && e.is_published);
-  const currentEvent = ongoingEvents.find(e => e.id === selectedEventId) || ongoingEvents[0] || events[1];
+  const isNoOngoing = ongoingEvents.length === 0 || settings.ongoing_tournaments_active === false;
+  const currentEvent = ongoingEvents.find(e => e.id === selectedEventId) || ongoingEvents[0];
 
   const currentPoints = pointsTable.filter(p => p.event_id === currentEvent?.id).sort((a, b) => a.rank - b.rank);
   const currentMatches = matches.filter(m => m.event_id === currentEvent?.id);
@@ -78,9 +81,43 @@ export default function OngoingEventsPage() {
           <LiveTelemetryTicker />
         </div>
 
-        {/* Selected Event Banner */}
-        {currentEvent && (
-          <div className="relative glass-hud rounded-2xl overflow-hidden border-2 border-neon-cyan/40 p-6 sm:p-8 mb-10 shadow-hud">
+        {/* If no ongoing tournaments are live */}
+        {isNoOngoing ? (
+          <div className="glass-hud p-8 sm:p-16 rounded-2xl border-2 border-neon-cyan/40 text-center relative overflow-hidden shadow-hud my-10">
+            <HudCornerBrackets color="cyan" />
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-neon-cyan/15 border border-neon-cyan/40 text-neon-cyan text-xs font-orbitron font-bold uppercase mb-4 shadow-[0_0_15px_rgba(0,242,254,0.2)]">
+              <Radio className="w-3.5 h-3.5 animate-pulse text-neon-cyan" />
+              <span>RADAR STANDBY • NO LIVE MATCHES</span>
+            </div>
+            <h2 className="text-2xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-wide">
+              {settings.no_ongoing_tournaments_title || "NO ONGOING TOURNAMENTS AT THE MOMENT"}
+            </h2>
+            <p className="mt-4 text-sm sm:text-lg text-gray-300 max-w-2xl mx-auto font-rajdhani font-semibold leading-relaxed">
+              {settings.no_ongoing_tournaments_message || "All live championship stages and match broadcasts have concluded. Check out our upcoming tournaments calendar to register and claim your slot!"}
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/upcoming-events"
+                className="btn-cyber-primary clip-esports-btn px-8 py-3.5 text-xs font-black font-orbitron uppercase tracking-wider flex items-center space-x-2 shadow-neon-emerald"
+              >
+                <Trophy className="w-4 h-4 text-cyber-black" />
+                <span>EXPLORE UPCOMING TOURNAMENTS</span>
+                <ChevronRight className="w-4 h-4 text-cyber-black" />
+              </Link>
+              <Link
+                href="/registration"
+                className="btn-cyber-secondary clip-esports-btn px-8 py-3.5 text-xs font-bold font-orbitron uppercase tracking-wider flex items-center space-x-2"
+              >
+                <Flame className="w-4 h-4 text-neon-cyan" />
+                <span>REGISTER SQUAD NOW</span>
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Selected Event Banner */}
+            {currentEvent && (
+              <div className="relative glass-hud rounded-2xl overflow-hidden border-2 border-neon-cyan/40 p-6 sm:p-8 mb-10 shadow-hud">
             <HudCornerBrackets color="red" />
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
               
@@ -365,6 +402,9 @@ export default function OngoingEventsPage() {
               ))}
             </div>
           </div>
+        )}
+
+          </>
         )}
 
       </div>

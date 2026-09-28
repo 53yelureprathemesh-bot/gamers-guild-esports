@@ -133,16 +133,19 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     { number: "10+", label: "CITIES", icon: "MapPin" }
   ],
   contact: {
-    email: "contact@gamersguild.gg",
+    email: "gamersgesports@gmail.com",
     phone: "+91 98765 43210",
-    address: "Gamers Guild Esports Arena, Cyber District, Nagpur, Maharashtra, India",
+    address: "Gamers Guild Esports, Nagpur, Maharashtra, India",
     discord: "https://discord.gg/gamersguild",
-    instagram: "https://instagram.com/gamersguildesports",
+    instagram: "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==",
     youtube: "https://youtube.com/@gamersguildesports",
     twitter: "https://twitter.com/gamersguildgg"
   },
   registration_enabled: true,
-  registration_closed_message: "NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED"
+  registration_closed_message: "NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED",
+  ongoing_tournaments_active: false,
+  no_ongoing_tournaments_title: "NO ONGOING TOURNAMENTS AT THE MOMENT",
+  no_ongoing_tournaments_message: "All live tournament stages have concluded or no live matches are currently in progress. Check our upcoming tournaments to claim your slot!"
 };
 
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [

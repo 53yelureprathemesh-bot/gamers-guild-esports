@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Mail, 
   Phone, 
@@ -14,10 +14,12 @@ import {
   HelpCircle,
   ShieldCheck 
 } from 'lucide-react';
+import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
 
 export default function ContactPage() {
+  const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -26,6 +28,25 @@ export default function ContactPage() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/data?type=site-settings')
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && res.data) {
+          const raw = res.data.settings || res.data;
+          setSettings(prev => ({
+            ...prev,
+            ...raw,
+            contact: {
+              ...prev.contact,
+              ...(raw?.contact || {})
+            }
+          }));
+        }
+      })
+      .catch(() => console.log('Using initial contact settings.'));
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,8 +93,11 @@ export default function ContactPage() {
                   <Mail className="w-5 h-5 text-neon-cyan flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="text-gray-400 block uppercase font-rajdhani font-semibold text-xs">Official Email</span>
-                    <a href="mailto:contact@gamersguild.gg" className="text-white font-bold hover:text-neon-cyan transition-colors">
-                      contact@gamersguild.gg
+                    <a 
+                      href={`mailto:${settings.contact?.email || 'gamersgesports@gmail.com'}`} 
+                      className="text-white font-bold hover:text-neon-cyan transition-colors"
+                    >
+                      {settings.contact?.email || 'gamersgesports@gmail.com'}
                     </a>
                   </div>
                 </div>
@@ -82,7 +106,12 @@ export default function ContactPage() {
                   <Phone className="w-5 h-5 text-neon-emerald flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="text-gray-400 block uppercase font-rajdhani font-semibold text-xs">Player Helpline & WhatsApp</span>
-                    <span className="text-white font-bold">+91 98765 43210</span>
+                    <a 
+                      href={`tel:${settings.contact?.phone || '+91 98765 43210'}`} 
+                      className="text-white font-bold hover:text-neon-emerald transition-colors"
+                    >
+                      {settings.contact?.phone || '+91 98765 43210'}
+                    </a>
                   </div>
                 </div>
 
@@ -90,7 +119,9 @@ export default function ContactPage() {
                   <MapPin className="w-5 h-5 text-neon-gold flex-shrink-0 mt-0.5" />
                   <div>
                     <span className="text-gray-400 block uppercase font-rajdhani font-semibold text-xs">Arena Headquarters</span>
-                    <span className="text-white font-bold">Gamers Guild Arena, Cyber District, Nagpur, Maharashtra, India</span>
+                    <span className="text-white font-bold">
+                      {settings.contact?.address || 'Gamers Guild Esports, Nagpur, Maharashtra, India'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -104,7 +135,7 @@ export default function ContactPage() {
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <a
-                  href="https://discord.gg"
+                  href={settings.contact?.discord || 'https://discord.gg/gamersguild'}
                   target="_blank"
                   rel="noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-cyan/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-cyan transition-colors"
@@ -113,16 +144,16 @@ export default function ContactPage() {
                   <span className="font-rajdhani font-semibold">Discord Guild</span>
                 </a>
                 <a
-                  href="https://instagram.com"
+                  href={settings.contact?.instagram || 'https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=='}
                   target="_blank"
                   rel="noreferrer"
-                  className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-pink/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-pink transition-colors"
+                  className="p-3 rounded-lg bg-cyber-dark/80 border border-neon-pink/40 hover:border-neon-pink text-xs font-mono flex items-center space-x-2 text-gray-200 hover:text-neon-pink transition-colors shadow-[0_0_12px_rgba(255,0,128,0.15)]"
                 >
-                  <Instagram className="w-4 h-4" />
-                  <span className="font-rajdhani font-semibold">Instagram</span>
+                  <Instagram className="w-4 h-4 text-neon-pink" />
+                  <span className="font-rajdhani font-bold text-white">Instagram</span>
                 </a>
                 <a
-                  href="https://youtube.com"
+                  href={settings.contact?.youtube || 'https://youtube.com/@gamersguildesports'}
                   target="_blank"
                   rel="noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-red/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-red transition-colors"
@@ -131,7 +162,7 @@ export default function ContactPage() {
                   <span className="font-rajdhani font-semibold">YouTube</span>
                 </a>
                 <a
-                  href="https://twitter.com"
+                  href={settings.contact?.twitter || 'https://twitter.com/gamersguildgg'}
                   target="_blank"
                   rel="noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-cyan/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-cyan transition-colors"

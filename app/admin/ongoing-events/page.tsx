@@ -13,8 +13,8 @@ import {
   ShieldCheck,
   RefreshCw
 } from 'lucide-react';
-import { Event, PointsTableEntry, TournamentMatch } from '@/lib/types';
-import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES } from '@/lib/dataStore';
+import { Event, PointsTableEntry, TournamentMatch, SiteSettings } from '@/lib/types';
+import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES, INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 
 export default function AdminOngoingEventsPage() {
   const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
@@ -22,6 +22,13 @@ export default function AdminOngoingEventsPage() {
   const [pointsTable, setPointsTable] = useState<PointsTableEntry[]>(INITIAL_POINTS_TABLE);
   const [matches, setMatches] = useState<TournamentMatch[]>(INITIAL_MATCHES);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // Site Settings for Ongoing Tournaments State
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
+  const [ongoingActive, setOngoingActive] = useState<boolean>(false);
+  const [noOngoingTitle, setNoOngoingTitle] = useState<string>('NO ONGOING TOURNAMENTS AT THE MOMENT');
+  const [noOngoingMsg, setNoOngoingMsg] = useState<string>('All live championship stages and match broadcasts have concluded. Check out our upcoming tournaments calendar to register and claim your slot!');
+  const [savingSettings, setSavingSettings] = useState<boolean>(false);
 
   // New Points Row State
   const [editingRow, setEditingRow] = useState<Partial<PointsTableEntry> | null>(null);
@@ -39,6 +46,33 @@ export default function AdminOngoingEventsPage() {
       ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     };
   };
+
+  useEffect(() => {
+    // Fetch live site settings
+    fetch('/api/admin/data?type=site-settings', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && res.data) {
+          const raw = res.data.settings || res.data;
+          setSiteSettings(raw);
+          if (raw.ongoing_tournaments_active !== undefined) setOngoingActive(Boolean(raw.ongoing_tournaments_active));
+          if (raw.no_ongoing_tournaments_title) setNoOngoingTitle(raw.no_ongoing_tournaments_title);
+          if (raw.no_ongoing_tournaments_message) setNoOngoingMsg(raw.no_ongoing_tournaments_message);
+        }
+      })
+      .catch(() => {});
+
+    // Fetch live events list
+    fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          setEvents(res.data);
+          setSelectedEventId(res.data[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (currentEvent) {
@@ -130,6 +164,39 @@ export default function AdminOngoingEventsPage() {
     }
   };
 
+  const handleSaveOngoingSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const updatedPayload = {
+        ...siteSettings,
+        ongoing_tournaments_active: ongoingActive,
+        no_ongoing_tournaments_title: noOngoingTitle,
+        no_ongoing_tournaments_message: noOngoingMsg
+      };
+
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          action: 'update-site-settings',
+          payload: updatedPayload
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSiteSettings(updatedPayload);
+        setNotice('Ongoing Tournaments gateway & "No Ongoing Tournaments" notice updated successfully!');
+        setTimeout(() => setNotice(null), 3500);
+      } else {
+        alert('Failed to save settings: ' + (data.error || 'Server error'));
+      }
+    } catch (err: any) {
+      alert('Error updating ongoing settings: ' + err.message);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       
@@ -164,6 +231,85 @@ export default function AdminOngoingEventsPage() {
           <span>{notice}</span>
         </div>
       )}
+
+      {/* 1. ONGOING TOURNAMENTS GATEWAY & 'NO ONGOING TOURNAMENTS' NOTICE CONTROLLER */}
+      <div className="glass-hud p-6 rounded-2xl border-2 border-neon-cyan/40 space-y-4 shadow-hud">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-cyber-border pb-3 gap-2">
+          <div className="flex items-center space-x-2">
+            <Radio className="w-5 h-5 text-neon-cyan animate-pulse" />
+            <h2 className="text-base font-black text-white font-mono uppercase">
+              1. ONGOING TOURNAMENTS GATEWAY & "NO ONGOING TOURNAMENTS" NOTICE
+            </h2>
+          </div>
+          <span className={`text-[11px] font-mono px-2.5 py-0.5 rounded font-bold border ${
+            ongoingActive 
+              ? 'bg-neon-emerald/20 text-neon-emerald border-neon-emerald/40' 
+              : 'bg-neon-red/20 text-neon-red border-neon-red/40'
+          }`}>
+            {ongoingActive ? '● ONGOING TOURNAMENTS ACTIVE' : '○ NO ONGOING TOURNAMENTS NOTICE DISPLAYED'}
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-cyber-dark/80 border border-cyber-border">
+            <div>
+              <span className="text-xs font-mono font-bold text-white block">
+                Ongoing Tournaments Broadcast Status
+              </span>
+              <span className="text-[11px] font-mono text-gray-400">
+                When unchecked or when 0 events are ongoing, the website shows the custom "No Ongoing Tournaments" banner.
+              </span>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={ongoingActive}
+                onChange={(e) => setOngoingActive(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neon-cyan"></div>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-mono font-bold text-gray-300 block mb-1">
+                Custom "No Ongoing Tournaments" Title
+              </label>
+              <input
+                type="text"
+                value={noOngoingTitle}
+                onChange={(e) => setNoOngoingTitle(e.target.value)}
+                placeholder="NO ONGOING TOURNAMENTS AT THE MOMENT"
+                className="w-full px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-mono font-bold text-gray-300 block mb-1">
+                Notice Description Message
+              </label>
+              <textarea
+                rows={2}
+                value={noOngoingMsg}
+                onChange={(e) => setNoOngoingMsg(e.target.value)}
+                placeholder="All live tournament stages have concluded..."
+                className="w-full px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={handleSaveOngoingSettings}
+              disabled={savingSettings}
+              className="btn-cyber-primary px-6 py-2.5 rounded-lg text-xs font-black font-mono uppercase flex items-center space-x-2"
+            >
+              <Save className="w-4 h-4 text-cyber-black" />
+              <span>{savingSettings ? 'SAVING...' : 'SAVE ONGOING TOURNAMENT SETTINGS'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* YOUTUBE LIVE STREAM BROADCAST CONTROLLER */}
       <div className="glass-hud p-6 rounded-2xl border-2 border-neon-red/40 space-y-4 shadow-hud">
