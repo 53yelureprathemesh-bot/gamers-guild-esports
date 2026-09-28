@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Shield, Mail, Phone, MapPin, Disc as Discord, Instagram, Youtube, Twitter, Trophy, ExternalLink } from 'lucide-react';
+import { Shield, Mail, Phone, MapPin, Disc as Discord, Instagram, Youtube, Facebook, Trophy, ExternalLink } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 import { formatExternalUrl } from '@/lib/formatUrl';
@@ -99,13 +99,13 @@ export default function Footer() {
                 <Youtube className="w-4 h-4" />
               </a>
               <a
-                href={formatExternalUrl(settings.contact?.twitter, "https://twitter.com/gamersguildgg")}
+                href={formatExternalUrl(settings.contact?.facebook, "https://facebook.com/gamers.guild.ngp")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all"
-                aria-label="Twitter"
+                className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-blue-500 hover:border-blue-500/50 hover:shadow-[0_0_10px_rgba(59,130,246,0.3)] transition-all"
+                aria-label="Facebook"
               >
-                <Twitter className="w-4 h-4" />
+                <Facebook className="w-4 h-4" />
               </a>
             </div>
           </div>

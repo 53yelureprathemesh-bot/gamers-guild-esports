@@ -502,7 +502,7 @@ export async function POST(req: NextRequest) {
             discord: cleanPayload.contact.discord ? formatExternalUrl(cleanPayload.contact.discord) : '',
             instagram: cleanPayload.contact.instagram ? formatExternalUrl(cleanPayload.contact.instagram) : '',
             youtube: cleanPayload.contact.youtube ? formatExternalUrl(cleanPayload.contact.youtube) : '',
-            twitter: cleanPayload.contact.twitter ? formatExternalUrl(cleanPayload.contact.twitter) : '',
+            facebook: cleanPayload.contact.facebook ? formatExternalUrl(cleanPayload.contact.facebook) : '',
           };
         }
         const updated = dataStore.updateSiteSettings(cleanPayload);

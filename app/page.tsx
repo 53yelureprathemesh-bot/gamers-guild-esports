@@ -29,7 +29,7 @@ import {
   Instagram,
   Disc as Discord,
   Youtube,
-  Twitter,
+  Facebook,
   Mail,
   Phone
 } from 'lucide-react';
@@ -1034,6 +1034,16 @@ export default function HomePage() {
               >
                 <Youtube className="w-4 h-4" />
                 <span className="font-rajdhani font-semibold">YOUTUBE</span>
+              </a>
+
+              <a
+                href={formatExternalUrl(settings.contact?.facebook, "https://facebook.com/gamers.guild.ngp")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-xl bg-cyber-dark border border-cyber-border text-gray-300 hover:text-blue-500 hover:border-blue-500/50 text-xs font-mono font-bold flex items-center space-x-2 transition-all"
+              >
+                <Facebook className="w-4 h-4 text-blue-500" />
+                <span className="font-rajdhani font-semibold">FACEBOOK</span>
               </a>
 
               <Link

@@ -51,7 +51,7 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     discord: "https://discord.gg/gamersguild",
     instagram: "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==",
     youtube: "https://youtube.com/@gamersguildesports",
-    twitter: "https://twitter.com/gamersguildgg"
+    facebook: "https://facebook.com/gamers.guild.ngp"
   },
   registration_enabled: true,
   registration_closed_message: "NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED",

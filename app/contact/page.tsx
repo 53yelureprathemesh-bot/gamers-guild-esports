@@ -9,7 +9,7 @@ import {
   Disc as Discord, 
   Instagram, 
   Youtube, 
-  Twitter, 
+  Facebook, 
   CheckCircle2, 
   HelpCircle,
   ShieldCheck 
@@ -179,13 +179,13 @@ export default function ContactPage() {
                   <span className="font-rajdhani font-semibold">YouTube</span>
                 </a>
                 <a
-                  href={formatExternalUrl(settings.contact?.twitter, 'https://twitter.com/gamersguildgg')}
+                  href={formatExternalUrl(settings.contact?.facebook, 'https://facebook.com/gamers.guild.ngp')}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-cyan/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-cyan transition-colors"
+                  className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-blue-500/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-blue-400 transition-colors"
                 >
-                  <Twitter className="w-4 h-4" />
-                  <span className="font-rajdhani font-semibold">Twitter / X</span>
+                  <Facebook className="w-4 h-4 text-blue-500" />
+                  <span className="font-rajdhani font-semibold">Facebook</span>
                 </a>
               </div>
             </div>

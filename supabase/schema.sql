@@ -140,7 +140,7 @@ INSERT INTO site_settings (key, value, description) VALUES
     "discord": "https://discord.gg/gamersguild",
     "instagram": "https://instagram.com/gamersguildesports",
     "youtube": "https://youtube.com/@gamersguildesports",
-    "twitter": "https://twitter.com/gamersguildgg"
+    "facebook": "https://facebook.com/gamers.guild.ngp"
 }', 'Contact details and social links')
 ON CONFLICT (key) DO NOTHING;
 

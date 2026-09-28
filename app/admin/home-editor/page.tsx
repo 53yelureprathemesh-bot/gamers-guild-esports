@@ -66,7 +66,7 @@ export default function AdminHomeEditorPage() {
           discord: settings.contact.discord ? formatExternalUrl(settings.contact.discord) : '',
           instagram: settings.contact.instagram ? formatExternalUrl(settings.contact.instagram) : '',
           youtube: settings.contact.youtube ? formatExternalUrl(settings.contact.youtube) : '',
-          twitter: settings.contact.twitter ? formatExternalUrl(settings.contact.twitter) : '',
+          facebook: settings.contact.facebook ? formatExternalUrl(settings.contact.facebook) : '',
         } : settings.contact
       };
 
@@ -399,12 +399,12 @@ export default function AdminHomeEditorPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-mono font-bold text-gray-300">Twitter / X Profile URL</label>
+            <label className="text-xs font-mono font-bold text-gray-300">Facebook Page / Profile URL</label>
             <input
               type="text"
-              value={settings?.contact?.twitter || ''}
-              onChange={(e) => updateContact('twitter', e.target.value)}
-              placeholder="https://twitter.com/..."
+              value={settings?.contact?.facebook || ''}
+              onChange={(e) => updateContact('facebook', e.target.value)}
+              placeholder="https://facebook.com/..."
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
           </div>

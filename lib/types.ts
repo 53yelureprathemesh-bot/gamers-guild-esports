@@ -217,7 +217,8 @@ export interface SiteSettings {
     discord: string;
     instagram: string;
     youtube: string;
-    twitter: string;
+    facebook: string;
+    twitter?: string;
   };
   registration_enabled?: boolean;
   registration_closed_message?: string;
