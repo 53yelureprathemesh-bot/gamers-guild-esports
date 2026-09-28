@@ -14,7 +14,8 @@ import {
   FileText, 
   ShieldCheck,
   TrendingUp,
-  MapPin
+  MapPin,
+  Mail
 } from 'lucide-react';
 import { Registration, Event } from '@/lib/types';
 import { INITIAL_REGISTRATIONS, INITIAL_EVENTS } from '@/lib/dataStore';
@@ -22,6 +23,7 @@ import { INITIAL_REGISTRATIONS, INITIAL_EVENTS } from '@/lib/dataStore';
 export default function AdminDashboardPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState<number>(0);
 
   useEffect(() => {
     fetch('/api/admin/data')
@@ -33,6 +35,18 @@ export default function AdminDashboardPage() {
         }
       })
       .catch(() => console.log('Loaded initial dashboard metrics.'));
+
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    fetch('/api/admin/data?type=contact-messages', {
+      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+    })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && Array.isArray(res.data)) {
+          setUnreadMessages(res.data.filter((m: any) => m.status === 'UNREAD').length);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const totalRegs = registrations.length;
@@ -66,6 +80,18 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="flex items-center space-x-3">
+          <Link
+            href="/admin/messages"
+            className="btn-cyber-secondary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5 border border-neon-cyan/40"
+          >
+            <Mail className="w-4 h-4 text-neon-cyan" />
+            <span>Transmit Messages</span>
+            {unreadMessages > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-neon-red text-white text-[10px] font-bold">
+                {unreadMessages}
+              </span>
+            )}
+          </Link>
           <Link
             href="/admin/registrations"
             className="btn-cyber-primary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"

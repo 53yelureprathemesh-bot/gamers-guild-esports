@@ -16,6 +16,7 @@ import {
   Award, 
   ShieldAlert, 
   Mail, 
+  MessageSquare,
   Settings, 
   LogOut, 
   Menu, 
@@ -125,6 +126,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/registrations', 
       icon: Users,
       allowed: ['SUPER_ADMIN', 'REGISTRATION_MANAGER']
+    },
+    { 
+      name: 'Transmit Messages', 
+      href: '/admin/messages', 
+      icon: MessageSquare,
+      allowed: ['SUPER_ADMIN', 'EVENT_ADMIN', 'REGISTRATION_MANAGER', 'CONTENT_EDITOR']
     },
     { 
       name: 'Announcements', 

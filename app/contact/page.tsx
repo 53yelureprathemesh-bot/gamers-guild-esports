@@ -24,11 +24,13 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     subject: 'General Tournament Query',
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/data?type=site-settings')
@@ -49,14 +51,28 @@ export default function ContactPage() {
       .catch(() => console.log('Using initial contact settings.'));
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate contact dispatch
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+      } else {
+        setErrorMessage(data.error || 'Failed to transmit message. Please try again.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Network error transmitting message.');
+    } finally {
       setLoading(false);
-      setSubmitted(true);
-    }, 600);
+    }
   };
 
   return (
@@ -198,7 +214,7 @@ export default function ContactPage() {
                   <button
                     onClick={() => {
                       setSubmitted(false);
-                      setFormData({ name: '', email: '', subject: 'General Query', message: '' });
+                      setFormData({ name: '', email: '', phone: '', subject: 'General Tournament Query', message: '' });
                     }}
                     className="btn-cyber-secondary clip-esports-btn px-6 py-2.5 text-xs font-orbitron font-bold mt-4"
                   >
@@ -207,6 +223,12 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {errorMessage && (
+                    <div className="p-3 bg-neon-red/15 border border-neon-red/50 rounded-lg text-neon-red text-xs font-mono">
+                      {errorMessage}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-orbitron font-bold text-gray-300">Your Name *</label>
@@ -233,19 +255,32 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-orbitron font-bold text-gray-300">Subject Category</label>
-                    <select
-                      value={formData.subject}
-                      onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
-                      className="w-full px-3.5 py-2.5 text-sm font-rajdhani font-semibold bg-cyber-dark/90 border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
-                    >
-                      <option value="General Tournament Query">General Tournament Query</option>
-                      <option value="Registration Code & Verification">Registration Code & Verification</option>
-                      <option value="Anti-Cheat & Dispute Appeal">Anti-Cheat & Dispute Appeal</option>
-                      <option value="Sponsorship & Business Partnership">Sponsorship & Business Partnership</option>
-                      <option value="Media & Press Inquiries">Media & Press Inquiries</option>
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-orbitron font-bold text-gray-300">Subject Category</label>
+                      <select
+                        value={formData.subject}
+                        onChange={(e) => setFormData(p => ({ ...p, subject: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 text-sm font-rajdhani font-semibold bg-cyber-dark/90 border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+                      >
+                        <option value="General Tournament Query">General Tournament Query</option>
+                        <option value="Registration Code & Verification">Registration Code & Verification</option>
+                        <option value="Anti-Cheat & Dispute Appeal">Anti-Cheat & Dispute Appeal</option>
+                        <option value="Sponsorship & Business Partnership">Sponsorship & Business Partnership</option>
+                        <option value="Media & Press Inquiries">Media & Press Inquiries</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-orbitron font-bold text-gray-300">Phone / WhatsApp (Optional)</label>
+                      <input
+                        type="tel"
+                        placeholder="+91 98765 43210"
+                        value={formData.phone}
+                        onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 text-sm font-rajdhani font-semibold bg-cyber-dark/90 border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-1">

@@ -587,6 +587,24 @@ CREATE POLICY "Admins can manage admin users" ON admin_users
     FOR ALL TO authenticated
     USING (EXISTS (SELECT 1 FROM admin_users WHERE admin_users.user_id = auth.uid() AND admin_users.role = 'SUPER_ADMIN'));
 
+-- 12. CONTACT TRANSMISSION INQUIRIES
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id VARCHAR(100) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(50) DEFAULT 'UNREAD',
+    admin_notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can insert contact messages" ON contact_messages FOR INSERT WITH CHECK (TRUE);
+CREATE POLICY "Admins can view and manage contact messages" ON contact_messages FOR ALL USING (TRUE);
+
 -- ==============================================================================
 -- END OF SCHEMA
 -- ==============================================================================

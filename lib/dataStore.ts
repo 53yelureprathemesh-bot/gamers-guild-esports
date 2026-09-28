@@ -10,7 +10,8 @@ import {
   EmailLog,
   AdminUser,
   TournamentMatch,
-  PointsTableEntry
+  PointsTableEntry,
+  ContactMessage
 } from './types';
 import { getStateCode } from './stateCodes';
 
@@ -220,6 +221,7 @@ class DataStore {
   private sponsors: Sponsor[] = [...INITIAL_SPONSORS];
   private siteSettings: SiteSettings = { ...INITIAL_SITE_SETTINGS };
   private admins: AdminUser[] = [...INITIAL_ADMINS];
+  private contactMessages: ContactMessage[] = [];
   private stateCounters: Record<string, number> = {
     MH: 28,
     GJ: 14,
@@ -569,6 +571,48 @@ class DataStore {
     }
 
     return null;
+  }
+
+  // Transmit / Contact Inquiries Store
+  public getContactMessages(): ContactMessage[] {
+    return [...this.contactMessages].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  public saveContactMessage(msg: Partial<ContactMessage> & { name: string; email: string; message: string }): ContactMessage {
+    const newMsg: ContactMessage = {
+      id: msg.id || `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      name: msg.name.trim(),
+      email: msg.email.trim(),
+      phone: msg.phone?.trim() || '',
+      subject: msg.subject?.trim() || 'General Tournament Query',
+      message: msg.message.trim(),
+      status: msg.status || 'UNREAD',
+      admin_notes: msg.admin_notes || '',
+      created_at: msg.created_at || new Date().toISOString()
+    };
+    // If updating existing
+    const existingIndex = this.contactMessages.findIndex(m => m.id === newMsg.id);
+    if (existingIndex !== -1) {
+      this.contactMessages[existingIndex] = { ...this.contactMessages[existingIndex], ...newMsg };
+      return this.contactMessages[existingIndex];
+    }
+    this.contactMessages.unshift(newMsg);
+    return newMsg;
+  }
+
+  public updateContactMessageStatus(id: string, status: 'UNREAD' | 'READ' | 'RESOLVED', notes?: string): ContactMessage | null {
+    const target = this.contactMessages.find(m => m.id === id);
+    if (!target) return null;
+    target.status = status;
+    if (notes !== undefined) target.admin_notes = notes;
+    target.updated_at = new Date().toISOString();
+    return target;
+  }
+
+  public deleteContactMessage(id: string): boolean {
+    const initialLen = this.contactMessages.length;
+    this.contactMessages = this.contactMessages.filter(m => m.id !== id);
+    return this.contactMessages.length < initialLen;
   }
 }
 

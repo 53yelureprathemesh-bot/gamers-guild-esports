@@ -371,6 +371,46 @@ export async function GET(req: NextRequest) {
           hasSmtp: Boolean(process.env.SMTP_USER && process.env.SMTP_PASS)
         }, { headers: NO_CACHE_HEADERS });
 
+      // 8. CONTACT INQUIRIES & TRANSMIT MESSAGES (Admin Protected)
+      case 'contact-messages': {
+        const admin = getAdminFromRequest(req);
+        if (!admin) {
+          return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401, headers: NO_CACHE_HEADERS });
+        }
+
+        let messages = dataStore.getContactMessages();
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: dbMsgs, error } = await supabase
+                .from('contact_messages')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+              if (!error && Array.isArray(dbMsgs)) {
+                dbMsgs.forEach((m: any) => dataStore.saveContactMessage(m));
+                messages = dataStore.getContactMessages();
+              } else {
+                const { data: backupData } = await supabase
+                  .from('site_settings')
+                  .select('value')
+                  .eq('key', 'contact_messages_backup')
+                  .single();
+                if (backupData?.value && Array.isArray(backupData.value)) {
+                  backupData.value.forEach((m: any) => dataStore.saveContactMessage(m));
+                  messages = dataStore.getContactMessages();
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('Supabase fetch contact messages warning:', e);
+          }
+        }
+
+        return NextResponse.json({ success: true, data: messages }, { headers: NO_CACHE_HEADERS });
+      }
+
       default: {
         // Combined default summary with cache
         const cacheKey = 'cache:public_bundle';
@@ -970,6 +1010,66 @@ export async function POST(req: NextRequest) {
           message: result.success ? `Test email successfully dispatched directly to ${targetEmail}!` : 'Failed to dispatch test email.',
           error: result.error
         }, { headers: NO_CACHE_HEADERS });
+      }
+
+      // 14. CONTACT INQUIRIES MANAGEMENT
+      case 'update-contact-message-status': {
+        const { id, status, notes } = payload;
+        const updated = dataStore.updateContactMessageStatus(id, status, notes);
+
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              await supabase
+                .from('contact_messages')
+                .update({ status, admin_notes: notes, updated_at: new Date().toISOString() })
+                .eq('id', id);
+
+              await supabase
+                .from('site_settings')
+                .upsert({
+                  key: 'contact_messages_backup',
+                  value: dataStore.getContactMessages(),
+                  description: 'Backup of user transmitted contact inquiries',
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'key' });
+            }
+          } catch (e) {
+            console.warn('Supabase update contact message status error:', e);
+          }
+        }
+
+        invalidateCache();
+        return NextResponse.json({ success: Boolean(updated), data: updated }, { headers: NO_CACHE_HEADERS });
+      }
+
+      case 'delete-contact-message': {
+        const { id } = payload;
+        const deleted = dataStore.deleteContactMessage(id);
+
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              await supabase.from('contact_messages').delete().eq('id', id);
+
+              await supabase
+                .from('site_settings')
+                .upsert({
+                  key: 'contact_messages_backup',
+                  value: dataStore.getContactMessages(),
+                  description: 'Backup of user transmitted contact inquiries',
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'key' });
+            }
+          } catch (e) {
+            console.warn('Supabase delete contact message error:', e);
+          }
+        }
+
+        invalidateCache();
+        return NextResponse.json({ success: deleted }, { headers: NO_CACHE_HEADERS });
       }
 
       default:
