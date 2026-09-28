@@ -17,6 +17,7 @@ import {
 import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
+import { formatExternalUrl } from '@/lib/formatUrl';
 
 export default function ContactPage() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
@@ -135,36 +136,36 @@ export default function ContactPage() {
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <a
-                  href={settings.contact?.discord || 'https://discord.gg/gamersguild'}
+                  href={formatExternalUrl(settings.contact?.discord, 'https://discord.gg/gamersguild')}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-cyan/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-cyan transition-colors"
                 >
                   <Discord className="w-4 h-4" />
                   <span className="font-rajdhani font-semibold">Discord Guild</span>
                 </a>
                 <a
-                  href={settings.contact?.instagram || 'https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=='}
+                  href={formatExternalUrl(settings.contact?.instagram, 'https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==')}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-neon-pink/40 hover:border-neon-pink text-xs font-mono flex items-center space-x-2 text-gray-200 hover:text-neon-pink transition-colors shadow-[0_0_12px_rgba(255,0,128,0.15)]"
                 >
                   <Instagram className="w-4 h-4 text-neon-pink" />
                   <span className="font-rajdhani font-bold text-white">Instagram</span>
                 </a>
                 <a
-                  href={settings.contact?.youtube || 'https://youtube.com/@gamersguildesports'}
+                  href={formatExternalUrl(settings.contact?.youtube, 'https://youtube.com/@gamersguildesports')}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-red/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-red transition-colors"
                 >
                   <Youtube className="w-4 h-4" />
                   <span className="font-rajdhani font-semibold">YouTube</span>
                 </a>
                 <a
-                  href={settings.contact?.twitter || 'https://twitter.com/gamersguildgg'}
+                  href={formatExternalUrl(settings.contact?.twitter, 'https://twitter.com/gamersguildgg')}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="p-3 rounded-lg bg-cyber-dark/80 border border-cyber-border hover:border-neon-cyan/50 text-xs font-mono flex items-center space-x-2 text-gray-300 hover:text-neon-cyan transition-colors"
                 >
                   <Twitter className="w-4 h-4" />

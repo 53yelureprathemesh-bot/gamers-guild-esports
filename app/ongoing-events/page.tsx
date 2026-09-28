@@ -20,6 +20,7 @@ import {
 import { Event, TournamentMatch, PointsTableEntry, SiteSettings } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES, INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/components/GamingVisualEffects';
+import { formatExternalUrl } from '@/lib/formatUrl';
 
 function getYouTubeVideoId(url?: string): string | null {
   if (!url) return null;
@@ -148,7 +149,7 @@ export default function OngoingEventsPage() {
               {/* Tournament Stream Button */}
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                 <a
-                  href={currentEvent.stream_url || "https://youtube.com"}
+                  href={formatExternalUrl(currentEvent.stream_url, "https://youtube.com")}
                   target="_blank"
                   rel="noreferrer"
                   className="btn-cyber-primary clip-esports-btn px-6 py-3.5 text-xs font-black font-orbitron uppercase flex items-center justify-center space-x-2 shadow-neon-emerald"
@@ -177,7 +178,7 @@ export default function OngoingEventsPage() {
               </div>
 
               <a
-                href={currentEvent.stream_url}
+                href={formatExternalUrl(currentEvent.stream_url, "https://youtube.com")}
                 target="_blank"
                 rel="noreferrer"
                 className="text-xs font-mono text-neon-cyan hover:underline flex items-center space-x-1"

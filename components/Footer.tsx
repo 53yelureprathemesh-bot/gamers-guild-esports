@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Shield, Mail, Phone, MapPin, Disc as Discord, Instagram, Youtube, Twitter, Trophy, ExternalLink } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
+import { formatExternalUrl } from '@/lib/formatUrl';
 
 export default function Footer() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
@@ -71,36 +72,36 @@ export default function Footer() {
             {/* Social Icons */}
             <div className="flex items-center space-x-3 pt-3">
               <a
-                href={settings.contact?.discord || "https://discord.gg/gamersguild"}
+                href={formatExternalUrl(settings.contact?.discord, "https://discord.gg/gamersguild")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-cyan hover:border-neon-cyan/50 hover:shadow-neon-cyan transition-all"
                 aria-label="Discord"
               >
                 <Discord className="w-4 h-4" />
               </a>
               <a
-                href={settings.contact?.instagram || "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=="}
+                href={formatExternalUrl(settings.contact?.instagram, "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-neon-pink/40 flex items-center justify-center text-neon-pink hover:text-white hover:bg-neon-pink/20 hover:border-neon-pink transition-all shadow-[0_0_10px_rgba(255,0,128,0.2)]"
                 aria-label="Instagram"
               >
                 <Instagram className="w-4 h-4" />
               </a>
               <a
-                href={settings.contact?.youtube || "https://youtube.com/@gamersguildesports"}
+                href={formatExternalUrl(settings.contact?.youtube, "https://youtube.com/@gamersguildesports")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-red hover:border-neon-red/50 transition-all"
                 aria-label="YouTube"
               >
                 <Youtube className="w-4 h-4" />
               </a>
               <a
-                href={settings.contact?.twitter || "https://twitter.com/gamersguildgg"}
+                href={formatExternalUrl(settings.contact?.twitter, "https://twitter.com/gamersguildgg")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="w-9 h-9 rounded-lg bg-cyber-dark border border-cyber-border flex items-center justify-center text-gray-400 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all"
                 aria-label="Twitter"
               >

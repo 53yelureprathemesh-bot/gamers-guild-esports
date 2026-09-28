@@ -5,6 +5,7 @@ import { sendRegistrationConfirmationEmail } from '@/lib/email';
 import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { getAdminFromRequest } from '@/lib/auth';
 import { getCached, setCached, invalidateCache } from '@/lib/cache';
+import { formatExternalUrl } from '@/lib/formatUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -454,7 +455,17 @@ export async function POST(req: NextRequest) {
     switch (action) {
       // 1. SITE SETTINGS & HOME CONTENT PERSISTENCE
       case 'update-site-settings': {
-        const updated = dataStore.updateSiteSettings(payload);
+        const cleanPayload = { ...payload };
+        if (cleanPayload.contact) {
+          cleanPayload.contact = {
+            ...cleanPayload.contact,
+            discord: cleanPayload.contact.discord ? formatExternalUrl(cleanPayload.contact.discord) : '',
+            instagram: cleanPayload.contact.instagram ? formatExternalUrl(cleanPayload.contact.instagram) : '',
+            youtube: cleanPayload.contact.youtube ? formatExternalUrl(cleanPayload.contact.youtube) : '',
+            twitter: cleanPayload.contact.twitter ? formatExternalUrl(cleanPayload.contact.twitter) : '',
+          };
+        }
+        const updated = dataStore.updateSiteSettings(cleanPayload);
 
         if (isSupabaseConfigured) {
           try {
@@ -496,7 +507,11 @@ export async function POST(req: NextRequest) {
 
       // 2. EVENT PERSISTENCE
       case 'save-event': {
-        const saved = dataStore.saveEvent(payload);
+        const cleanEvent = { ...payload };
+        if (cleanEvent.stream_url) {
+          cleanEvent.stream_url = formatExternalUrl(cleanEvent.stream_url, 'https://youtube.com');
+        }
+        const saved = dataStore.saveEvent(cleanEvent);
 
         if (isSupabaseConfigured) {
           try {
@@ -537,14 +552,15 @@ export async function POST(req: NextRequest) {
       }
 
       case 'update-stream-url': {
-        const updated = dataStore.updateEventStream(payload.eventId, payload.streamUrl, payload.isLive ?? true);
+        const cleanStreamUrl = payload.streamUrl ? formatExternalUrl(payload.streamUrl, 'https://youtube.com') : '';
+        const updated = dataStore.updateEventStream(payload.eventId, cleanStreamUrl, payload.isLive ?? true);
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
               await supabase
                 .from('events')
-                .update({ stream_url: payload.streamUrl, is_stream_live: payload.isLive ?? true })
+                .update({ stream_url: cleanStreamUrl, is_stream_live: payload.isLive ?? true })
                 .eq('id', payload.eventId);
             }
           } catch (e) {

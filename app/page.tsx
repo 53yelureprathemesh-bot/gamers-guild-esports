@@ -36,6 +36,7 @@ import {
 import { Event, Announcement, GalleryItem, Sponsor, SiteSettings, PointsTableEntry } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_SITE_SETTINGS, INITIAL_ANNOUNCEMENTS, INITIAL_GALLERY, INITIAL_SPONSORS, INITIAL_POINTS_TABLE } from '@/lib/dataStore';
 import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/components/GamingVisualEffects';
+import { formatExternalUrl } from '@/lib/formatUrl';
 
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -501,7 +502,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <a 
-                href={settings.contact.discord || "https://discord.gg/gamersguild"} 
+                href={formatExternalUrl(settings.contact.discord, "https://discord.gg/gamersguild")} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="btn-cyber-primary clip-esports-btn px-6 py-3 text-xs font-black uppercase tracking-wider inline-flex items-center space-x-2"
@@ -510,7 +511,7 @@ export default function HomePage() {
                 <span>JOIN DISCORD FOR UPDATES</span>
               </a>
               <a 
-                href={settings.contact.instagram || "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=="} 
+                href={formatExternalUrl(settings.contact.instagram, "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==")} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="btn-cyber-secondary clip-esports-btn px-6 py-3 text-xs font-black uppercase tracking-wider inline-flex items-center space-x-2"
@@ -1006,9 +1007,9 @@ export default function HomePage() {
 
             <div className="flex flex-wrap items-center justify-center gap-3">
               <a
-                href={settings.contact?.instagram || "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA=="}
+                href={formatExternalUrl(settings.contact?.instagram, "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-cyber-dark border border-neon-pink/50 text-white hover:bg-neon-pink/20 hover:border-neon-pink text-xs font-mono font-bold flex items-center space-x-2 shadow-[0_0_15px_rgba(255,0,128,0.2)] transition-all"
               >
                 <Instagram className="w-4 h-4 text-neon-pink" />
@@ -1016,9 +1017,9 @@ export default function HomePage() {
               </a>
 
               <a
-                href={settings.contact?.discord || "https://discord.gg/gamersguild"}
+                href={formatExternalUrl(settings.contact?.discord, "https://discord.gg/gamersguild")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-cyber-dark border border-cyber-border text-gray-300 hover:text-neon-cyan hover:border-neon-cyan/50 text-xs font-mono font-bold flex items-center space-x-2 transition-all"
               >
                 <Discord className="w-4 h-4" />
@@ -1026,9 +1027,9 @@ export default function HomePage() {
               </a>
 
               <a
-                href={settings.contact?.youtube || "https://youtube.com/@gamersguildesports"}
+                href={formatExternalUrl(settings.contact?.youtube, "https://youtube.com/@gamersguildesports")}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-cyber-dark border border-cyber-border text-gray-300 hover:text-neon-red hover:border-neon-red/50 text-xs font-mono font-bold flex items-center space-x-2 transition-all"
               >
                 <Youtube className="w-4 h-4" />

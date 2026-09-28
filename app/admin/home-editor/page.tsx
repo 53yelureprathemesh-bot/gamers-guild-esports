@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
+import { formatExternalUrl } from '@/lib/formatUrl';
 
 export default function AdminHomeEditorPage() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
@@ -58,16 +59,28 @@ export default function AdminHomeEditorPage() {
 
   const handleSave = async () => {
     try {
+      const normalizedSettings: SiteSettings = {
+        ...settings,
+        contact: settings.contact ? {
+          ...settings.contact,
+          discord: settings.contact.discord ? formatExternalUrl(settings.contact.discord) : '',
+          instagram: settings.contact.instagram ? formatExternalUrl(settings.contact.instagram) : '',
+          youtube: settings.contact.youtube ? formatExternalUrl(settings.contact.youtube) : '',
+          twitter: settings.contact.twitter ? formatExternalUrl(settings.contact.twitter) : '',
+        } : settings.contact
+      };
+
       const res = await fetch('/api/admin/data', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'update-site-settings',
-          payload: settings
+          payload: normalizedSettings
         })
       });
       const data = await res.json();
       if (data.success) {
+        setSettings(normalizedSettings);
         setSaveStatus('Homepage content & settings successfully updated and published to live website!');
         setTimeout(() => setSaveStatus(null), 3500);
       } else {
@@ -319,9 +332,14 @@ export default function AdminHomeEditorPage() {
 
       {/* 4. CONTACT & SOCIAL NETWORKS */}
       <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-cyber-border space-y-6">
-        <h2 className="text-base font-black text-white font-mono uppercase border-b border-cyber-border pb-3">
-          4. CONTACT DETAILS & SOCIAL HANDLES
-        </h2>
+        <div className="border-b border-cyber-border pb-3">
+          <h2 className="text-base font-black text-white font-mono uppercase">
+            4. CONTACT DETAILS & SOCIAL HANDLES
+          </h2>
+          <p className="text-[11px] font-mono text-neon-cyan mt-1">
+            Tip: You can paste handles or full URLs (e.g. www.youtube.com/@GamersGuild-NGP or https://youtube.com/@GamersGuild-NGP). All links are automatically formatted into working external links.
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
