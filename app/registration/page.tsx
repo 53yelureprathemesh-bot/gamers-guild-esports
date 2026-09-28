@@ -354,7 +354,7 @@ function RegistrationFormContent() {
   }
 
   // REGISTRATION CLOSED OR NO EVENTS VIEW (GAMING ALERT SCREEN)
-  if (!isLoadingSettings && (isRegistrationGloballyClosed || noEventsAvailable)) {
+  if (isRegistrationGloballyClosed || noEventsAvailable) {
     return (
       <div className="min-h-screen gaming-arena-bg py-16 sm:py-24 relative overflow-hidden font-rajdhani flex items-center justify-center">
         <GamingEmberParticles />
