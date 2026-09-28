@@ -30,7 +30,25 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Check if registrations are open
-    const currentSettings = dataStore.getSiteSettings();
+    let currentSettings = dataStore.getSiteSettings();
+    if (isSupabaseConfigured) {
+      try {
+        const supabase = getServiceSupabase();
+        if (supabase) {
+          const { data: sysEvent } = await supabase
+            .from('events')
+            .select('rules')
+            .eq('slug', 'system-site-settings')
+            .single();
+          if (sysEvent?.rules && typeof sysEvent.rules === 'object') {
+            currentSettings = { ...currentSettings, ...(sysEvent.rules as any) };
+          }
+        }
+      } catch (e) {
+        // fallback to memory
+      }
+    }
+
     if (currentSettings.registration_enabled === false) {
       return NextResponse.json(
         { 

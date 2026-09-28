@@ -303,121 +303,14 @@ export const INITIAL_ADMINS: AdminUser[] = [
   }
 ];
 
-export const INITIAL_REGISTRATIONS: Registration[] = [
-  {
-    id: "reg-001",
-    public_code: "MH27",
-    event_id: "evt-001",
-    form_id: "form-default",
-    player_name: "Rahul Deshmukh",
-    email: "rahul.deshmukh@gmail.com",
-    phone: "+91 98220 12345",
-    date_of_birth: "2003-05-14",
-    gender: "Male",
-    state: "Maharashtra",
-    district: "Nagpur",
-    city: "Nagpur",
-    game: "BGMI (Battlegrounds Mobile India)",
-    in_game_name: "TITAN_SNIPER",
-    player_uid: "5129481023",
-    team_name: "CYBER TITANS",
-    team_role: "IGL (In-Game Leader)",
-    gaming_experience: "Semifinalist at Nagpur Esports Open 2025.",
-    status: "APPROVED",
-    email_status: "SENT",
-    admin_notes: "ID and payment verified by admin.",
-    created_at: "2026-09-16T10:15:00Z",
-    event_title: "NEURAL NEXUS 2K26 — BGMI CHAMPIONSHIP",
-    files: [
-      { id: "f-1", file_name: "aadhaar_rahul.pdf", file_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", is_private: true, mime_type: "application/pdf" },
-      { id: "f-2", file_name: "player_photo.png", file_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80", is_private: false, mime_type: "image/png" }
-    ]
-  },
-  {
-    id: "reg-002",
-    public_code: "GJ14",
-    event_id: "evt-001",
-    form_id: "form-default",
-    player_name: "Karan Patel",
-    email: "karan.patel@gmail.com",
-    phone: "+91 98980 54321",
-    date_of_birth: "2004-11-20",
-    gender: "Male",
-    state: "Gujarat",
-    district: "Ahmedabad",
-    city: "Ahmedabad",
-    game: "BGMI (Battlegrounds Mobile India)",
-    in_game_name: "VIPER_GG",
-    player_uid: "5341209845",
-    team_name: "GUJARAT GLADIATORS",
-    team_role: "Assaulter",
-    gaming_experience: "T2 scrims winner 4x times.",
-    status: "VERIFIED",
-    email_status: "SENT",
-    created_at: "2026-09-16T14:30:00Z",
-    event_title: "NEURAL NEXUS 2K26 — BGMI CHAMPIONSHIP",
-    files: [
-      { id: "f-3", file_name: "student_id.jpg", file_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80", is_private: true, mime_type: "image/jpeg" }
-    ]
-  },
-  {
-    id: "reg-003",
-    public_code: "MP8",
-    event_id: "evt-002",
-    form_id: "form-default",
-    player_name: "Aman Sharma",
-    email: "aman.mp@gmail.com",
-    phone: "+91 97550 99887",
-    date_of_birth: "2002-08-05",
-    gender: "Male",
-    state: "Madhya Pradesh",
-    district: "Bhopal",
-    city: "Bhopal",
-    game: "Free Fire Max",
-    in_game_name: "GHOST_REAPER",
-    player_uid: "1987452301",
-    team_name: "BHOPAL ELITE",
-    team_role: "Assaulter",
-    gaming_experience: "City cup champions Bhopal 2025.",
-    status: "PENDING",
-    email_status: "SENT",
-    created_at: "2026-09-16T18:00:00Z",
-    event_title: "FREE FIRE CLASH OF TITANS: SEASON 4",
-    files: []
-  },
-  {
-    id: "reg-004",
-    public_code: "MH28",
-    event_id: "evt-003",
-    form_id: "form-default",
-    player_name: "Sneha Kulkarni",
-    email: "sneha.k@gmail.com",
-    phone: "+91 98200 44556",
-    date_of_birth: "2001-03-12",
-    gender: "Female",
-    state: "Maharashtra",
-    district: "Pune",
-    city: "Pune",
-    game: "Valorant",
-    in_game_name: "VALKYRIE_99",
-    player_uid: "Valkyrie#PUNE",
-    team_name: "APEX GODS",
-    team_role: "Support / Initiator",
-    gaming_experience: "Immortal 2 player, played University esports invitational.",
-    status: "APPROVED",
-    email_status: "SENT",
-    created_at: "2026-09-16T20:45:00Z",
-    event_title: "VALORANT CYBER STRIKE INVITATIONAL",
-    files: []
-  }
-];
+export const INITIAL_REGISTRATIONS: Registration[] = [];
 
 // In-Memory State Store with Concurrency-Safe State Code Counters
 class DataStore {
   private events: Event[] = [...INITIAL_EVENTS];
   private matches: TournamentMatch[] = [...INITIAL_MATCHES];
   private pointsTable: PointsTableEntry[] = [...INITIAL_POINTS_TABLE];
-  private registrations: Registration[] = [...INITIAL_REGISTRATIONS];
+  private registrations: Registration[] = [];
   private announcements: Announcement[] = [...INITIAL_ANNOUNCEMENTS];
   private gallery: GalleryItem[] = [...INITIAL_GALLERY];
   private sponsors: Sponsor[] = [...INITIAL_SPONSORS];
@@ -441,11 +334,11 @@ class DataStore {
   }
 
   // Events
-  public getEvents(): Event[] { return this.events; }
-  public getUpcomingEvents(): Event[] { return this.events.filter(e => e.status === 'UPCOMING' && e.is_published); }
-  public getOngoingEvents(): Event[] { return this.events.filter(e => e.status === 'ONGOING' && e.is_published); }
-  public getEventBySlug(slug: string): Event | undefined { return this.events.find(e => e.slug === slug); }
-  public getEventById(id: string): Event | undefined { return this.events.find(e => e.id === id); }
+  public getEvents(): Event[] { return this.events.filter(e => e.slug !== 'system-site-settings'); }
+  public getUpcomingEvents(): Event[] { return this.events.filter(e => e.status === 'UPCOMING' && e.is_published && e.slug !== 'system-site-settings'); }
+  public getOngoingEvents(): Event[] { return this.events.filter(e => e.status === 'ONGOING' && e.is_published && e.slug !== 'system-site-settings'); }
+  public getEventBySlug(slug: string): Event | undefined { return this.events.find(e => e.slug === slug && e.slug !== 'system-site-settings'); }
+  public getEventById(id: string): Event | undefined { return this.events.find(e => e.id === id && e.slug !== 'system-site-settings'); }
   
   public saveEvent(event: Partial<Event> & { title: string }): Event {
     if (event.id) {

@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
             try {
               let query = supabase
                 .from('registrations')
-                .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_id, event_title, state, district, city, phone, email, status, created_at, events(title)')
+                .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_id, state, district, city, phone, email, status, created_at, events(title)')
                 .ilike('phone', `%${last10}%`);
 
               if (rawCode) {
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
               if (dbData && dbData.length > 0) {
                 const mapped = dbData.map((d: any) => ({
                   ...d,
-                  event_title: d.events?.title || d.event_title || 'Gamers Guild Tournament',
+                  event_title: d.events?.title || 'Gamers Guild Tournament',
                   files: undefined,
                   answers: undefined
                 }));
@@ -89,9 +89,10 @@ export async function GET(req: NextRequest) {
               const { data: dbEvents } = await supabase
                 .from('events')
                 .select('*')
+                .neq('slug', 'system-site-settings')
                 .order('date', { ascending: true });
               if (dbEvents && dbEvents.length > 0) {
-                events = dbEvents;
+                events = dbEvents.filter((e: any) => e.slug !== 'system-site-settings');
               }
             }
           } catch (e) {
@@ -117,7 +118,7 @@ export async function GET(req: NextRequest) {
             if (supabase) {
               let query = supabase
                 .from('registrations')
-                .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_id, event_title, state, district, city, phone, email, status, created_at, events(title)', { count: 'exact' });
+                .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_id, state, district, city, phone, email, status, created_at, events(title)', { count: 'exact' });
 
               if (eventId && eventId !== 'ALL') {
                 query = query.eq('event_id', eventId);
@@ -137,7 +138,7 @@ export async function GET(req: NextRequest) {
               if (!error && dbData) {
                 const mapped = dbData.map((d: any) => ({
                   ...d,
-                  event_title: d.events?.title || d.event_title || 'Gamers Guild Tournament'
+                  event_title: d.events?.title || 'Gamers Guild Tournament'
                 }));
                 const total = count || 0;
                 return NextResponse.json({
@@ -255,6 +256,16 @@ export async function GET(req: NextRequest) {
               if (dbSettings && dbSettings.value) {
                 settings = { ...settings, ...dbSettings.value };
                 dataStore.updateSiteSettings(settings);
+              } else {
+                const { data: sysEvent } = await supabase
+                  .from('events')
+                  .select('rules')
+                  .eq('slug', 'system-site-settings')
+                  .single();
+                if (sysEvent && sysEvent.rules && typeof sysEvent.rules === 'object') {
+                  settings = { ...settings, ...(sysEvent.rules as any) };
+                  dataStore.updateSiteSettings(settings);
+                }
               }
             }
           } catch (e) {
@@ -377,16 +388,23 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const [evRes, stRes, anRes, galRes, spRes] = await Promise.all([
-                supabase.from('events').select('*').order('date', { ascending: true }),
+              const [evRes, stRes, sysEvRes, anRes, galRes, spRes] = await Promise.all([
+                supabase.from('events').select('*').neq('slug', 'system-site-settings').order('date', { ascending: true }),
                 supabase.from('site_settings').select('value').eq('key', 'general_settings').single(),
+                supabase.from('events').select('rules').eq('slug', 'system-site-settings').single(),
                 supabase.from('announcements').select('*').eq('is_published', true).order('created_at', { ascending: false }),
                 supabase.from('gallery').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
                 supabase.from('sponsors').select('*').order('tier', { ascending: true })
               ]);
 
-              if (evRes.data && evRes.data.length > 0) events = evRes.data;
-              if (stRes.data && stRes.data.value) settings = { ...settings, ...stRes.data.value };
+              if (evRes.data && evRes.data.length > 0) events = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
+              if (stRes.data && stRes.data.value) {
+                settings = { ...settings, ...stRes.data.value };
+                dataStore.updateSiteSettings(settings);
+              } else if (sysEvRes.data && sysEvRes.data.rules && typeof sysEvRes.data.rules === 'object') {
+                settings = { ...settings, ...(sysEvRes.data.rules as any) };
+                dataStore.updateSiteSettings(settings);
+              }
               if (anRes.data && anRes.data.length > 0) announcements = anRes.data;
               if (galRes.data && galRes.data.length > 0) gallery = galRes.data;
               if (spRes.data && spRes.data.length > 0) sponsors = spRes.data;
@@ -448,6 +466,22 @@ export async function POST(req: NextRequest) {
                   description: 'Gamers Guild Esports visual site settings and registration controls',
                   updated_at: new Date().toISOString()
                 }, { onConflict: 'key' });
+
+              await supabase.from('events').upsert({
+                id: '00000000-0000-0000-0000-000000000001',
+                slug: 'system-site-settings',
+                title: 'SYSTEM_SITE_SETTINGS',
+                game: 'SYSTEM',
+                date: '2000-01-01',
+                time: '00:00',
+                venue: 'System',
+                mode: 'ONLINE',
+                prize_pool: '0',
+                registration_deadline: '2000-01-01T00:00:00Z',
+                rules: updated,
+                is_published: false,
+                status: 'COMPLETED'
+              }, { onConflict: 'slug' });
             }
           } catch (e) {
             console.warn('Supabase site settings upsert error:', e);
