@@ -589,7 +589,7 @@ export async function POST(req: NextRequest) {
 
       // 4. FIX SINGLE REGISTRATION DELETION (UUID-safe and foreign-key safe)
       case 'delete-registration': {
-        const regId = payload.id;
+        const regId = payload?.id;
         if (!regId) {
           return NextResponse.json({ success: false, error: 'Registration ID required' }, { status: 400 });
         }
@@ -600,16 +600,24 @@ export async function POST(req: NextRequest) {
             if (supabase) {
               const isUuid = UUID_REGEX.test(regId);
               // 1. Locate the exact record ID
-              let findQuery = supabase.from('registrations').select('id');
+              let findQuery = supabase.from('registrations').select('id, event_id');
               findQuery = isUuid ? findQuery.eq('id', regId) : findQuery.ilike('public_code', regId);
-              const { data: record } = await findQuery.single();
+              const { data: records } = await findQuery;
 
-              if (record && record.id) {
+              if (records && records.length > 0) {
+                const target = records[0];
                 // 2. Delete foreign-key child entries first
-                await supabase.from('registration_files').delete().eq('registration_id', record.id);
-                await supabase.from('registration_answers').delete().eq('registration_id', record.id);
+                await supabase.from('registration_files').delete().eq('registration_id', target.id);
+                await supabase.from('registration_answers').delete().eq('registration_id', target.id);
                 // 3. Delete parent registration entry
-                await supabase.from('registrations').delete().eq('id', record.id);
+                await supabase.from('registrations').delete().eq('id', target.id);
+                // 4. Decrement filled slots on the event
+                if (target.event_id) {
+                  const { data: evData } = await supabase.from('events').select('filled_slots').eq('id', target.event_id).single();
+                  if (evData && evData.filled_slots > 0) {
+                    await supabase.from('events').update({ filled_slots: Math.max(0, evData.filled_slots - 1) }).eq('id', target.event_id);
+                  }
+                }
               }
             }
           } catch (e) {
@@ -624,7 +632,7 @@ export async function POST(req: NextRequest) {
 
       // 5. BULK PURGE: CLEAR ALL REGISTRATIONS FOR A SPECIFIC EVENT
       case 'clear-event-registrations': {
-        const targetEventId = payload.eventId;
+        const targetEventId = payload?.eventId;
         if (!targetEventId) {
           return NextResponse.json({ success: false, error: 'Event ID required for event purge' }, { status: 400 });
         }
@@ -649,15 +657,17 @@ export async function POST(req: NextRequest) {
                 // Delete registrations
                 await supabase.from('registrations').delete().eq('event_id', targetEventId);
               }
+              // Reset filled_slots for this event in Supabase
+              await supabase.from('events').update({ filled_slots: 0 }).eq('id', targetEventId);
             }
           } catch (e) {
             console.warn('Supabase clear-event-registrations error:', e);
           }
         }
 
-        const initialMem = dataStore.getRegistrations().length;
-        dataStore.setRegistrations(dataStore.getRegistrations().filter(r => r.event_id !== targetEventId));
-        const memPurged = initialMem - dataStore.getRegistrations().length;
+        const memPurged = dataStore.clearEventRegistrations(targetEventId);
+        const ev = dataStore.getEventById(targetEventId);
+        if (ev) ev.filled_slots = 0;
 
         invalidateCache();
         return NextResponse.json({ 
@@ -668,26 +678,36 @@ export async function POST(req: NextRequest) {
 
       // 6. GLOBAL PURGE: CLEAR ALL REGISTRATIONS (Entire System)
       case 'clear-all-registrations': {
-        if (admin.role !== 'SUPER_ADMIN' && admin.role !== 'REGISTRATION_MANAGER') {
-          return NextResponse.json({ success: false, error: 'Insufficient permissions for global data purge.' }, { status: 403 });
+        if (!admin || !admin.role) {
+          return NextResponse.json({ success: false, error: 'Administrative authorization required.' }, { status: 401 });
         }
 
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
+              // 1. Delete all attached proofs and document files
               await supabase.from('registration_files').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              // 2. Delete all custom form answers
               await supabase.from('registration_answers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              // 3. Delete all registrations
               await supabase.from('registrations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+              // 4. Reset all tournament filled_slots back to 0
+              await supabase.from('events').update({ filled_slots: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
+              // 5. Reset state counters back to 0
+              await supabase.from('state_counters').update({ current_count: 0 }).neq('state_code', '');
             }
           } catch (e) {
             console.warn('Supabase clear all registrations error:', e);
           }
         }
 
-        dataStore.setRegistrations([]);
+        dataStore.clearAllRegistrations();
         invalidateCache();
-        return NextResponse.json({ success: true, message: 'All registrations in the database have been purged successfully.' }, { headers: NO_CACHE_HEADERS });
+        return NextResponse.json({ 
+          success: true, 
+          message: 'All registrations across all tournaments, proofs, and state counters have been permanently purged.' 
+        }, { headers: NO_CACHE_HEADERS });
       }
 
       // 7. ANNOUNCEMENTS PERSISTENCE

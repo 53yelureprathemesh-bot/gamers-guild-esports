@@ -31,7 +31,7 @@ import { INITIAL_REGISTRATIONS } from '@/lib/dataStore';
 import { INDIAN_STATES } from '@/lib/stateCodes';
 
 export default function AdminRegistrationsPage() {
-  const [registrations, setRegistrations] = useState<Registration[]>(INITIAL_REGISTRATIONS);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [eventsList, setEventsList] = useState<Event[]>([]);
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
@@ -320,8 +320,8 @@ export default function AdminRegistrationsPage() {
 
   // Purge All Registrations (Global)
   const handlePurgeGlobal = async () => {
-    if (globalPurgeInput.trim() !== 'PURGE ALL') {
-      alert('Please type PURGE ALL exactly to confirm global database wipe.');
+    if (globalPurgeInput.trim().toUpperCase() !== 'PURGE ALL') {
+      alert('Please type PURGE ALL to confirm global database wipe.');
       return;
     }
 
@@ -341,7 +341,10 @@ export default function AdminRegistrationsPage() {
         setRegistrations([]);
         setTotalRecords(0);
         setTotalPages(1);
-        setActionNotice(`Global database purged. All registrations have been cleared.`);
+        setPage(1);
+        setSelectedReg(null);
+        await fetchRegistrations(1);
+        setActionNotice(`Global database purged. All registrations across all tournaments have been cleared.`);
         setTimeout(() => setActionNotice(null), 4000);
       } else {
         alert('Global purge failed: ' + (data.error || 'Server error'));
@@ -1046,14 +1049,29 @@ export default function AdminRegistrationsPage() {
             </p>
 
             <div className="space-y-1.5 pt-1">
-              <label className="text-[11px] font-mono text-gray-400 block">
-                Type <strong className="text-neon-red">CONFIRM</strong> below to execute:
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-mono text-gray-400 block">
+                  Type <strong className="text-neon-red">CONFIRM</strong> below to execute:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setEventPurgeInput('CONFIRM')}
+                  className="text-[10px] font-mono text-neon-cyan hover:underline uppercase bg-neon-cyan/10 px-2 py-0.5 rounded border border-neon-cyan/30"
+                >
+                  Quick Auto-fill
+                </button>
+              </div>
               <input
                 type="text"
                 value={eventPurgeInput}
-                onChange={(e) => setEventPurgeInput(e.target.value)}
+                onChange={(e) => setEventPurgeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && eventPurgeInput.trim().toUpperCase() === 'CONFIRM' && !isPurgingEvent) {
+                    handlePurgeEvent();
+                  }
+                }}
                 placeholder="Type CONFIRM"
+                autoFocus
                 className="w-full px-3 py-2 text-xs font-mono bg-cyber-black border border-neon-red/60 rounded-lg text-white uppercase focus:outline-none focus:border-neon-red"
               />
             </div>
@@ -1098,14 +1116,29 @@ export default function AdminRegistrationsPage() {
             </p>
 
             <div className="space-y-1.5 pt-1">
-              <label className="text-[11px] font-mono text-gray-400 block">
-                Type <strong className="text-neon-red">PURGE ALL</strong> to confirm:
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-mono text-gray-400 block">
+                  Type <strong className="text-neon-red">PURGE ALL</strong> to confirm:
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setGlobalPurgeInput('PURGE ALL')}
+                  className="text-[10px] font-mono text-neon-cyan hover:underline uppercase bg-neon-cyan/10 px-2 py-0.5 rounded border border-neon-cyan/30"
+                >
+                  Quick Auto-fill
+                </button>
+              </div>
               <input
                 type="text"
                 value={globalPurgeInput}
-                onChange={(e) => setGlobalPurgeInput(e.target.value)}
+                onChange={(e) => setGlobalPurgeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && globalPurgeInput.trim().toUpperCase() === 'PURGE ALL' && !isPurgingGlobal) {
+                    handlePurgeGlobal();
+                  }
+                }}
                 placeholder="Type PURGE ALL"
+                autoFocus
                 className="w-full px-3 py-2 text-xs font-mono bg-cyber-black border border-neon-red/60 rounded-lg text-white uppercase focus:outline-none focus:border-neon-red"
               />
             </div>
@@ -1122,8 +1155,8 @@ export default function AdminRegistrationsPage() {
               <button
                 type="button"
                 onClick={handlePurgeGlobal}
-                disabled={globalPurgeInput.trim() !== 'PURGE ALL' || isPurgingGlobal}
-                className="px-5 py-2 rounded bg-neon-red hover:bg-neon-red/80 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
+                disabled={globalPurgeInput.trim().toUpperCase() !== 'PURGE ALL' || isPurgingGlobal}
+                className="px-5 py-2 rounded bg-neon-red hover:bg-neon-red/80 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold uppercase flex items-center space-x-1.5 shadow-lg shadow-neon-red/30 transition-all"
               >
                 {isPurgingGlobal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{isPurgingGlobal ? 'WIPING RECORDS...' : 'PERMANENTLY PURGE ALL'}</span>

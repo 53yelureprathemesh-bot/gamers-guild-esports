@@ -611,6 +611,10 @@ class DataStore {
   public clearAllRegistrations(): number {
     const count = this.registrations.length;
     this.registrations = [];
+    this.events.forEach(e => {
+      e.filled_slots = 0;
+    });
+    this.stateCounters = {};
     return count;
   }
 
