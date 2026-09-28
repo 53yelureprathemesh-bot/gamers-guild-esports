@@ -11,8 +11,16 @@ export default function AdminSponsorsPage() {
   const [editingSponsor, setEditingSponsor] = useState<Partial<Sponsor> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   useEffect(() => {
-    fetch('/api/admin/data?type=sponsors')
+    fetch('/api/admin/data?type=sponsors', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) setSponsors(res.data);
@@ -29,7 +37,7 @@ export default function AdminSponsorsPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'save-sponsor',
           payload: editingSponsor
@@ -41,6 +49,8 @@ export default function AdminSponsorsPage() {
         setSponsors([data.data, ...sponsors.filter(s => s.id !== data.data.id)]);
         setEditingSponsor(null);
         setTimeout(() => setNotice(null), 3000);
+      } else {
+        alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -51,7 +61,7 @@ export default function AdminSponsorsPage() {
     try {
       await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: 'delete-sponsor', payload: { id } })
       });
       setSponsors(sponsors.filter(s => s.id !== id));

@@ -11,8 +11,16 @@ export default function AdminGalleryPage() {
   const [editingItem, setEditingItem] = useState<Partial<GalleryItem> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   useEffect(() => {
-    fetch('/api/admin/data?type=gallery')
+    fetch('/api/admin/data?type=gallery', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) setGallery(res.data);
@@ -29,7 +37,7 @@ export default function AdminGalleryPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'save-gallery',
           payload: editingItem
@@ -41,6 +49,8 @@ export default function AdminGalleryPage() {
         setGallery([data.data, ...gallery.filter(g => g.id !== data.data.id)]);
         setEditingItem(null);
         setTimeout(() => setNotice(null), 3000);
+      } else {
+        alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -51,7 +61,7 @@ export default function AdminGalleryPage() {
     try {
       await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: 'delete-gallery', payload: { id } })
       });
       setGallery(gallery.filter(g => g.id !== id));

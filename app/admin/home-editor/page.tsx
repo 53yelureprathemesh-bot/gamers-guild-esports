@@ -21,8 +21,16 @@ export default function AdminHomeEditorPage() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   useEffect(() => {
-    fetch('/api/admin/data?type=settings')
+    fetch('/api/admin/data?type=site-settings', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) setSettings(res.data);
@@ -34,7 +42,7 @@ export default function AdminHomeEditorPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'update-site-settings',
           payload: settings
@@ -42,8 +50,10 @@ export default function AdminHomeEditorPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSaveStatus('Homepage content successfully updated and published to production!');
+        setSaveStatus('Homepage content & settings successfully updated and published to live website!');
         setTimeout(() => setSaveStatus(null), 3500);
+      } else {
+        alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Error updating homepage: ' + err.message);
@@ -335,6 +345,52 @@ export default function AdminHomeEditorPage() {
             />
           </div>
         </div>
+      </div>
+
+      {/* 5. REGISTRATION GATEWAY CONTROLS */}
+      <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-cyber-border space-y-6">
+        <h2 className="text-base font-black text-white font-mono uppercase border-b border-cyber-border pb-3">
+          5. TOURNAMENT REGISTRATION GATEWAY
+        </h2>
+
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border">
+            <input
+              type="checkbox"
+              id="registration_enabled"
+              checked={settings.registration_enabled ?? true}
+              onChange={(e) => setSettings(prev => ({ ...prev, registration_enabled: e.target.checked }))}
+              className="w-5 h-5 rounded bg-cyber-black border-cyber-border text-neon-emerald focus:ring-neon-emerald"
+            />
+            <label htmlFor="registration_enabled" className="text-xs font-mono font-bold text-white cursor-pointer select-none">
+              ALLOW PUBLIC TOURNAMENT REGISTRATIONS (GLOBAL GATEWAY)
+            </label>
+          </div>
+
+          <div>
+            <label className="text-xs font-mono font-bold text-gray-300 block mb-1">
+              Custom Closed Notice Message (Displayed when registrations are closed or no events exist)
+            </label>
+            <textarea
+              rows={2}
+              value={settings.registration_closed_message || ''}
+              onChange={(e) => setSettings(prev => ({ ...prev, registration_closed_message: e.target.value }))}
+              placeholder="NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED"
+              className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Save Bar */}
+      <div className="flex justify-end pt-4 border-t border-cyber-border">
+        <button
+          onClick={handleSave}
+          className="btn-cyber-primary px-8 py-3 rounded-xl text-xs font-mono font-bold uppercase flex items-center space-x-2"
+        >
+          <Save className="w-4 h-4 text-cyber-black" />
+          <span>SAVE & PUBLISH ALL EDITS</span>
+        </button>
       </div>
 
     </div>

@@ -42,9 +42,13 @@ export default function AdminFormBuilderPage() {
   // Save all fields to server
   const handleSaveForm = async () => {
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           action: 'save-form-fields',
           payload: { fields }

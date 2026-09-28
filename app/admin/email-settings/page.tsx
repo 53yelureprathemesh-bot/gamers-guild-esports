@@ -58,9 +58,13 @@ export default function AdminEmailSettingsPage() {
     setTestLoading(true);
     setTestResult(null);
     try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
           action: 'send-test-email',
           payload: { to: testEmail, playerName: 'Test Participant' }

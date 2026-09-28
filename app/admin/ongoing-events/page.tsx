@@ -32,6 +32,14 @@ export default function AdminOngoingEventsPage() {
   const [isStreamLive, setIsStreamLive] = useState(true);
   const [savingStream, setSavingStream] = useState(false);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   useEffect(() => {
     if (currentEvent) {
       setStreamUrl(currentEvent.stream_url || '');
@@ -44,7 +52,7 @@ export default function AdminOngoingEventsPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'update-stream-url',
           payload: {
@@ -75,7 +83,7 @@ export default function AdminOngoingEventsPage() {
   };
 
   const fetchCurrentPoints = () => {
-    fetch(`/api/admin/data?type=points-table&eventId=${selectedEventId}`)
+    fetch(`/api/admin/data?type=points-table&eventId=${selectedEventId}`, { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data?.length) setPointsTable(res.data);
@@ -100,7 +108,7 @@ export default function AdminOngoingEventsPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'save-points-entry',
           payload: {

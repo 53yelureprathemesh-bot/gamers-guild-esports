@@ -182,6 +182,7 @@ export interface Sponsor {
   name: string;
   logo_url: string;
   website?: string;
+  website_url?: string;
   description?: string;
   tier: SponsorTier;
   sort_order: number;
@@ -218,6 +219,8 @@ export interface SiteSettings {
     youtube: string;
     twitter: string;
   };
+  registration_enabled?: boolean;
+  registration_closed_message?: string;
 }
 
 export interface EmailTemplate {

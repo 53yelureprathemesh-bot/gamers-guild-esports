@@ -10,8 +10,16 @@ export default function AdminAnnouncementsPage() {
   const [editingAnn, setEditingAnn] = useState<Partial<Announcement> | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   useEffect(() => {
-    fetch('/api/admin/data?type=announcements')
+    fetch('/api/admin/data?type=announcements', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) setAnnouncements(res.data);
@@ -28,7 +36,7 @@ export default function AdminAnnouncementsPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'save-announcement',
           payload: editingAnn
@@ -40,6 +48,8 @@ export default function AdminAnnouncementsPage() {
         setAnnouncements([data.data, ...announcements.filter(a => a.id !== data.data.id)]);
         setEditingAnn(null);
         setTimeout(() => setNotice(null), 3000);
+      } else {
+        alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -50,7 +60,7 @@ export default function AdminAnnouncementsPage() {
     try {
       await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ action: 'delete-announcement', payload: { id } })
       });
       setAnnouncements(announcements.filter(a => a.id !== id));

@@ -25,8 +25,16 @@ export default function AdminUpcomingEventsPage() {
   const [isNew, setIsNew] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   const fetchEvents = () => {
-    fetch('/api/admin/data?type=events')
+    fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) setEvents(res.data);
@@ -73,7 +81,7 @@ export default function AdminUpcomingEventsPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'save-event',
           payload: editingEvent
@@ -85,6 +93,8 @@ export default function AdminUpcomingEventsPage() {
         fetchEvents();
         setEditingEvent(null);
         setTimeout(() => setNotice(null), 3500);
+      } else {
+        alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -96,7 +106,7 @@ export default function AdminUpcomingEventsPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'delete-event',
           payload: { id }

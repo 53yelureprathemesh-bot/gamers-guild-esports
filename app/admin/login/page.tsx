@@ -33,11 +33,15 @@ export default function AdminLoginPage() {
       const data = await res.json();
 
       if (data.success && data.admin) {
+        if (data.token) {
+          localStorage.setItem('gg_admin_token', data.token);
+        }
         localStorage.setItem('gg_admin_user', JSON.stringify({
           id: data.admin.id,
           email: data.admin.email,
           name: data.admin.name,
-          role: data.admin.role
+          role: data.admin.role,
+          token: data.token
         }));
         router.push('/admin');
         return;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, 
   Search, 
@@ -19,18 +19,66 @@ import {
   RotateCw,
   AlertTriangle,
   ZoomIn,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+  Power,
+  ShieldAlert,
+  Loader2
 } from 'lucide-react';
-import { Registration, RegistrationStatus } from '@/lib/types';
+import { Registration, RegistrationStatus, Event } from '@/lib/types';
 import { INITIAL_REGISTRATIONS } from '@/lib/dataStore';
 import { INDIAN_STATES } from '@/lib/stateCodes';
 
 export default function AdminRegistrationsPage() {
   const [registrations, setRegistrations] = useState<Registration[]>(INITIAL_REGISTRATIONS);
+  const [eventsList, setEventsList] = useState<Event[]>([]);
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string } | null>(null);
+
+  // Pagination & Capacity State (1 Lakh+ ready)
+  const [page, setPage] = useState<number>(1);
+  const [limit, setLimit] = useState<number>(25);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Filters & State Drilldown
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState('ALL');
+  const [selectedState, setSelectedState] = useState('ALL');
+  const [selectedDistrict, setSelectedDistrict] = useState('ALL');
+  const [selectedGame, setSelectedGame] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+
+  // Global Registration Switch
+  const [isRegEnabled, setIsRegEnabled] = useState<boolean>(true);
+  const [togglingRegStatus, setTogglingRegStatus] = useState<boolean>(false);
+
+  // Deletion Confirmation States
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeletingSingle, setIsDeletingSingle] = useState<boolean>(false);
+
+  // Event Purge Modal State
+  const [eventPurgeModalOpen, setEventPurgeModalOpen] = useState<boolean>(false);
+  const [eventPurgeInput, setEventPurgeInput] = useState<string>('');
+  const [isPurgingEvent, setIsPurgingEvent] = useState<boolean>(false);
+
+  // Global Purge Modal State
+  const [globalPurgeModalOpen, setGlobalPurgeModalOpen] = useState<boolean>(false);
+  const [globalPurgeInput, setGlobalPurgeInput] = useState<string>('');
+  const [isPurgingGlobal, setIsPurgingGlobal] = useState<boolean>(false);
+
+  // Get Auth Token for Secure Requests
+  const getAuthHeaders = useCallback(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  }, []);
 
   const isImageFile = (file: { mime_type?: string; file_url?: string; file_name?: string }) => {
     if (file.mime_type?.startsWith('image/')) return true;
@@ -40,32 +88,124 @@ export default function AdminRegistrationsPage() {
     return false;
   };
 
-  // Filters & State Drilldown
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedState, setSelectedState] = useState('ALL');
-  const [selectedDistrict, setSelectedDistrict] = useState('ALL');
-  const [selectedGame, setSelectedGame] = useState('ALL');
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
-
-  const fetchRegistrations = () => {
-    fetch('/api/admin/data?type=registrations')
+  // Fetch Events and Site Settings
+  useEffect(() => {
+    fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && res.data) setRegistrations(res.data);
+        if (res.success && Array.isArray(res.data)) {
+          setEventsList(res.data);
+        }
       })
-      .catch(() => console.log('Using local registrations data.'));
-  };
+      .catch(() => {});
+
+    fetch('/api/admin/data?type=site-settings', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && res.data) {
+          if (res.data.registration_enabled !== undefined) {
+            setIsRegEnabled(Boolean(res.data.registration_enabled));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [getAuthHeaders]);
+
+  // Fetch Paginated Registrations
+  const fetchRegistrations = useCallback(async (targetPage = page) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        type: 'registrations',
+        page: targetPage.toString(),
+        limit: limit.toString(),
+        ...(selectedEventId !== 'ALL' ? { eventId: selectedEventId } : {}),
+        ...(selectedStatus !== 'ALL' ? { status: selectedStatus } : {}),
+        ...(searchQuery ? { search: searchQuery } : {})
+      });
+
+      const res = await fetch(`/api/admin/data?${params.toString()}`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setRegistrations(data.data);
+        setTotalRecords(data.total ?? data.data.length);
+        setTotalPages(data.totalPages ?? 1);
+        setPage(data.page ?? targetPage);
+      }
+    } catch {
+      console.log('Using local registrations data.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, limit, selectedEventId, selectedStatus, searchQuery, getAuthHeaders]);
 
   useEffect(() => {
-    fetchRegistrations();
-  }, []);
+    fetchRegistrations(1);
+  }, [selectedEventId, selectedStatus, searchQuery, limit]);
+
+  // Inspect Registration on demand (loads full proofs and files)
+  const handleInspectRegistration = async (reg: Registration) => {
+    setSelectedReg(reg);
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/admin/data?type=registration-detail&id=${encodeURIComponent(reg.id)}`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setSelectedReg(data.data);
+      }
+    } catch (e) {
+      console.warn('Failed to load detail proofs on demand:', e);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  // Toggle Global Registration Status (OPEN / CLOSED)
+  const handleToggleRegistrationStatus = async () => {
+    const nextStatus = !isRegEnabled;
+    const confirmMsg = nextStatus 
+      ? "Enable public tournament registrations across the entire platform?" 
+      : "Close tournament registrations? Anyone visiting the registration page will be notified that registrations are currently closed.";
+    
+    if (!confirm(confirmMsg)) return;
+
+    setTogglingRegStatus(true);
+    try {
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          action: 'update-site-settings',
+          payload: {
+            registration_enabled: nextStatus
+          }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsRegEnabled(nextStatus);
+        setActionNotice(`Tournament registrations are now officially ${nextStatus ? 'OPEN' : 'CLOSED'}!`);
+        setTimeout(() => setActionNotice(null), 4000);
+      } else {
+        alert('Failed to update registration status: ' + (data.error || 'Server error'));
+      }
+    } catch (err: any) {
+      alert('Error updating status: ' + err.message);
+    } finally {
+      setTogglingRegStatus(false);
+    }
+  };
 
   // Update Status
   const handleUpdateStatus = async (id: string, status: RegistrationStatus) => {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'update-registration-status',
           payload: { id, status }
@@ -79,26 +219,28 @@ export default function AdminRegistrationsPage() {
         }
         setActionNotice(`Registration status successfully updated to ${status}!`);
         setTimeout(() => setActionNotice(null), 3000);
+      } else {
+        alert('Update failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Error updating status: ' + err.message);
     }
   };
 
-  // Resend Confirmation Email (Section 22: DO NOT generate another code)
+  // Resend Confirmation Email
   const handleResendEmail = async (id: string) => {
     try {
       setActionNotice('Dispatching confirmation email with existing registration code...');
       const res = await fetch('/api/registrations/email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ registrationId: id })
       });
       const data = await res.json();
       if (data.success) {
         setActionNotice(data.message || 'Confirmation email resent successfully!');
       } else {
-        setActionNotice('Email dispatch failed: ' + data.error);
+        setActionNotice('Email dispatch failed: ' + (data.error || 'Unknown error'));
       }
       setTimeout(() => setActionNotice(null), 4000);
     } catch (err: any) {
@@ -106,12 +248,13 @@ export default function AdminRegistrationsPage() {
     }
   };
 
-  // Delete Registration
+  // Delete Single Registration
   const handleDelete = async (id: string) => {
+    setIsDeletingSingle(true);
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'delete-registration',
           payload: { id }
@@ -119,18 +262,98 @@ export default function AdminRegistrationsPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setRegistrations(prev => prev.filter(r => r.id !== id));
-        if (selectedReg && selectedReg.id === id) setSelectedReg(null);
+        setRegistrations(prev => prev.filter(r => r.id !== id && r.public_code !== id));
+        if (selectedReg && (selectedReg.id === id || selectedReg.public_code === id)) {
+          setSelectedReg(null);
+        }
         setDeleteConfirmId(null);
-        setActionNotice('Registration successfully deleted.');
+        setTotalRecords(prev => Math.max(0, prev - 1));
+        setActionNotice('Registration record successfully deleted.');
         setTimeout(() => setActionNotice(null), 3000);
+      } else {
+        alert('Delete failed: ' + (data.error || 'Permission denied or record not found.'));
       }
     } catch (err: any) {
       alert('Error deleting registration: ' + err.message);
+    } finally {
+      setIsDeletingSingle(false);
     }
   };
 
-  // CSV Export (Section 31)
+  // Purge Registrations for Selected Event
+  const handlePurgeEvent = async () => {
+    if (eventPurgeInput.trim().toUpperCase() !== 'CONFIRM') {
+      alert('Please type CONFIRM to authorize clearing registrations for this event.');
+      return;
+    }
+    if (selectedEventId === 'ALL') {
+      alert('Please select a specific event from the filter first.');
+      return;
+    }
+
+    setIsPurgingEvent(true);
+    try {
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          action: 'clear-event-registrations',
+          payload: { eventId: selectedEventId }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setEventPurgeModalOpen(false);
+        setEventPurgeInput('');
+        fetchRegistrations(1);
+        setActionNotice(`All registrations and uploaded documents for this event have been purged.`);
+        setTimeout(() => setActionNotice(null), 4000);
+      } else {
+        alert('Event purge failed: ' + (data.error || 'Server error'));
+      }
+    } catch (err: any) {
+      alert('Error purging event registrations: ' + err.message);
+    } finally {
+      setIsPurgingEvent(false);
+    }
+  };
+
+  // Purge All Registrations (Global)
+  const handlePurgeGlobal = async () => {
+    if (globalPurgeInput.trim() !== 'PURGE ALL') {
+      alert('Please type PURGE ALL exactly to confirm global database wipe.');
+      return;
+    }
+
+    setIsPurgingGlobal(true);
+    try {
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          action: 'clear-all-registrations'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGlobalPurgeModalOpen(false);
+        setGlobalPurgeInput('');
+        setRegistrations([]);
+        setTotalRecords(0);
+        setTotalPages(1);
+        setActionNotice(`Global database purged. All registrations have been cleared.`);
+        setTimeout(() => setActionNotice(null), 4000);
+      } else {
+        alert('Global purge failed: ' + (data.error || 'Server error'));
+      }
+    } catch (err: any) {
+      alert('Error clearing registrations: ' + err.message);
+    } finally {
+      setIsPurgingGlobal(false);
+    }
+  };
+
+  // CSV Export
   const handleExportCSV = () => {
     const headers = ['Public Code', 'Player Name', 'Email', 'Phone', 'State', 'District', 'City', 'Game', 'IGN', 'UID', 'Team', 'Role', 'Status', 'Date'];
     const rows = filteredRegistrations.map(r => [
@@ -160,31 +383,74 @@ export default function AdminRegistrationsPage() {
     document.body.removeChild(link);
   };
 
-  // Filter Logic
+  // Client-Side Secondary Filter Logic (State, District, Game)
   const filteredRegistrations = registrations.filter(r => {
-    const matchesSearch = 
-      r.player_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.in_game_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.player_uid.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.team_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      r.public_code.toLowerCase().includes(searchQuery.toLowerCase());
-
     const matchesState = selectedState === 'ALL' || r.state === selectedState;
     const matchesDistrict = selectedDistrict === 'ALL' || r.district === selectedDistrict;
-    const matchesGame = selectedGame === 'ALL' || r.game.toLowerCase().includes(selectedGame.toLowerCase());
-    const matchesStatus = selectedStatus === 'ALL' || r.status === selectedStatus;
-
-    return matchesSearch && matchesState && matchesDistrict && matchesGame && matchesStatus;
+    const matchesGame = selectedGame === 'ALL' || (r.game && r.game.toLowerCase().includes(selectedGame.toLowerCase()));
+    return matchesState && matchesDistrict && matchesGame;
   });
 
-  // Extract available districts based on selected state
-  const availableDistricts = Array.from(new Set(registrations.filter(r => selectedState === 'ALL' || r.state === selectedState).map(r => r.district)));
+  const availableDistricts = Array.from(new Set(registrations.filter(r => selectedState === 'ALL' || r.state === selectedState).map(r => r.district).filter(Boolean)));
+  const currentSelectedEvent = eventsList.find(e => e.id === selectedEventId);
 
   return (
     <div className="space-y-6">
       
+      {/* GLOBAL REGISTRATION CONTROL BAR */}
+      <div className={`p-4 rounded-xl border flex flex-col md:flex-row items-center justify-between gap-4 transition-all ${
+        isRegEnabled 
+          ? 'bg-neon-emerald/10 border-neon-emerald/40 shadow-lg shadow-neon-emerald/5' 
+          : 'bg-neon-red/10 border-neon-red/50 shadow-lg shadow-neon-red/10'
+      }`}>
+        <div className="flex items-center space-x-3 text-left w-full md:w-auto">
+          <div className={`p-2.5 rounded-lg border ${
+            isRegEnabled ? 'bg-neon-emerald/20 border-neon-emerald/50 text-neon-emerald' : 'bg-neon-red/20 border-neon-red/50 text-neon-red'
+          }`}>
+            <Power className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-mono font-bold uppercase text-gray-400">
+                PUBLIC REGISTRATION GATEWAY:
+              </span>
+              <span className={`text-xs font-mono font-black uppercase px-2 py-0.5 rounded ${
+                isRegEnabled ? 'bg-neon-emerald text-black' : 'bg-neon-red text-white'
+              }`}>
+                {isRegEnabled ? 'LIVE & ACCEPTING ENTRIES' : 'REGISTRATIONS CLOSED'}
+              </span>
+            </div>
+            <p className="text-[11px] font-mono text-gray-300 mt-0.5">
+              {isRegEnabled 
+                ? 'Players across India can freely submit registrations for active tournaments.' 
+                : 'Registration page displays "NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED".'}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleToggleRegistrationStatus}
+          disabled={togglingRegStatus}
+          className={`w-full md:w-auto px-5 py-2.5 rounded-lg text-xs font-mono font-black uppercase tracking-wider flex items-center justify-center space-x-2 border transition-all ${
+            isRegEnabled 
+              ? 'bg-neon-red/20 hover:bg-neon-red text-neon-red hover:text-white border-neon-red/60' 
+              : 'bg-neon-emerald hover:bg-neon-emerald/80 text-black border-neon-emerald'
+          }`}
+        >
+          {togglingRegStatus ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>UPDATING GATEWAY...</span>
+            </>
+          ) : (
+            <>
+              <Power className="w-4 h-4" />
+              <span>{isRegEnabled ? 'CLOSE REGISTRATIONS' : 'OPEN REGISTRATIONS'}</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -192,25 +458,36 @@ export default function AdminRegistrationsPage() {
             REGISTRATION DATABASE & ARBITER CONSOLE
           </h1>
           <p className="text-xs text-gray-400 font-mono mt-0.5">
-            Private player roster, state code allocations (e.g. MH27), and proof verification.
+            Capacity-optimized database (1 Lakh+ scale), proof vault verification, and selective purge controls.
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           <button
-            onClick={fetchRegistrations}
+            onClick={() => fetchRegistrations(page)}
             className="btn-cyber-secondary px-3 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
-            title="Refresh database records from cloud"
+            title="Refresh database records"
           >
-            <RotateCw className="w-4 h-4 text-neon-emerald" />
+            <RotateCw className={`w-4 h-4 text-neon-emerald ${isLoading ? 'animate-spin' : ''}`} />
             <span>REFRESH</span>
           </button>
+          
           <button
             onClick={handleExportCSV}
-            className="btn-cyber-secondary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
+            className="btn-cyber-secondary px-3 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
           >
             <Download className="w-4 h-4 text-neon-cyan" />
-            <span>EXPORT AS CSV</span>
+            <span>EXPORT CSV</span>
+          </button>
+
+          {/* Global Purge Button */}
+          <button
+            onClick={() => setGlobalPurgeModalOpen(true)}
+            className="px-3 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5 bg-neon-red/20 hover:bg-neon-red/30 text-neon-red border border-neon-red/50 transition-colors"
+            title="Purge all registration records across all events"
+          >
+            <Trash2 className="w-4 h-4 text-neon-red" />
+            <span>CLEAR ALL</span>
           </button>
         </div>
       </div>
@@ -223,7 +500,7 @@ export default function AdminRegistrationsPage() {
         </div>
       )}
 
-      {/* STATE-WISE DRILLDOWN BREADCRUMB (SECTION 30 REQUIREMENT) */}
+      {/* STATE-WISE DRILLDOWN BREADCRUMB */}
       <div className="glass-hud p-4 rounded-xl border border-neon-cyan/30 text-xs font-mono flex flex-wrap items-center gap-2">
         <span className="text-gray-400">STATE CIRCUIT NAVIGATOR:</span>
         <button 
@@ -260,63 +537,117 @@ export default function AdminRegistrationsPage() {
         )}
       </div>
 
-      {/* Search & Secondary Filters */}
-      <div className="glass-panel p-4 rounded-xl border border-cyber-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Search */}
-        <div className="relative lg:col-span-2">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search code (MH27), player name, UID, team, email, phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-          />
+      {/* Search & Event Filters */}
+      <div className="glass-panel p-4 rounded-xl border border-cyber-border space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Search */}
+          <div className="relative lg:col-span-2">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search code (MH27), player name, UID, team, email, phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+            />
+          </div>
+
+          {/* Event Filter */}
+          <div>
+            <select
+              value={selectedEventId}
+              onChange={(e) => setSelectedEventId(e.target.value)}
+              className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+            >
+              <option value="ALL">All Tournaments / Events</option>
+              {eventsList.map(e => (
+                <option key={e.id} value={e.id}>{e.title}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status Filter */}
+          <div>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING">PENDING</option>
+              <option value="VERIFIED">VERIFIED</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="REJECTED">REJECTED</option>
+            </select>
+          </div>
         </div>
 
-        {/* Game Filter */}
-        <div>
-          <select
-            value={selectedGame}
-            onChange={(e) => setSelectedGame(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-          >
-            <option value="ALL">All Games</option>
-            <option value="BGMI">BGMI</option>
-            <option value="Free Fire">Free Fire Max</option>
-            <option value="Valorant">Valorant</option>
-          </select>
-        </div>
-
-        {/* Status Filter */}
-        <div>
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="PENDING">PENDING</option>
-            <option value="VERIFIED">VERIFIED</option>
-            <option value="APPROVED">APPROVED</option>
-            <option value="REJECTED">REJECTED</option>
-          </select>
-        </div>
+        {/* Event-Specific Purge Action Banner (Shows when an event is selected) */}
+        {selectedEventId !== 'ALL' && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-lg bg-neon-red/10 border border-neon-red/40 text-xs font-mono">
+            <div className="flex items-center space-x-2 text-neon-red">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span>
+                Filtering: <strong className="text-white">{currentSelectedEvent?.title || selectedEventId}</strong>
+              </span>
+            </div>
+            <button
+              onClick={() => setEventPurgeModalOpen(true)}
+              className="px-3 py-1.5 rounded bg-neon-red text-white text-xs font-mono font-bold uppercase flex items-center space-x-1.5 hover:bg-neon-red/80 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>CLEAR THIS EVENT&apos;S RECORDS</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* REGISTRATIONS TABLE */}
       <div className="glass-panel rounded-xl overflow-hidden border border-cyber-border">
-        <div className="p-4 border-b border-cyber-border flex justify-between items-center text-xs font-mono">
-          <span className="text-gray-400">
-            Showing <strong className="text-white">{filteredRegistrations.length}</strong> Registrations
-          </span>
-          <button 
-            onClick={fetchRegistrations}
-            className="text-neon-cyan hover:underline flex items-center space-x-1"
-          >
-            <RotateCw className="w-3.5 h-3.5" />
-            <span>Refresh Grid</span>
-          </button>
+        <div className="p-4 border-b border-cyber-border flex flex-col sm:flex-row justify-between items-center gap-3 text-xs font-mono">
+          <div className="text-gray-400">
+            Showing <strong className="text-white">{filteredRegistrations.length}</strong> of{' '}
+            <strong className="text-neon-cyan">{totalRecords}</strong> Total Records (Page {page} of {totalPages})
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1 text-gray-400">
+              <span>Per page:</span>
+              <select
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+                className="bg-cyber-dark border border-cyber-border text-white text-xs px-2 py-1 rounded font-mono"
+              >
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => fetchRegistrations(Math.max(1, page - 1))}
+                disabled={page <= 1 || isLoading}
+                className="p-1.5 rounded bg-cyber-dark hover:bg-white/10 text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed border border-cyber-border"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="px-2 font-bold text-white">
+                {page} / {totalPages}
+              </span>
+              <button
+                onClick={() => fetchRegistrations(Math.min(totalPages, page + 1))}
+                disabled={page >= totalPages || isLoading}
+                className="p-1.5 rounded bg-cyber-dark hover:bg-white/10 text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed border border-cyber-border"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -333,7 +664,14 @@ export default function AdminRegistrationsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-cyber-border">
-              {filteredRegistrations.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-gray-400 space-y-2">
+                    <Loader2 className="w-6 h-6 text-neon-cyan animate-spin mx-auto" />
+                    <div>Loading high-capacity tournament records...</div>
+                  </td>
+                </tr>
+              ) : filteredRegistrations.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-gray-500">
                     No registrations found matching the specified filters.
@@ -342,7 +680,7 @@ export default function AdminRegistrationsPage() {
               ) : (
                 filteredRegistrations.map((reg) => (
                   <tr key={reg.id} className="hover:bg-white/5 transition-colors">
-                    <td className="py-3.5 px-3 font-black text-neon-cyan text-sm">
+                    <td className="py-3.5 px-3 font-black text-neon-cyan text-sm whitespace-nowrap">
                       #{reg.public_code}
                     </td>
                     <td className="py-3.5 px-3">
@@ -353,7 +691,7 @@ export default function AdminRegistrationsPage() {
                       <div className="text-[10px] text-gray-500">{reg.email} &bull; {reg.phone}</div>
                     </td>
                     <td className="py-3.5 px-3">
-                      <div className="text-gray-300 font-semibold">{reg.district}</div>
+                      <div className="text-gray-300 font-semibold">{reg.district || reg.city}</div>
                       <div className="text-[10px] text-gray-400">{reg.state}</div>
                     </td>
                     <td className="py-3.5 px-3">
@@ -361,7 +699,7 @@ export default function AdminRegistrationsPage() {
                       <div className="text-[10px] text-gray-400 truncate max-w-[130px]">{reg.game}</div>
                     </td>
                     <td className="py-3.5 px-3">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase whitespace-nowrap ${
                         reg.status === 'APPROVED' ? 'bg-neon-emerald/20 text-neon-emerald border border-neon-emerald/40' :
                         reg.status === 'VERIFIED' ? 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/40' :
                         reg.status === 'REJECTED' ? 'bg-neon-red/20 text-neon-red border border-neon-red/40' :
@@ -375,12 +713,12 @@ export default function AdminRegistrationsPage() {
                         {reg.email_status}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 text-right space-x-1">
-                      {/* View details */}
+                    <td className="py-3.5 px-3 text-right whitespace-nowrap space-x-1">
+                      {/* View details & proofs */}
                       <button
-                        onClick={() => setSelectedReg(reg)}
+                        onClick={() => handleInspectRegistration(reg)}
                         className="p-1.5 rounded bg-cyber-dark hover:bg-neon-cyan/20 text-gray-300 hover:text-neon-cyan border border-cyber-border"
-                        title="View Full Profile & Documents"
+                        title="View Full Profile & Uploaded Proofs"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
@@ -436,6 +774,29 @@ export default function AdminRegistrationsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Bottom Pagination Bar */}
+        <div className="p-4 border-t border-cyber-border flex justify-between items-center text-xs font-mono">
+          <span className="text-gray-400">
+            Page {page} of {totalPages} &bull; Total: {totalRecords} records
+          </span>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => fetchRegistrations(Math.max(1, page - 1))}
+              disabled={page <= 1 || isLoading}
+              className="px-3 py-1.5 rounded bg-cyber-dark hover:bg-white/10 text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed border border-cyber-border uppercase text-[11px] font-bold"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => fetchRegistrations(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages || isLoading}
+              className="px-3 py-1.5 rounded bg-cyber-dark hover:bg-white/10 text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed border border-cyber-border uppercase text-[11px] font-bold"
+            >
+              Next
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* FULL REGISTRATION DETAILS MODAL */}
@@ -479,6 +840,7 @@ export default function AdminRegistrationsPage() {
                 <div className="text-gray-400 uppercase font-bold text-[10px] border-b border-cyber-border pb-1">
                   GAMING TELEMETRY
                 </div>
+                <div><strong>Tournament:</strong> {selectedReg.event_title || 'Gamers Guild Championship'}</div>
                 <div><strong>Game:</strong> {selectedReg.game}</div>
                 <div><strong>In-Game Name:</strong> {selectedReg.in_game_name}</div>
                 <div><strong>Player UID:</strong> {selectedReg.player_uid}</div>
@@ -500,7 +862,12 @@ export default function AdminRegistrationsPage() {
                 </span>
               </div>
 
-              {selectedReg.files && selectedReg.files.length > 0 ? (
+              {loadingDetail ? (
+                <div className="py-8 text-center space-y-2 text-xs font-mono text-gray-400">
+                  <Loader2 className="w-5 h-5 animate-spin text-neon-cyan mx-auto" />
+                  <div>Loading high-resolution documents from vault...</div>
+                </div>
+              ) : selectedReg.files && selectedReg.files.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {selectedReg.files.map((file, idx) => {
                     const isImg = isImageFile(file);
@@ -628,27 +995,138 @@ export default function AdminRegistrationsPage() {
         </div>
       )}
 
-      {/* DELETION CONFIRMATION MODAL */}
+      {/* SINGLE DELETION CONFIRMATION MODAL */}
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           <div className="glass-hud p-6 rounded-2xl border-2 border-neon-red/60 max-w-sm w-full text-center space-y-4">
             <AlertTriangle className="w-12 h-12 text-neon-red mx-auto" />
             <h3 className="text-lg font-black text-white font-mono uppercase">CONFIRM DELETION</h3>
             <p className="text-xs font-mono text-gray-300">
-              Are you sure you want to delete this registration record? This action is irreversible.
+              Are you sure you want to permanently delete registration record <span className="text-neon-cyan font-bold">#{deleteConfirmId}</span>? This action is irreversible.
             </p>
             <div className="flex justify-center space-x-3 pt-2">
               <button
                 onClick={() => setDeleteConfirmId(null)}
+                disabled={isDeletingSingle}
                 className="px-4 py-2 text-xs font-mono font-bold text-gray-400 hover:text-white"
               >
                 CANCEL
               </button>
               <button
                 onClick={() => handleDelete(deleteConfirmId)}
-                className="px-5 py-2 rounded bg-neon-red text-white text-xs font-mono font-bold uppercase"
+                disabled={isDeletingSingle}
+                className="px-5 py-2 rounded bg-neon-red text-white text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
               >
-                DELETE RECORD
+                {isDeletingSingle && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isDeletingSingle ? 'DELETING...' : 'DELETE RECORD'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EVENT PURGE MODAL */}
+      {eventPurgeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-hud p-6 rounded-2xl border-2 border-neon-red max-w-md w-full text-left space-y-4 shadow-2xl shadow-neon-red/20">
+            <div className="flex items-center space-x-3 text-neon-red">
+              <ShieldAlert className="w-8 h-8 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-black font-mono uppercase text-white">PURGE EVENT REGISTRATIONS</h3>
+                <span className="text-[11px] font-mono text-neon-red uppercase font-bold">IRREVERSIBLE ARBITER ACTION</span>
+              </div>
+            </div>
+
+            <p className="text-xs font-mono text-gray-300 leading-relaxed">
+              This will permanently delete <strong className="text-white">ALL registrations and uploaded proofs</strong> associated with the tournament:
+              <br />
+              <span className="text-neon-cyan font-bold block mt-1">
+                &ldquo;{currentSelectedEvent?.title || selectedEventId}&rdquo;
+              </span>
+            </p>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] font-mono text-gray-400 block">
+                Type <strong className="text-neon-red">CONFIRM</strong> below to execute:
+              </label>
+              <input
+                type="text"
+                value={eventPurgeInput}
+                onChange={(e) => setEventPurgeInput(e.target.value)}
+                placeholder="Type CONFIRM"
+                className="w-full px-3 py-2 text-xs font-mono bg-cyber-black border border-neon-red/60 rounded-lg text-white uppercase focus:outline-none focus:border-neon-red"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-3 border-t border-cyber-border">
+              <button
+                type="button"
+                onClick={() => { setEventPurgeModalOpen(false); setEventPurgeInput(''); }}
+                disabled={isPurgingEvent}
+                className="px-4 py-2 text-xs font-mono font-bold text-gray-400 hover:text-white"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={handlePurgeEvent}
+                disabled={eventPurgeInput.trim().toUpperCase() !== 'CONFIRM' || isPurgingEvent}
+                className="px-5 py-2 rounded bg-neon-red hover:bg-neon-red/80 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
+              >
+                {isPurgingEvent && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isPurgingEvent ? 'PURGING EVENT...' : 'CLEAR EVENT DATA'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GLOBAL PURGE MODAL */}
+      {globalPurgeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-hud p-6 rounded-2xl border-2 border-neon-red max-w-md w-full text-left space-y-4 shadow-2xl shadow-neon-red/30">
+            <div className="flex items-center space-x-3 text-neon-red">
+              <ShieldAlert className="w-9 h-9 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-black font-mono uppercase text-white">GLOBAL DATABASE PURGE</h3>
+                <span className="text-[11px] font-mono text-neon-red uppercase font-bold">SUPER ARBITER WIPE PROTOCOL</span>
+              </div>
+            </div>
+
+            <p className="text-xs font-mono text-gray-300 leading-relaxed">
+              WARNING: This will permanently wipe <strong className="text-neon-red">EVERY REGISTRATION RECORD</strong> across all tournaments, states, and files stored in the platform.
+            </p>
+
+            <div className="space-y-1.5 pt-1">
+              <label className="text-[11px] font-mono text-gray-400 block">
+                Type <strong className="text-neon-red">PURGE ALL</strong> to confirm:
+              </label>
+              <input
+                type="text"
+                value={globalPurgeInput}
+                onChange={(e) => setGlobalPurgeInput(e.target.value)}
+                placeholder="Type PURGE ALL"
+                className="w-full px-3 py-2 text-xs font-mono bg-cyber-black border border-neon-red/60 rounded-lg text-white uppercase focus:outline-none focus:border-neon-red"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-3 border-t border-cyber-border">
+              <button
+                type="button"
+                onClick={() => { setGlobalPurgeModalOpen(false); setGlobalPurgeInput(''); }}
+                disabled={isPurgingGlobal}
+                className="px-4 py-2 text-xs font-mono font-bold text-gray-400 hover:text-white"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={handlePurgeGlobal}
+                disabled={globalPurgeInput.trim() !== 'PURGE ALL' || isPurgingGlobal}
+                className="px-5 py-2 rounded bg-neon-red hover:bg-neon-red/80 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
+              >
+                {isPurgingGlobal && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isPurgingGlobal ? 'WIPING RECORDS...' : 'PERMANENTLY PURGE ALL'}</span>
               </button>
             </div>
           </div>
@@ -699,7 +1177,7 @@ export default function AdminRegistrationsPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={previewImage.url} 
-                alt={previewImage.title}
+                alt={previewImage.title} 
                 className="max-w-full max-h-[72vh] object-contain rounded shadow-2xl" 
               />
             </div>
@@ -719,4 +1197,3 @@ export default function AdminRegistrationsPage() {
     </div>
   );
 }
-

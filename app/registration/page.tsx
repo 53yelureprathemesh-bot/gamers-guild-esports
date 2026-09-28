@@ -20,11 +20,12 @@ import {
   Gamepad2,
   Trash2,
   Lock,
-  Mail
+  Mail,
+  Trophy
 } from 'lucide-react';
 import { INDIAN_STATES, getDistrictsForState } from '@/lib/stateCodes';
 import { DEFAULT_FORM_FIELDS } from '@/lib/defaultForm';
-import { Event, RegistrationField } from '@/lib/types';
+import { Event, RegistrationField, SiteSettings } from '@/lib/types';
 import { INITIAL_EVENTS } from '@/lib/dataStore';
 import PrintableReceipt from '@/components/PrintableReceipt';
 import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
@@ -65,8 +66,10 @@ function RegistrationFormContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submissionSuccess, setSubmissionSuccess] = useState<any | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState<boolean>(true);
 
-  // Fetch events & form fields
+  // Fetch events & form fields & site settings
   useEffect(() => {
     fetch('/api/admin/data')
       .then(res => res.json())
@@ -74,9 +77,11 @@ function RegistrationFormContent() {
         if (res.success && res.data) {
           if (res.data.events?.length) setEvents(res.data.events);
           if (res.data.formFields?.length) setFormFields(res.data.formFields);
+          if (res.data.settings) setSiteSettings(res.data.settings);
         }
       })
-      .catch(() => console.log('Loaded default client form structure.'));
+      .catch(() => console.log('Loaded default client form structure.'))
+      .finally(() => setIsLoadingSettings(false));
   }, []);
 
   // Update district dropdown when state changes
@@ -87,7 +92,16 @@ function RegistrationFormContent() {
     }
   }, [formData.state]);
 
-  const activeEvent = events.find(e => e.id === selectedEventId) || events[0];
+  const activeEvents = events.filter(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING'));
+  const activeEvent = activeEvents.find(e => e.id === selectedEventId) || activeEvents[0] || events[0];
+  const isRegistrationGloballyClosed = siteSettings?.registration_enabled === false;
+  const noEventsAvailable = activeEvents.length === 0;
+
+  useEffect(() => {
+    if (activeEvents.length > 0 && !activeEvents.some(e => e.id === selectedEventId)) {
+      setSelectedEventId(activeEvents[0].id);
+    }
+  }, [events, selectedEventId]);
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -339,6 +353,83 @@ function RegistrationFormContent() {
     );
   }
 
+  // REGISTRATION CLOSED OR NO EVENTS VIEW (GAMING ALERT SCREEN)
+  if (!isLoadingSettings && (isRegistrationGloballyClosed || noEventsAvailable)) {
+    return (
+      <div className="min-h-screen gaming-arena-bg py-16 sm:py-24 relative overflow-hidden font-rajdhani flex items-center justify-center">
+        <GamingEmberParticles />
+        <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 relative z-10 text-center">
+          <div className="glass-hud rounded-2xl border-2 border-neon-red/60 p-8 sm:p-12 shadow-2xl shadow-neon-red/20 relative overflow-hidden backdrop-blur-xl">
+            <HudCornerBrackets color="red" />
+
+            {/* Glowing Lock Icon */}
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-neon-red/10 border-2 border-neon-red/50 flex items-center justify-center mb-6 shadow-lg shadow-neon-red/30">
+              <Lock className="w-10 h-10 text-neon-red animate-pulse" />
+            </div>
+
+            {/* Status Pill */}
+            <div className="inline-block px-3 py-1 rounded bg-neon-red/20 border border-neon-red text-neon-red font-orbitron font-bold text-xs tracking-widest uppercase mb-4">
+              SYSTEM TRANSMISSION • STATUS LOCKED
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl font-orbitron font-black text-white uppercase tracking-wider mb-4">
+              {noEventsAvailable && !isRegistrationGloballyClosed 
+                ? "NO EVENT IS GOING ON" 
+                : "REGISTRATIONS CURRENTLY CLOSED"}
+            </h1>
+
+            <p className="text-gray-300 font-rajdhani text-lg sm:text-xl font-medium leading-relaxed max-w-lg mx-auto mb-8">
+              {siteSettings?.registration_closed_message || (
+                noEventsAvailable 
+                  ? "There are currently no active esports tournaments accepting registrations at this moment. Our arbiters are preparing upcoming high-stakes championships!" 
+                  : "Tournament registrations have been temporarily closed by administration. Please check back shortly or stay connected for the next bracket drop."
+              )}
+            </p>
+
+            {/* Tactical Info Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-left font-mono text-xs">
+              <div className="p-4 rounded-xl bg-cyber-black/70 border border-cyber-border">
+                <span className="text-gray-400 block mb-1">BRACKET INTEL</span>
+                <span className="text-neon-cyan font-bold block text-sm">UPCOMING TOURNAMENTS</span>
+                <span className="text-gray-400 text-[11px] mt-1 block">New state championship circuits are announced regularly on our schedule.</span>
+              </div>
+              <div className="p-4 rounded-xl bg-cyber-black/70 border border-cyber-border">
+                <span className="text-gray-400 block mb-1">EXISTING ROSTER</span>
+                <span className="text-neon-gold font-bold block text-sm">FIND REGISTRATION</span>
+                <span className="text-gray-400 text-[11px] mt-1 block">Already submitted an entry? Check your squad status with your mobile number.</span>
+              </div>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/upcoming-events"
+                className="btn-cyber-primary px-6 py-3 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2"
+              >
+                <Trophy className="w-4 h-4 text-cyber-black" />
+                <span>VIEW EVENT SCHEDULE</span>
+              </Link>
+              <Link
+                href="/find-registration"
+                className="btn-cyber-secondary px-6 py-3 rounded-lg text-xs font-bold font-mono uppercase flex items-center justify-center space-x-2"
+              >
+                <UserCheck className="w-4 h-4 text-neon-cyan" />
+                <span>FIND MY REGISTRATION</span>
+              </Link>
+              <Link
+                href="/"
+                className="px-5 py-3 rounded-lg text-xs font-bold font-mono uppercase text-gray-400 hover:text-white bg-cyber-dark border border-cyber-border flex items-center justify-center space-x-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>ARENA HOME</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // STANDARD FORM VIEW
   return (
     <div className="min-h-screen gaming-arena-bg py-12 sm:py-16 relative overflow-hidden font-rajdhani">
@@ -400,7 +491,7 @@ function RegistrationFormContent() {
               onChange={(e) => setSelectedEventId(e.target.value)}
               className="w-full px-4 py-3 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
             >
-              {events.map((ev) => (
+              {activeEvents.map((ev) => (
                 <option key={ev.id} value={ev.id}>
                   {ev.title} ({ev.game}) — {ev.prize_pool}
                 </option>

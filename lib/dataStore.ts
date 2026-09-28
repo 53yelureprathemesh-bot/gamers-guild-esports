@@ -140,7 +140,9 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
     instagram: "https://instagram.com/gamersguildesports",
     youtube: "https://youtube.com/@gamersguildesports",
     twitter: "https://twitter.com/gamersguildgg"
-  }
+  },
+  registration_enabled: true,
+  registration_closed_message: "NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED"
 };
 
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
@@ -586,10 +588,30 @@ class DataStore {
     return reg;
   }
 
+  public setRegistrations(regs: Registration[]): void {
+    this.registrations = regs;
+  }
+
   public deleteRegistration(id: string): boolean {
+    const cleanId = id.trim().toLowerCase().replace(/^#/, '');
     const initialLen = this.registrations.length;
-    this.registrations = this.registrations.filter(r => r.id !== id);
+    this.registrations = this.registrations.filter(r => 
+      r.id.toLowerCase() !== cleanId && 
+      r.public_code.toLowerCase().replace(/^#/, '') !== cleanId
+    );
     return this.registrations.length < initialLen;
+  }
+
+  public clearEventRegistrations(eventId: string): number {
+    const initialLen = this.registrations.length;
+    this.registrations = this.registrations.filter(r => r.event_id !== eventId);
+    return initialLen - this.registrations.length;
+  }
+
+  public clearAllRegistrations(): number {
+    const count = this.registrations.length;
+    this.registrations = [];
+    return count;
   }
 
   // Announcements

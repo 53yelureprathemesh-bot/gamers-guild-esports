@@ -30,6 +30,14 @@ export default function AdminUsersPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(true);
 
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  };
+
   // Check if current user is Super Admin
   useEffect(() => {
     try {
@@ -44,7 +52,7 @@ export default function AdminUsersPage() {
   }, []);
 
   const fetchAdmins = () => {
-    fetch('/api/admin/data?type=admins')
+    fetch('/api/admin/data?type=admins', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data && Array.isArray(res.data) && res.data.length > 0) {
@@ -94,7 +102,7 @@ export default function AdminUsersPage() {
 
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'save-admin',
           payload
@@ -127,7 +135,7 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch('/api/admin/data', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           action: 'delete-admin',
           payload: { id }
