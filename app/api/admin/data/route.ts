@@ -234,6 +234,7 @@ export async function GET(req: NextRequest) {
       }
 
       // 5. SITE SETTINGS & HOME CONTENT (With High-Concurrency Cache)
+      case 'site-settings':
       case 'settings': {
         const cacheKey = 'cache:site_settings';
         const cached = getCached<any>(cacheKey);

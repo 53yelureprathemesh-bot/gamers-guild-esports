@@ -12,7 +12,8 @@ import {
   Layers, 
   Globe, 
   Image as ImageIcon,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
 import { SiteSettings } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
@@ -20,6 +21,7 @@ import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 export default function AdminHomeEditorPage() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const getAuthHeaders = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
@@ -33,9 +35,22 @@ export default function AdminHomeEditorPage() {
     fetch('/api/admin/data?type=site-settings', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && res.data) setSettings(res.data);
+        if (res.success && res.data) {
+          const raw = res.data.settings || res.data;
+          setSettings({
+            ...INITIAL_SITE_SETTINGS,
+            ...raw,
+            hero: { ...INITIAL_SITE_SETTINGS.hero, ...(raw?.hero || {}) },
+            about: { ...INITIAL_SITE_SETTINGS.about, ...(raw?.about || {}) },
+            contact: { ...INITIAL_SITE_SETTINGS.contact, ...(raw?.contact || {}) },
+            statistics: Array.isArray(raw?.statistics) && raw.statistics.length > 0 ? raw.statistics : INITIAL_SITE_SETTINGS.statistics,
+            registration_enabled: raw?.registration_enabled !== undefined ? Boolean(raw.registration_enabled) : true,
+            registration_closed_message: raw?.registration_closed_message || INITIAL_SITE_SETTINGS.registration_closed_message
+          });
+        }
       })
-      .catch(() => console.log('Using initial settings.'));
+      .catch((e) => console.log('Using initial settings:', e))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleSave = async () => {
@@ -63,29 +78,36 @@ export default function AdminHomeEditorPage() {
   const updateHero = (key: keyof SiteSettings['hero'], val: string) => {
     setSettings(prev => ({
       ...prev,
-      hero: { ...prev.hero, [key]: val }
+      hero: { ...(prev.hero || INITIAL_SITE_SETTINGS.hero), [key]: val }
     }));
   };
 
   const updateAbout = (key: keyof SiteSettings['about'], val: string) => {
     setSettings(prev => ({
       ...prev,
-      about: { ...prev.about, [key]: val }
+      about: { ...(prev.about || INITIAL_SITE_SETTINGS.about), [key]: val }
     }));
   };
 
   const updateStat = (index: number, key: 'number' | 'label', val: string) => {
-    const copy = [...settings.statistics];
-    copy[index] = { ...copy[index], [key]: val };
-    setSettings(prev => ({ ...prev, statistics: copy }));
+    const list = settings.statistics || INITIAL_SITE_SETTINGS.statistics;
+    const copy = [...list];
+    if (copy[index]) {
+      copy[index] = { ...copy[index], [key]: val };
+      setSettings(prev => ({ ...prev, statistics: copy }));
+    }
   };
 
   const updateContact = (key: keyof SiteSettings['contact'], val: string) => {
     setSettings(prev => ({
       ...prev,
-      contact: { ...prev.contact, [key]: val }
+      contact: { ...(prev.contact || INITIAL_SITE_SETTINGS.contact), [key]: val }
     }));
   };
+
+  const statsList = Array.isArray(settings?.statistics) && settings.statistics.length > 0 
+    ? settings.statistics 
+    : INITIAL_SITE_SETTINGS.statistics;
 
   return (
     <div className="space-y-8 max-w-5xl">
@@ -140,7 +162,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Hero Main Tagline</label>
             <input
               type="text"
-              value={settings.hero.tagline}
+              value={settings?.hero?.tagline || ''}
               onChange={(e) => updateHero('tagline', e.target.value)}
               className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
             />
@@ -150,7 +172,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Hero Subheading</label>
             <textarea
               rows={3}
-              value={settings.hero.subheading}
+              value={settings?.hero?.subheading || ''}
               onChange={(e) => updateHero('subheading', e.target.value)}
               className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
             />
@@ -161,7 +183,7 @@ export default function AdminHomeEditorPage() {
               <label className="text-xs font-mono font-bold text-gray-300">Primary CTA Text</label>
               <input
                 type="text"
-                value={settings.hero.cta_primary_text}
+                value={settings?.hero?.cta_primary_text || ''}
                 onChange={(e) => updateHero('cta_primary_text', e.target.value)}
                 className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
               />
@@ -170,7 +192,7 @@ export default function AdminHomeEditorPage() {
               <label className="text-xs font-mono font-bold text-gray-300">Primary CTA Link</label>
               <input
                 type="text"
-                value={settings.hero.cta_primary_link}
+                value={settings?.hero?.cta_primary_link || ''}
                 onChange={(e) => updateHero('cta_primary_link', e.target.value)}
                 className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
               />
@@ -179,7 +201,7 @@ export default function AdminHomeEditorPage() {
               <label className="text-xs font-mono font-bold text-gray-300">Secondary CTA Text</label>
               <input
                 type="text"
-                value={settings.hero.cta_secondary_text}
+                value={settings?.hero?.cta_secondary_text || ''}
                 onChange={(e) => updateHero('cta_secondary_text', e.target.value)}
                 className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
               />
@@ -188,7 +210,7 @@ export default function AdminHomeEditorPage() {
               <label className="text-xs font-mono font-bold text-gray-300">Secondary CTA Link</label>
               <input
                 type="text"
-                value={settings.hero.cta_secondary_link}
+                value={settings?.hero?.cta_secondary_link || ''}
                 onChange={(e) => updateHero('cta_secondary_link', e.target.value)}
                 className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
               />
@@ -199,7 +221,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Logo Image Path / URL</label>
             <input
               type="text"
-              value={settings.hero.logo_url}
+              value={settings?.hero?.logo_url || ''}
               onChange={(e) => updateHero('logo_url', e.target.value)}
               className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
             />
@@ -219,7 +241,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">About Heading</label>
             <input
               type="text"
-              value={settings.about.heading}
+              value={settings?.about?.heading || ''}
               onChange={(e) => updateAbout('heading', e.target.value)}
               className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
             />
@@ -229,7 +251,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Detailed Description</label>
             <textarea
               rows={3}
-              value={settings.about.description}
+              value={settings?.about?.description || ''}
               onChange={(e) => updateAbout('description', e.target.value)}
               className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
             />
@@ -240,7 +262,7 @@ export default function AdminHomeEditorPage() {
               <label className="text-xs font-mono font-bold text-gray-300">Organization Mission</label>
               <textarea
                 rows={3}
-                value={settings.about.mission}
+                value={settings?.about?.mission || ''}
                 onChange={(e) => updateAbout('mission', e.target.value)}
                 className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
               />
@@ -249,7 +271,7 @@ export default function AdminHomeEditorPage() {
               <label className="text-xs font-mono font-bold text-gray-300">Organization Vision</label>
               <textarea
                 rows={3}
-                value={settings.about.vision}
+                value={settings?.about?.vision || ''}
                 onChange={(e) => updateAbout('vision', e.target.value)}
                 className="w-full mt-1 px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
               />
@@ -266,14 +288,14 @@ export default function AdminHomeEditorPage() {
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {settings.statistics.map((st, idx) => (
+          {statsList.map((st, idx) => (
             <div key={idx} className="p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border space-y-2">
               <span className="text-[10px] font-mono text-gray-400 font-bold uppercase">CARD #{idx + 1}</span>
               <div>
                 <label className="text-[11px] font-mono text-gray-400">Value (e.g. 500+)</label>
                 <input
                   type="text"
-                  value={st.number}
+                  value={st?.number || ''}
                   onChange={(e) => updateStat(idx, 'number', e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs font-mono bg-cyber-black border border-cyber-border rounded text-white focus:border-neon-emerald"
                 />
@@ -282,7 +304,7 @@ export default function AdminHomeEditorPage() {
                 <label className="text-[11px] font-mono text-gray-400">Label (e.g. PLAYERS)</label>
                 <input
                   type="text"
-                  value={st.label}
+                  value={st?.label || ''}
                   onChange={(e) => updateStat(idx, 'label', e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs font-mono bg-cyber-black border border-cyber-border rounded text-white focus:border-neon-emerald"
                 />
@@ -303,7 +325,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Public Support Email</label>
             <input
               type="email"
-              value={settings.contact.email}
+              value={settings?.contact?.email || ''}
               onChange={(e) => updateContact('email', e.target.value)}
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
@@ -312,7 +334,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Helpline / WhatsApp</label>
             <input
               type="text"
-              value={settings.contact.phone}
+              value={settings?.contact?.phone || ''}
               onChange={(e) => updateContact('phone', e.target.value)}
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
@@ -321,7 +343,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Headquarters Address</label>
             <input
               type="text"
-              value={settings.contact.address}
+              value={settings?.contact?.address || ''}
               onChange={(e) => updateContact('address', e.target.value)}
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
@@ -330,7 +352,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Discord Invite URL</label>
             <input
               type="text"
-              value={settings.contact.discord}
+              value={settings?.contact?.discord || ''}
               onChange={(e) => updateContact('discord', e.target.value)}
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
@@ -339,7 +361,7 @@ export default function AdminHomeEditorPage() {
             <label className="text-xs font-mono font-bold text-gray-300">Instagram Handle URL</label>
             <input
               type="text"
-              value={settings.contact.instagram}
+              value={settings?.contact?.instagram || ''}
               onChange={(e) => updateContact('instagram', e.target.value)}
               className="w-full mt-1 px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
             />
@@ -358,7 +380,7 @@ export default function AdminHomeEditorPage() {
             <input
               type="checkbox"
               id="registration_enabled"
-              checked={settings.registration_enabled ?? true}
+              checked={settings?.registration_enabled ?? true}
               onChange={(e) => setSettings(prev => ({ ...prev, registration_enabled: e.target.checked }))}
               className="w-5 h-5 rounded bg-cyber-black border-cyber-border text-neon-emerald focus:ring-neon-emerald"
             />
@@ -373,7 +395,7 @@ export default function AdminHomeEditorPage() {
             </label>
             <textarea
               rows={2}
-              value={settings.registration_closed_message || ''}
+              value={settings?.registration_closed_message || ''}
               onChange={(e) => setSettings(prev => ({ ...prev, registration_closed_message: e.target.value }))}
               placeholder="NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED"
               className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
