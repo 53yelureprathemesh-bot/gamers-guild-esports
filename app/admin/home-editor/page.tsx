@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   Edit3, 
   Save, 
@@ -13,9 +14,13 @@ import {
   Globe, 
   Image as ImageIcon,
   ExternalLink,
-  Loader2
+  Loader2,
+  Plus,
+  Trash2,
+  Swords,
+  Trophy
 } from 'lucide-react';
-import { SiteSettings } from '@/lib/types';
+import { SiteSettings, BattlegroundDiscipline, HeroShowcase } from '@/lib/types';
 import { INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 import { formatExternalUrl } from '@/lib/formatUrl';
 
@@ -49,7 +54,17 @@ export default function AdminHomeEditorPage() {
             registration_closed_message: raw?.registration_closed_message || INITIAL_SITE_SETTINGS.registration_closed_message,
             ongoing_tournaments_active: raw?.ongoing_tournaments_active !== undefined ? Boolean(raw.ongoing_tournaments_active) : false,
             no_ongoing_tournaments_title: raw?.no_ongoing_tournaments_title || INITIAL_SITE_SETTINGS.no_ongoing_tournaments_title,
-            no_ongoing_tournaments_message: raw?.no_ongoing_tournaments_message || INITIAL_SITE_SETTINGS.no_ongoing_tournaments_message
+            no_ongoing_tournaments_message: raw?.no_ongoing_tournaments_message || INITIAL_SITE_SETTINGS.no_ongoing_tournaments_message,
+            hero_showcase: raw?.hero_showcase || INITIAL_SITE_SETTINGS.hero_showcase || {
+              enabled: false,
+              badge_text: 'NATIONAL ROSTER • APEX CHAMPIONS',
+              subtitle: 'DOMINATING ALL DISCIPLINES',
+              title: 'BGMI • FREE FIRE • VALORANT',
+              prize_circuit: '₹5,00,000+',
+              status_text: 'CIRCUIT STANDBY',
+              image_url: '/images/characters/hero_squad.jpg'
+            },
+            disciplines: Array.isArray(raw?.disciplines) ? raw.disciplines : []
           });
         }
       })
@@ -67,7 +82,9 @@ export default function AdminHomeEditorPage() {
           instagram: settings.contact.instagram ? formatExternalUrl(settings.contact.instagram) : '',
           youtube: settings.contact.youtube ? formatExternalUrl(settings.contact.youtube) : '',
           facebook: settings.contact.facebook ? formatExternalUrl(settings.contact.facebook) : '',
-        } : settings.contact
+        } : settings.contact,
+        hero_showcase: settings.hero_showcase,
+        disciplines: settings.disciplines || []
       };
 
       const res = await fetch('/api/admin/data', {
@@ -118,6 +135,58 @@ export default function AdminHomeEditorPage() {
     setSettings(prev => ({
       ...prev,
       contact: { ...(prev.contact || INITIAL_SITE_SETTINGS.contact), [key]: val }
+    }));
+  };
+
+  const updateHeroShowcase = (key: keyof HeroShowcase, val: any) => {
+    setSettings(prev => ({
+      ...prev,
+      hero_showcase: {
+        ...(prev.hero_showcase || {
+          enabled: false,
+          badge_text: '',
+          subtitle: '',
+          title: '',
+          prize_circuit: '',
+          status_text: '',
+          image_url: ''
+        }),
+        [key]: val
+      }
+    }));
+  };
+
+  const addDiscipline = () => {
+    const newDiscipline: BattlegroundDiscipline = {
+      id: 'disc-' + Date.now(),
+      game: 'BGMI',
+      title: 'BGMI CHAMPIONSHIP',
+      tagline: 'BATTLE ROYALE • SQUAD',
+      prize_pool: '₹2,50,000 INR',
+      description: 'Custom competitive rooms, Level-3 loot distribution, Erangel & Miramar state qualifiers.',
+      format: '4v4 Squad',
+      status: 'CIRCUIT STANDBY',
+      image_url: '/images/characters/bgmi_operator.jpg',
+      link_url: '/upcoming-events',
+      link_text: 'VIEW SCHEDULE'
+    };
+    setSettings(prev => ({
+      ...prev,
+      disciplines: [...(prev.disciplines || []), newDiscipline]
+    }));
+  };
+
+  const updateDiscipline = (id: string, key: keyof BattlegroundDiscipline, val: string) => {
+    setSettings(prev => ({
+      ...prev,
+      disciplines: (prev.disciplines || []).map(d => d.id === id ? { ...d, [key]: val } : d)
+    }));
+  };
+
+  const removeDiscipline = (id: string) => {
+    setSettings(prev => ({
+      ...prev,
+      disciplines: (prev.disciplines || []).filter(d => d.id !== id)
     }));
   };
 
@@ -411,10 +480,276 @@ export default function AdminHomeEditorPage() {
         </div>
       </div>
 
-      {/* 5. REGISTRATION GATEWAY CONTROLS */}
+      {/* 5. HERO SQUAD SHOWCASE BANNER (APEX ROSTER) */}
+      <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-cyber-border space-y-6">
+        <h2 className="text-base font-black text-white font-mono uppercase border-b border-cyber-border pb-3 flex items-center justify-between">
+          <span>5. HERO SQUAD SHOWCASE BANNER</span>
+          <span className="text-xs font-bold text-neon-cyan px-2 py-0.5 rounded bg-neon-cyan/15 border border-neon-cyan/40">
+            HERO ROSTER CARD
+          </span>
+        </h2>
+
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border">
+            <input
+              type="checkbox"
+              id="hero_showcase_enabled"
+              checked={settings?.hero_showcase?.enabled ?? false}
+              onChange={(e) => updateHeroShowcase('enabled', e.target.checked)}
+              className="w-5 h-5 rounded bg-cyber-black border-cyber-border text-neon-emerald focus:ring-neon-emerald"
+            />
+            <label htmlFor="hero_showcase_enabled" className="text-xs font-mono font-bold text-white cursor-pointer select-none">
+              SHOW HERO SQUAD SHOWCASE BANNER ON HOMEPAGE (If unchecked, this section is completely hidden from the public homepage).
+            </label>
+          </div>
+
+          {settings?.hero_showcase?.enabled && (
+            <div className="p-4 rounded-xl bg-cyber-dark/40 border border-cyber-border space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Top Live Badge</label>
+                  <input
+                    type="text"
+                    value={settings.hero_showcase?.badge_text || ''}
+                    onChange={(e) => updateHeroShowcase('badge_text', e.target.value)}
+                    placeholder="NATIONAL ROSTER • APEX CHAMPIONS"
+                    className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Subtitle</label>
+                  <input
+                    type="text"
+                    value={settings.hero_showcase?.subtitle || ''}
+                    onChange={(e) => updateHeroShowcase('subtitle', e.target.value)}
+                    placeholder="DOMINATING ALL DISCIPLINES"
+                    className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Main Heading</label>
+                  <input
+                    type="text"
+                    value={settings.hero_showcase?.title || ''}
+                    onChange={(e) => updateHeroShowcase('title', e.target.value)}
+                    placeholder="BGMI • FREE FIRE • VALORANT"
+                    className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Total Prize Circuit</label>
+                  <input
+                    type="text"
+                    value={settings.hero_showcase?.prize_circuit || ''}
+                    onChange={(e) => updateHeroShowcase('prize_circuit', e.target.value)}
+                    placeholder="₹5,00,000+"
+                    className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Status Text</label>
+                  <input
+                    type="text"
+                    value={settings.hero_showcase?.status_text || ''}
+                    onChange={(e) => updateHeroShowcase('status_text', e.target.value)}
+                    placeholder="CIRCUIT STANDBY"
+                    className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Banner Image / Picture URL</label>
+                  <input
+                    type="text"
+                    value={settings.hero_showcase?.image_url || ''}
+                    onChange={(e) => updateHeroShowcase('image_url', e.target.value)}
+                    placeholder="/images/characters/hero_squad.jpg or https://..."
+                    className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 6. COMPETITIVE DISCIPLINES / BATTLEGROUND CARDS */}
+      <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-neon-cyan/40 space-y-6 shadow-hud">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-cyber-border pb-3">
+          <div>
+            <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+              <Swords className="w-4 h-4 text-neon-cyan" />
+              <span>6. BATTLEGROUND DISCIPLINES & GAME CARDS</span>
+            </h2>
+            <p className="text-xs text-gray-400 font-mono mt-0.5">
+              Add custom game cards with pictures, titles, formats, and schedules displayed on the homepage.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={addDiscipline}
+            className="btn-cyber-primary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5 self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4 text-cyber-black" />
+            <span>ADD DISCIPLINE CARD</span>
+          </button>
+        </div>
+
+        {(!settings.disciplines || settings.disciplines.length === 0) ? (
+          <div className="p-8 rounded-xl bg-cyber-dark/60 border border-cyber-border text-center space-y-3">
+            <Swords className="w-8 h-8 text-gray-500 mx-auto" />
+            <div className="text-sm font-bold text-gray-300 font-mono">
+              NO DISCIPLINE CARDS CONFIGURED
+            </div>
+            <p className="text-xs text-gray-400 font-mono max-w-md mx-auto">
+              Hardcoded discipline cards have been deleted per your request. The section will stay hidden from the public homepage until you click &quot;Add Discipline Card&quot; below.
+            </p>
+            <button
+              type="button"
+              onClick={addDiscipline}
+              className="btn-cyber-secondary px-4 py-2 rounded text-xs font-mono font-bold inline-flex items-center space-x-1"
+            >
+              <Plus className="w-3.5 h-3.5 text-neon-cyan" />
+              <span>ADD YOUR FIRST CARD</span>
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {settings.disciplines.map((item, index) => (
+              <div 
+                key={item.id} 
+                className="p-5 rounded-xl bg-cyber-dark/80 border border-cyber-border space-y-4 relative group hover:border-neon-cyan/40 transition-colors"
+              >
+                <div className="flex items-center justify-between border-b border-cyber-border pb-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-6 h-6 rounded-full bg-neon-cyan/20 border border-neon-cyan text-neon-cyan font-mono text-xs font-bold flex items-center justify-center">
+                      {index + 1}
+                    </span>
+                    <span className="font-mono text-xs font-bold text-white uppercase">
+                      {item.title || item.game || 'New Discipline'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeDiscipline(item.id)}
+                    className="p-1.5 rounded-lg bg-cyber-black hover:bg-neon-red/20 text-gray-400 hover:text-neon-red border border-cyber-border transition-colors text-xs font-mono flex items-center space-x-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>DELETE CARD</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Game Name</label>
+                    <input
+                      type="text"
+                      value={item.game || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'game', e.target.value)}
+                      placeholder="BGMI, Free Fire, Valorant..."
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Championship Title</label>
+                    <input
+                      type="text"
+                      value={item.title || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'title', e.target.value)}
+                      placeholder="BGMI CHAMPIONSHIP"
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Tagline / Genre</label>
+                    <input
+                      type="text"
+                      value={item.tagline || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'tagline', e.target.value)}
+                      placeholder="BATTLE ROYALE • SQUAD"
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Prize Pool</label>
+                    <input
+                      type="text"
+                      value={item.prize_pool || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'prize_pool', e.target.value)}
+                      placeholder="₹2,50,000 INR"
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Format</label>
+                    <input
+                      type="text"
+                      value={item.format || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'format', e.target.value)}
+                      placeholder="4v4 Squad, 5v5 Tactical..."
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Status Badge</label>
+                    <input
+                      type="text"
+                      value={item.status || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'status', e.target.value)}
+                      placeholder="CIRCUIT STANDBY, REGISTRATION OPEN..."
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Picture / Image URL</label>
+                    <input
+                      type="text"
+                      value={item.image_url || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'image_url', e.target.value)}
+                      placeholder="/images/characters/bgmi_operator.jpg or https://..."
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Button Link URL</label>
+                    <input
+                      type="text"
+                      value={item.link_url || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'link_url', e.target.value)}
+                      placeholder="/upcoming-events or /registration"
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Button Text</label>
+                    <input
+                      type="text"
+                      value={item.link_text || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'link_text', e.target.value)}
+                      placeholder="VIEW SCHEDULE"
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-mono font-bold text-gray-300 block mb-1">Description</label>
+                    <input
+                      type="text"
+                      value={item.description || ''}
+                      onChange={(e) => updateDiscipline(item.id, 'description', e.target.value)}
+                      placeholder="Custom competitive rooms, Level-3 loot distribution..."
+                      className="w-full px-3 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 7. REGISTRATION GATEWAY CONTROLS */}
       <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-cyber-border space-y-6">
         <h2 className="text-base font-black text-white font-mono uppercase border-b border-cyber-border pb-3">
-          5. TOURNAMENT REGISTRATION GATEWAY
+          7. TOURNAMENT REGISTRATION GATEWAY
         </h2>
 
         <div className="space-y-4">
@@ -446,10 +781,10 @@ export default function AdminHomeEditorPage() {
         </div>
       </div>
 
-      {/* 6. ONGOING TOURNAMENTS SECTION CONTROLS */}
+      {/* 8. ONGOING TOURNAMENTS SECTION CONTROLS */}
       <div className="glass-hud p-6 sm:p-8 rounded-2xl border border-neon-cyan/40 space-y-6 shadow-hud">
         <h2 className="text-base font-black text-white font-mono uppercase border-b border-cyber-border pb-3 flex items-center justify-between">
-          <span>6. ONGOING TOURNAMENTS SECTION CONTROLS</span>
+          <span>8. ONGOING TOURNAMENTS SECTION CONTROLS</span>
           <span className="text-xs font-bold text-neon-cyan px-2 py-0.5 rounded bg-neon-cyan/15 border border-neon-cyan/40">
             PUBLIC WEBSITE DISPLAY
           </span>

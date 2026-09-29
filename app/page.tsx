@@ -242,207 +242,153 @@ export default function HomePage() {
                 </div>
               </div>
             )}
-            {/* APEX CHAMPIONS SQUAD HERO SHOWCASE */}
-            <div className="mt-14 w-full max-w-4xl relative group">
-              <div className="absolute -inset-1.5 bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-gold rounded-3xl blur-xl opacity-50 group-hover:opacity-85 transition duration-500"></div>
-              <div className="relative rounded-2xl overflow-hidden border-2 border-neon-cyan/60 bg-cyber-dark/90 shadow-[0_0_40px_rgba(0,242,254,0.2)]">
-                <HudCornerBrackets color="cyan" />
-                <div className="relative h-64 sm:h-80 md:h-[420px] w-full">
-                  <Image
-                    src="/images/characters/hero_squad.jpg"
-                    alt="Gamers Guild Champions Squad"
-                    fill
-                    priority
-                    className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-cyber-black/20 to-transparent"></div>
-                  
-                  {/* Top Live Badge */}
-                  <div className="absolute top-4 left-4 flex items-center space-x-2">
-                    <span className="px-3.5 py-1 rounded-full bg-neon-emerald/30 border border-neon-emerald text-neon-emerald font-orbitron font-bold text-xs uppercase flex items-center gap-2 backdrop-blur-md shadow-[0_0_15px_rgba(10,255,10,0.3)]">
-                      <span className="w-2.5 h-2.5 rounded-full bg-neon-emerald animate-ping"></span>
-                      NATIONAL ROSTER • APEX CHAMPIONS
-                    </span>
-                  </div>
-
-                  {/* Bottom Squad Banner Bar */}
-                  <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-cyber-black/90 backdrop-blur-md border border-neon-cyan/30">
-                    <div>
-                      <div className="text-[11px] font-mono text-neon-cyan font-bold tracking-widest uppercase">
-                        DOMINATING ALL DISCIPLINES
-                      </div>
-                      <div className="text-lg sm:text-2xl font-black text-white font-orbitron uppercase tracking-wide">
-                        BGMI • FREE FIRE • VALORANT
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-6 text-xs font-mono">
-                      <div>
-                        <span className="text-gray-400 block text-[10px] uppercase">Total Prize Circuit</span>
-                        <span className="text-neon-gold font-bold font-orbitron text-sm sm:text-base">₹5,00,000+</span>
-                      </div>
-                      <div className="h-8 w-px bg-white/20"></div>
-                      <div>
-                        <span className="text-gray-400 block text-[10px] uppercase">Battleground Status</span>
-                        <span className="text-neon-emerald font-bold font-orbitron text-sm sm:text-base">
-                          {upcomingEvents.length > 0 || ongoingEvents.length > 0 ? 'LIVE TOURNAMENTS' : 'CIRCUIT STANDBY'}
+            {/* APEX CHAMPIONS SQUAD HERO SHOWCASE (Rendered only if enabled in settings by admin) */}
+            {settings.hero_showcase?.enabled && (
+              <div className="mt-14 w-full max-w-4xl relative group">
+                <div className="absolute -inset-1.5 bg-gradient-to-r from-neon-emerald via-neon-cyan to-neon-gold rounded-3xl blur-xl opacity-50 group-hover:opacity-85 transition duration-500"></div>
+                <div className="relative rounded-2xl overflow-hidden border-2 border-neon-cyan/60 bg-cyber-dark/90 shadow-[0_0_40px_rgba(0,242,254,0.2)]">
+                  <HudCornerBrackets color="cyan" />
+                  <div className="relative h-64 sm:h-80 md:h-[420px] w-full">
+                    <Image
+                      src={settings.hero_showcase.image_url || "/images/characters/hero_squad.jpg"}
+                      alt={settings.hero_showcase.title || "Gamers Guild Champions Squad"}
+                      fill
+                      priority
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-cyber-black/20 to-transparent"></div>
+                    
+                    {/* Top Live Badge */}
+                    {settings.hero_showcase.badge_text && (
+                      <div className="absolute top-4 left-4 flex items-center space-x-2">
+                        <span className="px-3.5 py-1 rounded-full bg-neon-emerald/30 border border-neon-emerald text-neon-emerald font-orbitron font-bold text-xs uppercase flex items-center gap-2 backdrop-blur-md shadow-[0_0_15px_rgba(10,255,10,0.3)]">
+                          <span className="w-2.5 h-2.5 rounded-full bg-neon-emerald animate-ping"></span>
+                          {settings.hero_showcase.badge_text}
                         </span>
+                      </div>
+                    )}
+
+                    {/* Bottom Squad Banner Bar */}
+                    <div className="absolute bottom-4 left-4 right-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-cyber-black/90 backdrop-blur-md border border-neon-cyan/30">
+                      <div>
+                        {settings.hero_showcase.subtitle && (
+                          <div className="text-[11px] font-mono text-neon-cyan font-bold tracking-widest uppercase">
+                            {settings.hero_showcase.subtitle}
+                          </div>
+                        )}
+                        <div className="text-lg sm:text-2xl font-black text-white font-orbitron uppercase tracking-wide">
+                          {settings.hero_showcase.title || "BGMI • FREE FIRE • VALORANT"}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-6 text-xs font-mono">
+                        {settings.hero_showcase.prize_circuit && (
+                          <div>
+                            <span className="text-gray-400 block text-[10px] uppercase">Total Prize Circuit</span>
+                            <span className="text-neon-gold font-bold font-orbitron text-sm sm:text-base">
+                              {settings.hero_showcase.prize_circuit}
+                            </span>
+                          </div>
+                        )}
+                        {settings.hero_showcase.prize_circuit && <div className="h-8 w-px bg-white/20"></div>}
+                        <div>
+                          <span className="text-gray-400 block text-[10px] uppercase">Battleground Status</span>
+                          <span className="text-neon-emerald font-bold font-orbitron text-sm sm:text-base">
+                            {settings.hero_showcase.status_text || (upcomingEvents.length > 0 || ongoingEvents.length > 0 ? 'LIVE TOURNAMENTS' : 'CIRCUIT STANDBY')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
       </section>
 
-      {/* 4. OFFICIAL TOURNAMENT DISCIPLINES & GAMING CHARACTERS SHOWCASE */}
-      <section className="py-20 relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-14">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-orbitron font-bold uppercase mb-3">
-            <Swords className="w-4 h-4 text-neon-cyan" />
-            <span>OFFICIAL DISCIPLINES</span>
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
-            CHOOSE YOUR BATTLEGROUND
-          </h2>
-          <p className="mt-3 text-base text-gray-300 font-rajdhani font-medium max-w-xl mx-auto">
-            From tactical battle royale survival to lightning-fast neon duels, register your squad in national tournament circuits.
-          </p>
-        </div>
-
-        {/* 3 Discipline Character Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* Card 1: BGMI Operator */}
-          <div className="gaming-battle-card rounded-2xl p-4 border border-neon-emerald/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl">
-            <HudCornerBrackets color="emerald" />
-            <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
-              <Image
-                src="/images/characters/bgmi_operator.jpg"
-                alt="BGMI Tactical Operator"
-                fill
-                className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
-              <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-emerald/50 text-[10px] font-black uppercase text-neon-emerald font-orbitron">
-                BATTLE ROYALE • SQUAD
-              </div>
-              <div className="absolute bottom-3 left-3 right-3 text-left">
-                <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
-                <div className="text-2xl font-black text-white font-orbitron">₹2,50,000 INR</div>
-              </div>
+      {/* 4. OFFICIAL TOURNAMENT DISCIPLINES & GAMING CHARACTERS SHOWCASE (Rendered only if admin added disciplines) */}
+      {settings.disciplines && settings.disciplines.length > 0 && (
+        <section className="py-20 relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-14">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-neon-cyan/10 border border-neon-cyan/30 text-neon-cyan text-xs font-orbitron font-bold uppercase mb-3">
+              <Swords className="w-4 h-4 text-neon-cyan" />
+              <span>OFFICIAL DISCIPLINES</span>
             </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
+              CHOOSE YOUR BATTLEGROUND
+            </h2>
+            <p className="mt-3 text-base text-gray-300 font-rajdhani font-medium max-w-xl mx-auto">
+              From tactical battle royale survival to lightning-fast neon duels, register your squad in national tournament circuits.
+            </p>
+          </div>
 
-            <div className="space-y-3 px-2 pb-2">
-              <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-emerald transition-colors">
-                BGMI CHAMPIONSHIP
-              </h3>
-              <p className="text-xs text-gray-400 font-rajdhani font-semibold">
-                Custom competitive rooms, Level-3 loot distribution, Erangel & Miramar state qualifiers.
-              </p>
-              <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
-                <span>FORMAT: 4v4 Squad</span>
-                <span className={hasBgmi ? "text-neon-emerald font-bold" : "text-neon-cyan font-bold"}>
-                  {hasBgmi ? "SLOTS ACTIVE" : "CIRCUIT STANDBY"}
-                </span>
-              </div>
-              <Link
-                href={hasBgmi ? "/registration?game=BGMI" : "/upcoming-events"}
-                className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
+          {/* Dynamic Discipline Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {settings.disciplines.map((item) => (
+              <div 
+                key={item.id}
+                className="gaming-battle-card rounded-2xl p-4 border border-neon-cyan/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl"
               >
-                {hasBgmi ? "ENLIST BGMI SQUAD" : "VIEW BGMI SCHEDULE"}
-              </Link>
-            </div>
+                <HudCornerBrackets color="cyan" />
+                <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
+                  {item.image_url ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.title || item.game}
+                      fill
+                      className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-cyber-black text-gray-600 font-mono text-xs">
+                      NO IMAGE PROVIDED
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
+                  {item.tagline && (
+                    <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-cyan/50 text-[10px] font-black uppercase text-neon-cyan font-orbitron">
+                      {item.tagline}
+                    </div>
+                  )}
+                  {item.prize_pool && (
+                    <div className="absolute bottom-3 left-3 right-3 text-left">
+                      <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
+                      <div className="text-2xl font-black text-white font-orbitron">{item.prize_pool}</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 px-2 pb-2 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-cyan transition-colors">
+                      {item.title}
+                    </h3>
+                    {item.description && (
+                      <p className="text-xs text-gray-400 font-rajdhani font-semibold mt-1">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
+                      <span>{item.format ? `FORMAT: ${item.format}` : item.game}</span>
+                      <span className="text-neon-cyan font-bold">
+                        {item.status || "CIRCUIT STANDBY"}
+                      </span>
+                    </div>
+                    <Link
+                      href={item.link_url || "/upcoming-events"}
+                      className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
+                    >
+                      {item.link_text || "VIEW SCHEDULE"}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-
-          {/* Card 2: Free Fire Ninja */}
-          <div className="gaming-battle-card rounded-2xl p-4 border border-neon-gold/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl">
-            <HudCornerBrackets color="gold" />
-            <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
-              <Image
-                src="/images/characters/freefire_ninja.jpg"
-                alt="Free Fire Cyber Ninja"
-                fill
-                className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
-              <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-gold/50 text-[10px] font-black uppercase text-neon-gold font-orbitron">
-                SURVIVAL CLASH • SPEED
-              </div>
-              <div className="absolute bottom-3 left-3 right-3 text-left">
-                <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
-                <div className="text-2xl font-black text-white font-orbitron">₹1,50,000 INR</div>
-              </div>
-            </div>
-
-            <div className="space-y-3 px-2 pb-2">
-              <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-gold transition-colors">
-                FREE FIRE ROYALE
-              </h3>
-              <p className="text-xs text-gray-400 font-rajdhani font-semibold">
-                High-speed Bermuda rush battles, Purgatory qualifiers, and national champion ring.
-              </p>
-              <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
-                <span>FORMAT: Squad Rush</span>
-                <span className={hasFreeFire ? "text-neon-gold font-bold" : "text-neon-cyan font-bold"}>
-                  {hasFreeFire ? "OPEN REGISTRATION" : "CIRCUIT STANDBY"}
-                </span>
-              </div>
-              <Link
-                href={hasFreeFire ? "/registration?game=FreeFire" : "/upcoming-events"}
-                className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
-              >
-                {hasFreeFire ? "JOIN FREE FIRE SQUAD" : "VIEW FREE FIRE SCHEDULE"}
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 3: Valorant Tactical Duelist */}
-          <div className="gaming-battle-card rounded-2xl p-4 border border-neon-cyan/40 relative group flex flex-col justify-between overflow-hidden shadow-2xl">
-            <HudCornerBrackets color="cyan" />
-            <div className="relative h-80 sm:h-96 w-full rounded-xl overflow-hidden bg-cyber-dark mb-4">
-              <Image
-                src="/images/characters/valorant_duelist.jpg"
-                alt="Valorant Tactical Duelist"
-                fill
-                className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent to-transparent"></div>
-              <div className="absolute top-3 left-3 px-2.5 py-1 rounded bg-black/80 backdrop-blur-md border border-neon-cyan/50 text-[10px] font-black uppercase text-neon-cyan font-orbitron">
-                TACTICAL FPS • 5v5
-              </div>
-              <div className="absolute bottom-3 left-3 right-3 text-left">
-                <div className="text-xs font-mono text-neon-gold font-bold">CIRCUIT PRIZE POOL</div>
-                <div className="text-2xl font-black text-white font-orbitron">₹1,00,000 INR</div>
-              </div>
-            </div>
-
-            <div className="space-y-3 px-2 pb-2">
-              <h3 className="text-xl font-black text-white font-orbitron group-hover:text-neon-cyan transition-colors">
-                VALORANT PREMIER LAN
-              </h3>
-              <p className="text-xs text-gray-400 font-rajdhani font-semibold">
-                128-tick private Indian match servers, Spike plant & defusal tournament brackets.
-              </p>
-              <div className="flex items-center justify-between text-xs font-mono pt-2 border-t border-cyber-border text-gray-300">
-                <span>FORMAT: 5v5 Tactical</span>
-                <span className={hasValorant ? "text-neon-cyan font-bold" : "text-neon-cyan font-bold"}>
-                  {hasValorant ? "BRACKET LIVE" : "CIRCUIT STANDBY"}
-                </span>
-              </div>
-              <Link
-                href={hasValorant ? "/registration?game=Valorant" : "/upcoming-events"}
-                className="btn-cyber-primary clip-esports-btn w-full py-2.5 text-center text-xs font-black uppercase tracking-wider block mt-2"
-              >
-                {hasValorant ? "ENTER VALORANT LAN" : "VIEW VALORANT SCHEDULE"}
-              </Link>
-            </div>
-          </div>
-
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 3. STATISTICS SECTION */}
       <section className="py-12 border-y border-cyber-border bg-cyber-dark/40 relative">
@@ -823,93 +769,97 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. GALLERY SECTION */}
-      <section className="py-20 bg-cyber-dark/40 border-y border-cyber-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-            <div>
-              <div className="text-xs font-black tracking-widest text-neon-cyan uppercase font-mono flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-neon-cyan"></span>
-                <span>MEDIA VAULT</span>
+      {/* 7. GALLERY SECTION (Rendered only if items exist) */}
+      {gallery.length > 0 && (
+        <section className="py-20 bg-cyber-dark/40 border-y border-cyber-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+              <div>
+                <div className="text-xs font-black tracking-widest text-neon-cyan uppercase font-mono flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-neon-cyan"></span>
+                  <span>MEDIA VAULT</span>
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-black text-white uppercase font-mono mt-1">
+                  ACTION & LAN MOMENTS
+                </h2>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-black text-white uppercase font-mono mt-1">
-                ACTION & LAN MOMENTS
-              </h2>
+              <div className="text-xs font-mono text-gray-400 mt-2 md:mt-0">
+                LAN Grand Finals, Trophy Celebrations & Stage Moments
+              </div>
             </div>
-            <div className="text-xs font-mono text-gray-400 mt-2 md:mt-0">
-              LAN Grand Finals, Trophy Celebrations & Stage Moments
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {gallery.slice(0, 4).map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedGalleryImg(item)}
-                className="glass-panel rounded-xl overflow-hidden border border-cyber-border hover:border-neon-emerald/50 cursor-pointer group transition-all duration-300"
-              >
-                <div className="relative h-56 w-full overflow-hidden bg-cyber-dark">
-                  <Image
-                    src={item.image_url}
-                    alt={item.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent opacity-60 group-hover:opacity-30 transition-opacity"></div>
-                  <div className="absolute bottom-3 left-3 right-3 text-left">
-                    <span className="text-[10px] font-mono font-bold uppercase text-neon-emerald bg-cyber-black/70 px-2 py-0.5 rounded border border-neon-emerald/30">
-                      {item.category}
-                    </span>
-                    <h4 className="text-xs font-black text-white font-mono mt-1 truncate">
-                      {item.title}
-                    </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {gallery.slice(0, 4).map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => setSelectedGalleryImg(item)}
+                  className="glass-panel rounded-xl overflow-hidden border border-cyber-border hover:border-neon-emerald/50 cursor-pointer group transition-all duration-300"
+                >
+                  <div className="relative h-56 w-full overflow-hidden bg-cyber-dark">
+                    <Image
+                      src={item.image_url}
+                      alt={item.title}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-cyber-black via-transparent opacity-60 group-hover:opacity-30 transition-opacity"></div>
+                    <div className="absolute bottom-3 left-3 right-3 text-left">
+                      <span className="text-[10px] font-mono font-bold uppercase text-neon-emerald bg-cyber-black/70 px-2 py-0.5 rounded border border-neon-emerald/30">
+                        {item.category}
+                      </span>
+                      <h4 className="text-xs font-black text-white font-mono mt-1 truncate">
+                        {item.title}
+                      </h4>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 8. SPONSORS & PARTNERS (Rendered only if items exist) */}
+      {sponsors.length > 0 && (
+        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="text-xs font-black tracking-widest text-neon-gold uppercase font-mono mb-2">
+            OFFICIAL ALLIANCES
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-black text-white uppercase font-mono mb-12">
+            SPONSORS & PARTNERS
+          </h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {sponsors.map((sponsor) => (
+              <a
+                key={sponsor.id}
+                href={sponsor.website || '#'}
+                target="_blank"
+                rel="noreferrer"
+                className="glass-panel p-6 rounded-xl border border-cyber-border hover:border-neon-gold/50 flex flex-col items-center justify-center space-y-3 group transition-all duration-300"
+              >
+                <div className="relative w-16 h-16 rounded-lg bg-white/5 p-2 flex items-center justify-center">
+                  <Image
+                    src={sponsor.logo_url}
+                    alt={sponsor.name}
+                    width={60}
+                    height={60}
+                    className="object-contain filter grayscale group-hover:grayscale-0 transition duration-300"
+                  />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-white font-mono group-hover:text-neon-gold transition-colors">
+                    {sponsor.name}
+                  </h4>
+                  <p className="text-[10px] font-mono text-gray-400 mt-0.5 uppercase">
+                    {sponsor.tier.replace(/_/g, ' ')}
+                  </p>
+                </div>
+              </a>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* 8. SPONSORS & PARTNERS */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="text-xs font-black tracking-widest text-neon-gold uppercase font-mono mb-2">
-          OFFICIAL ALLIANCES
-        </div>
-        <h2 className="text-3xl sm:text-4xl font-black text-white uppercase font-mono mb-12">
-          SPONSORS & PARTNERS
-        </h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {sponsors.map((sponsor) => (
-            <a
-              key={sponsor.id}
-              href={sponsor.website || '#'}
-              target="_blank"
-              rel="noreferrer"
-              className="glass-panel p-6 rounded-xl border border-cyber-border hover:border-neon-gold/50 flex flex-col items-center justify-center space-y-3 group transition-all duration-300"
-            >
-              <div className="relative w-16 h-16 rounded-lg bg-white/5 p-2 flex items-center justify-center">
-                <Image
-                  src={sponsor.logo_url}
-                  alt={sponsor.name}
-                  width={60}
-                  height={60}
-                  className="object-contain filter grayscale group-hover:grayscale-0 transition duration-300"
-                />
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-white font-mono group-hover:text-neon-gold transition-colors">
-                  {sponsor.name}
-                </h4>
-                <p className="text-[10px] font-mono text-gray-400 mt-0.5 uppercase">
-                  {sponsor.tier.replace(/_/g, ' ')}
-                </p>
-              </div>
-            </a>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 9. CALL TO ACTION (CTA) */}
       <section className="py-20 relative overflow-hidden">
@@ -974,10 +924,10 @@ export default function HomePage() {
                 <span>PLAYER HELPLINE & WHATSAPP</span>
               </div>
               <a 
-                href={`tel:${settings.contact?.phone || '+91 98765 43210'}`}
+                href={`tel:${settings.contact?.phone || '+91 8459547533'}`}
                 className="text-white font-bold font-mono text-sm sm:text-base mt-2 block hover:text-neon-emerald transition-colors"
               >
-                {settings.contact?.phone || '+91 98765 43210'}
+                {settings.contact?.phone || '+91 8459547533'}
               </a>
               <p className="text-xs text-gray-400 mt-2 font-medium">WhatsApp room assistance & verification helpdesk.</p>
             </div>

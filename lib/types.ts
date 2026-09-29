@@ -225,6 +225,34 @@ export interface SiteSettings {
   ongoing_tournaments_active?: boolean;
   no_ongoing_tournaments_title?: string;
   no_ongoing_tournaments_message?: string;
+  hero_showcase?: HeroShowcase;
+  disciplines?: BattlegroundDiscipline[];
+  gallery_items?: GalleryItem[];
+  sponsors_items?: Sponsor[];
+}
+
+export interface HeroShowcase {
+  enabled: boolean;
+  badge_text: string;
+  subtitle: string;
+  title: string;
+  prize_circuit: string;
+  status_text: string;
+  image_url: string;
+}
+
+export interface BattlegroundDiscipline {
+  id: string;
+  game: string;
+  title: string;
+  tagline: string;
+  prize_pool: string;
+  description: string;
+  format: string;
+  status: string;
+  image_url: string;
+  link_url?: string;
+  link_text?: string;
 }
 
 export interface EmailTemplate {

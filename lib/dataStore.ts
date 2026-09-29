@@ -46,18 +46,28 @@ export const INITIAL_SITE_SETTINGS: SiteSettings = {
   ],
   contact: {
     email: "gamersgesports@gmail.com",
-    phone: "+91 98765 43210",
+    phone: "+91 8459547533",
     address: "Gamers Guild Esports, Nagpur, Maharashtra, India",
     discord: "https://discord.gg/gamersguild",
     instagram: "https://www.instagram.com/gamers_guild_ngp?stkn=MTN4YnB2amJlcmJncA==",
-    youtube: "https://youtube.com/@gamersguildesports",
+    youtube: "https://www.youtube.com/@GamersGuild-NGP",
     facebook: "https://facebook.com/gamers.guild.ngp"
   },
   registration_enabled: true,
   registration_closed_message: "NO EVENT IS GOING ON / REGISTRATIONS CURRENTLY CLOSED",
   ongoing_tournaments_active: false,
   no_ongoing_tournaments_title: "NO ONGOING TOURNAMENTS AT THE MOMENT",
-  no_ongoing_tournaments_message: "All live tournament stages have concluded or no live matches are currently in progress. Check our upcoming tournaments to claim your slot!"
+  no_ongoing_tournaments_message: "All live tournament stages have concluded or no live matches are currently in progress. Check our upcoming tournaments to claim your slot!",
+  hero_showcase: {
+    enabled: false,
+    badge_text: "NATIONAL ROSTER • APEX CHAMPIONS",
+    subtitle: "DOMINATING ALL DISCIPLINES",
+    title: "BGMI • FREE FIRE • VALORANT",
+    prize_circuit: "₹5,00,000+",
+    status_text: "CIRCUIT STANDBY",
+    image_url: "/images/characters/hero_squad.jpg"
+  },
+  disciplines: []
 };
 
 export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
@@ -83,91 +93,9 @@ export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   }
 ];
 
-export const INITIAL_GALLERY: GalleryItem[] = [
-  {
-    id: "gal-1",
-    title: "Winter Championship Trophy Lift",
-    description: "Team Hydra lifting the ₹1L Grand Trophy at GG Arena Nagpur",
-    category: "LAN_EVENTS",
-    image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80",
-    is_published: true,
-    sort_order: 1,
-    created_at: "2026-08-20"
-  },
-  {
-    id: "gal-2",
-    title: "Main Stage Lighting & Casters Desk",
-    description: "High adrenaline commentary desk during the grand finals",
-    category: "ARENA",
-    image_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80",
-    is_published: true,
-    sort_order: 2,
-    created_at: "2026-08-20"
-  },
-  {
-    id: "gal-3",
-    title: "Player Pods & LAN Battleground",
-    description: "32 competitive rigs running simultaneous bracket matches",
-    category: "STAGE",
-    image_url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
-    is_published: true,
-    sort_order: 3,
-    created_at: "2026-08-20"
-  },
-  {
-    id: "gal-4",
-    title: "Squad Huddle Before Final Circle",
-    description: "Cyber Titans discussing match strategy moments before drop",
-    category: "COMMUNITY",
-    image_url: "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=800&q=80",
-    is_published: true,
-    sort_order: 4,
-    created_at: "2026-08-20"
-  }
-];
+export const INITIAL_GALLERY: GalleryItem[] = [];
 
-export const INITIAL_SPONSORS: Sponsor[] = [
-  {
-    id: "sp-1",
-    name: "CYBERCORE HARDWARE",
-    logo_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
-    website: "https://example.com",
-    description: "Official High-Performance Gaming Rig Partner",
-    tier: "MAIN_SPONSOR",
-    sort_order: 1,
-    is_active: true
-  },
-  {
-    id: "sp-2",
-    name: "NEXUS ENERGY",
-    logo_url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=300&q=80",
-    website: "https://example.com",
-    description: "Fueling Champions Through Extended Clutch Rounds",
-    tier: "ESPORTS_PARTNER",
-    sort_order: 2,
-    is_active: true
-  },
-  {
-    id: "sp-3",
-    name: "QUANTUM BROADCAST NETWORKS",
-    logo_url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=300&q=80",
-    website: "https://example.com",
-    description: "Zero-Latency Tournament Stream Transmission",
-    tier: "TECH_PARTNER",
-    sort_order: 3,
-    is_active: true
-  },
-  {
-    id: "sp-4",
-    name: "DISCORD INDIA COMMUNITY",
-    logo_url: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=300&q=80",
-    website: "https://example.com",
-    description: "Official Tournament Voice Server Partner",
-    tier: "COMMUNITY_PARTNER",
-    sort_order: 4,
-    is_active: true
-  }
-];
+export const INITIAL_SPONSORS: Sponsor[] = [];
 
 export const INITIAL_ADMINS: AdminUser[] = [
   { 

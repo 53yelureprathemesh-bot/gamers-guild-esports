@@ -313,12 +313,19 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const { data: dbGal } = await supabase
+              const { data: dbGal, error } = await supabase
                 .from('gallery')
                 .select('*')
                 .eq('is_published', true)
                 .order('sort_order', { ascending: true });
-              if (dbGal && dbGal.length > 0) gal = dbGal;
+              if (!error && Array.isArray(dbGal)) {
+                gal = dbGal;
+              } else {
+                const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+                if (sysEvent?.rules?.gallery && Array.isArray(sysEvent.rules.gallery)) {
+                  gal = sysEvent.rules.gallery;
+                }
+              }
             }
           } catch (e) {
             console.warn('Supabase fetch gallery error:', e);
@@ -333,11 +340,18 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const { data: dbSps } = await supabase
+              const { data: dbSps, error } = await supabase
                 .from('sponsors')
                 .select('*')
                 .order('tier', { ascending: true });
-              if (dbSps && dbSps.length > 0) sps = dbSps;
+              if (!error && Array.isArray(dbSps)) {
+                sps = dbSps;
+              } else {
+                const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+                if (sysEvent?.rules?.sponsors && Array.isArray(sysEvent.rules.sponsors)) {
+                  sps = sysEvent.rules.sponsors;
+                }
+              }
             }
           } catch (e) {
             console.warn('Supabase fetch sponsors error:', e);
@@ -449,8 +463,16 @@ export async function GET(req: NextRequest) {
                 dataStore.updateSiteSettings(settings);
               }
               if (!anRes.error && Array.isArray(anRes.data)) announcements = anRes.data;
-              if (!galRes.error && Array.isArray(galRes.data)) gallery = galRes.data;
-              if (!spRes.error && Array.isArray(spRes.data)) sponsors = spRes.data;
+              if (!galRes.error && Array.isArray(galRes.data)) {
+                gallery = galRes.data;
+              } else if (sysEvRes.data?.rules?.gallery && Array.isArray(sysEvRes.data.rules.gallery)) {
+                gallery = sysEvRes.data.rules.gallery;
+              }
+              if (!spRes.error && Array.isArray(spRes.data)) {
+                sponsors = spRes.data;
+              } else if (sysEvRes.data?.rules?.sponsors && Array.isArray(sysEvRes.data.rules.sponsors)) {
+                sponsors = sysEvRes.data.rules.sponsors;
+              }
             }
           } catch (e) {
             console.warn('Supabase bundle fetch warning:', e);
@@ -853,15 +875,23 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('gallery').upsert({
-                id: gal.id,
-                title: gal.title,
-                description: gal.description,
-                category: gal.category,
-                image_url: gal.image_url,
-                is_published: gal.is_published,
-                sort_order: gal.sort_order
-              }, { onConflict: 'id' });
+              try {
+                await supabase.from('gallery').upsert({
+                  id: gal.id,
+                  title: gal.title,
+                  description: gal.description,
+                  category: gal.category,
+                  image_url: gal.image_url,
+                  is_published: gal.is_published,
+                  sort_order: gal.sort_order
+                }, { onConflict: 'id' });
+              } catch (_) {}
+
+              // Redundant backup in system-site-settings rules
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object') ? sysEvent.rules : {};
+              const currentGal = dataStore.getGallery();
+              await supabase.from('events').update({ rules: { ...existingRules, gallery: currentGal } }).eq('slug', 'system-site-settings');
             }
           } catch (e) {
             console.warn('Supabase save gallery error:', e);
@@ -872,17 +902,23 @@ export async function POST(req: NextRequest) {
       }
 
       case 'delete-gallery': {
+        const res = dataStore.deleteGalleryItem(payload.id);
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('gallery').delete().eq('id', payload.id);
+              try {
+                await supabase.from('gallery').delete().eq('id', payload.id);
+              } catch (_) {}
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object') ? sysEvent.rules : {};
+              const currentGal = dataStore.getGallery();
+              await supabase.from('events').update({ rules: { ...existingRules, gallery: currentGal } }).eq('slug', 'system-site-settings');
             }
           } catch (e) {
             console.warn('Supabase delete gallery error:', e);
           }
         }
-        const res = dataStore.deleteGalleryItem(payload.id);
         invalidateCache();
         return NextResponse.json({ success: res }, { headers: NO_CACHE_HEADERS });
       }
@@ -894,14 +930,21 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('sponsors').upsert({
-                id: sp.id,
-                name: sp.name,
-                tier: sp.tier,
-                logo_url: sp.logo_url,
-                website_url: sp.website_url || sp.website || '',
-                description: sp.description
-              }, { onConflict: 'id' });
+              try {
+                await supabase.from('sponsors').upsert({
+                  id: sp.id,
+                  name: sp.name,
+                  tier: sp.tier,
+                  logo_url: sp.logo_url,
+                  website_url: sp.website_url || sp.website || '',
+                  description: sp.description
+                }, { onConflict: 'id' });
+              } catch (_) {}
+
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object') ? sysEvent.rules : {};
+              const currentSps = dataStore.getSponsors();
+              await supabase.from('events').update({ rules: { ...existingRules, sponsors: currentSps } }).eq('slug', 'system-site-settings');
             }
           } catch (e) {
             console.warn('Supabase save sponsor error:', e);
@@ -912,17 +955,23 @@ export async function POST(req: NextRequest) {
       }
 
       case 'delete-sponsor': {
+        const res = dataStore.deleteSponsor(payload.id);
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('sponsors').delete().eq('id', payload.id);
+              try {
+                await supabase.from('sponsors').delete().eq('id', payload.id);
+              } catch (_) {}
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object') ? sysEvent.rules : {};
+              const currentSps = dataStore.getSponsors();
+              await supabase.from('events').update({ rules: { ...existingRules, sponsors: currentSps } }).eq('slug', 'system-site-settings');
             }
           } catch (e) {
             console.warn('Supabase delete sponsor error:', e);
           }
         }
-        const res = dataStore.deleteSponsor(payload.id);
         invalidateCache();
         return NextResponse.json({ success: res }, { headers: NO_CACHE_HEADERS });
       }

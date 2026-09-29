@@ -124,10 +124,10 @@ export default function ContactPage() {
                   <div>
                     <span className="text-gray-400 block uppercase font-rajdhani font-semibold text-xs">Player Helpline & WhatsApp</span>
                     <a 
-                      href={`tel:${settings.contact?.phone || '+91 98765 43210'}`} 
+                      href={`tel:${settings.contact?.phone || '+91 8459547533'}`} 
                       className="text-white font-bold hover:text-neon-emerald transition-colors"
                     >
-                      {settings.contact?.phone || '+91 98765 43210'}
+                      {settings.contact?.phone || '+91 8459547533'}
                     </a>
                   </div>
                 </div>
