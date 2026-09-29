@@ -34,8 +34,8 @@ function RegistrationFormContent() {
   const searchParams = useSearchParams();
   const preselectedEventId = searchParams.get('event');
 
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || '');
+  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || (INITIAL_EVENTS[0]?.id || ''));
   const [formFields, setFormFields] = useState<RegistrationField[]>(DEFAULT_FORM_FIELDS);
 
   // Form State
@@ -75,7 +75,8 @@ function RegistrationFormContent() {
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          if (Array.isArray(res.data.events)) setEvents(res.data.events);
+          const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
+          if (evList.length > 0) setEvents(evList);
           if (Array.isArray(res.data.formFields)) setFormFields(res.data.formFields);
           if (res.data.settings) setSiteSettings(res.data.settings);
         }
@@ -348,6 +349,19 @@ function RegistrationFormContent() {
               <span>BACK TO ARENA HOME</span>
             </Link>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // LOADING SCREEN WHILE RESOLVING BRACKET DATA
+  if (isLoadingSettings) {
+    return (
+      <div className="min-h-screen gaming-arena-bg py-20 flex items-center justify-center font-rajdhani">
+        <GamingEmberParticles />
+        <div className="glass-hud p-8 rounded-2xl border border-neon-cyan/40 text-center max-w-sm mx-auto">
+          <div className="w-12 h-12 border-4 border-neon-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="text-white font-orbitron font-bold text-sm tracking-wider uppercase">INITIALIZING BRACKET DATA...</div>
         </div>
       </div>
     );

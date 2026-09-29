@@ -278,6 +278,37 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: settings }, { headers: NO_CACHE_HEADERS });
       }
 
+      // 5b. EVENTS LIST
+      case 'events': {
+        let events = dataStore.getEvents();
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: dbEvents, error } = await supabase
+                .from('events')
+                .select('*')
+                .neq('slug', 'system-site-settings')
+                .order('date', { ascending: true });
+              if (!error && Array.isArray(dbEvents) && dbEvents.length > 0) {
+                events = dbEvents.map((e: any) => {
+                  const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                  return {
+                    ...e,
+                    rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
+                    stream_url: rulesObj?.stream_url || e.stream_url || '',
+                    is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
+                  };
+                });
+              }
+            }
+          } catch (e) {
+            console.warn('Supabase fetch events error:', e);
+          }
+        }
+        return NextResponse.json({ success: true, data: events }, { headers: NO_CACHE_HEADERS });
+      }
+
       case 'points-table':
         return NextResponse.json({ success: true, data: dataStore.getPointsTable(searchParams.get('eventId') || undefined) }, { headers: NO_CACHE_HEADERS });
 
@@ -452,8 +483,19 @@ export async function GET(req: NextRequest) {
                 supabase.from('sponsors').select('*').order('tier', { ascending: true })
               ]);
 
-              if (!evRes.error && Array.isArray(evRes.data)) {
-                events = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
+              if (!evRes.error && Array.isArray(evRes.data) && evRes.data.length > 0) {
+                const filtered = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
+                if (filtered.length > 0) {
+                  events = filtered.map((e: any) => {
+                    const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                    return {
+                      ...e,
+                      rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
+                      stream_url: rulesObj?.stream_url || e.stream_url || '',
+                      is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
+                    };
+                  });
+                }
               }
               if (stRes.data && stRes.data.value) {
                 settings = { ...settings, ...stRes.data.value };
@@ -573,13 +615,41 @@ export async function POST(req: NextRequest) {
         if (cleanEvent.stream_url) {
           cleanEvent.stream_url = formatExternalUrl(cleanEvent.stream_url, 'https://youtube.com');
         }
+        // Ensure valid UUID for id
+        if (!cleanEvent.id || !UUID_REGEX.test(cleanEvent.id)) {
+          if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            cleanEvent.id = crypto.randomUUID();
+          } else {
+            cleanEvent.id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+              const r = (Math.random() * 16) | 0;
+              const v = c === 'x' ? r : (r & 0x3) | 0x8;
+              return v.toString(16);
+            });
+          }
+        }
+        if (!cleanEvent.slug && cleanEvent.title) {
+          cleanEvent.slug = cleanEvent.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + cleanEvent.id.slice(0, 8);
+        }
         const saved = dataStore.saveEvent(cleanEvent);
 
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase
+              const rulesPayload = {
+                rulesList: Array.isArray(saved.rules) ? saved.rules : [],
+                stream_url: saved.stream_url || '',
+                is_stream_live: saved.is_stream_live ?? false
+              };
+
+              let cleanDeadline = saved.registration_deadline || new Date(Date.now() + 14 * 86400000).toISOString();
+              try {
+                cleanDeadline = new Date(cleanDeadline).toISOString();
+              } catch (_) {
+                cleanDeadline = new Date().toISOString();
+              }
+
+              const { error: upsertError } = await supabase
                 .from('events')
                 .upsert({
                   id: saved.id,
@@ -593,19 +663,23 @@ export async function POST(req: NextRequest) {
                   mode: saved.mode,
                   prize_pool: saved.prize_pool,
                   entry_fee: saved.entry_fee,
-                  registration_deadline: saved.registration_deadline,
-                  total_slots: saved.total_slots,
-                  filled_slots: saved.filled_slots,
-                  description: saved.description,
-                  rules: saved.rules,
+                  registration_deadline: cleanDeadline,
+                  total_slots: Number(saved.total_slots) || 100,
+                  filled_slots: Number(saved.filled_slots) || 0,
+                  description: saved.description || '',
+                  rules: rulesPayload,
                   status: saved.status,
-                  is_published: saved.is_published,
-                  stream_url: saved.stream_url,
-                  is_stream_live: saved.is_stream_live
+                  is_published: saved.is_published
                 }, { onConflict: 'id' });
+
+              if (upsertError) {
+                console.error('Supabase save-event error:', upsertError);
+                return NextResponse.json({ success: false, error: 'Database save failed: ' + upsertError.message }, { status: 500, headers: NO_CACHE_HEADERS });
+              }
             }
-          } catch (e) {
-            console.warn('Supabase save-event error:', e);
+          } catch (e: any) {
+            console.warn('Supabase save-event exception:', e);
+            return NextResponse.json({ success: false, error: 'Server exception: ' + e.message }, { status: 500, headers: NO_CACHE_HEADERS });
           }
         }
 
@@ -620,9 +694,16 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
+              const { data: evData } = await supabase.from('events').select('rules').eq('id', payload.eventId).single();
+              const existingRules = (evData?.rules && typeof evData.rules === 'object') ? evData.rules : {};
+              const updatedRules = {
+                ...existingRules,
+                stream_url: cleanStreamUrl,
+                is_stream_live: payload.isLive ?? true
+              };
               await supabase
                 .from('events')
-                .update({ stream_url: cleanStreamUrl, is_stream_live: payload.isLive ?? true })
+                .update({ rules: updatedRules })
                 .eq('id', payload.eventId);
             }
           } catch (e) {
@@ -639,6 +720,14 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
+              // 1. Delete child registrations referencing this event first to prevent FK constraint failure
+              const { data: regs } = await supabase.from('registrations').select('id').eq('event_id', payload.id);
+              if (regs && regs.length > 0) {
+                const regIds = regs.map(r => r.id);
+                await supabase.from('registration_files').delete().in('registration_id', regIds);
+                await supabase.from('registration_answers').delete().in('registration_id', regIds);
+                await supabase.from('registrations').delete().eq('event_id', payload.id);
+              }
               const { error } = await supabase.from('events').delete().eq('id', payload.id);
               if (!error) deleted = true;
             }

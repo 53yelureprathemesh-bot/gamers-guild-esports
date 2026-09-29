@@ -66,13 +66,12 @@ export default function AdminOngoingEventsPage() {
     fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && Array.isArray(res.data)) {
-          setEvents(res.data);
-          if (res.data.length > 0) {
-            setSelectedEventId(res.data[0].id);
-          } else {
-            setSelectedEventId('');
-          }
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.events) ? res.data.events : []);
+        setEvents(list);
+        if (list.length > 0) {
+          setSelectedEventId(list[0].id);
+        } else {
+          setSelectedEventId('');
         }
       })
       .catch(() => {});

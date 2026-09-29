@@ -93,9 +93,8 @@ export default function AdminRegistrationsPage() {
     fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && Array.isArray(res.data)) {
-          setEventsList(res.data);
-        }
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.events) ? res.data.events : []);
+        setEventsList(list);
       })
       .catch(() => {});
 

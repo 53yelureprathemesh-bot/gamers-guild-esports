@@ -42,9 +42,8 @@ export default function UpcomingEventsPage() {
     fetch('/api/admin/data?type=events')
       .then(res => res.json())
       .then(res => {
-        if (res.success && Array.isArray(res.data)) {
-          setEvents(res.data);
-        }
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.events) ? res.data.events : []);
+        setEvents(list);
       })
       .catch(() => console.log('Using default client store.'));
   }, []);

@@ -37,7 +37,8 @@ export default function AdminUpcomingEventsPage() {
     fetch('/api/admin/data?type=events', { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-        if (res.success && Array.isArray(res.data)) setEvents(res.data);
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.events) ? res.data.events : []);
+        setEvents(list);
       })
       .catch(() => console.log('Using initial events.'));
   };
@@ -50,7 +51,7 @@ export default function AdminUpcomingEventsPage() {
     setEditingEvent({
       title: '',
       game: 'BGMI (Battlegrounds Mobile India)',
-      poster_url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+      poster_url: '/images/characters/bgmi_operator.jpg',
       date: '2026-11-20',
       time: '06:00 PM IST',
       venue: 'Online Custom Rooms',
@@ -60,7 +61,7 @@ export default function AdminUpcomingEventsPage() {
       registration_deadline: '2026-11-18 23:59:59',
       total_slots: 100,
       filled_slots: 0,
-      description: '',
+      description: 'Official squad battle royale tournament organized by Gamers Guild Esports.',
       rules: [
         'All team members must have minimum level 35 account.',
         'No emulators, triggers, or iPads allowed.',

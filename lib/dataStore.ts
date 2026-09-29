@@ -15,8 +15,48 @@ import {
 } from './types';
 import { getStateCode } from './stateCodes';
 
-// Initial Demo Seed Data - Default to empty so user deletion persists cleanly
-export const INITIAL_EVENTS: Event[] = [];
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Initial Flagship Tournament Seed Data
+export const INITIAL_EVENTS: Event[] = [
+  {
+    id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+    slug: "neural-nexus-bgmi-championship-2026",
+    title: "NEURAL NEXUS 2026 — BGMI STATE CHAMPIONSHIP",
+    game: "BGMI (Battlegrounds Mobile India)",
+    poster_url: "/images/characters/bgmi_operator.jpg",
+    date: "2026-11-20",
+    time: "06:00 PM IST",
+    venue: "Online Custom Rooms (Live Streamed)",
+    mode: "ONLINE",
+    prize_pool: "₹50,000",
+    entry_fee: "FREE ENTRY",
+    registration_deadline: "2026-11-18 23:59:59",
+    total_slots: 100,
+    filled_slots: 0,
+    description: "The premier competitive mobile battle royale tournament of the season. 100 squads drop into Erangel for ultimate glory, official circuit points, and cash prizes.",
+    rules: [
+      "All squad members must have a minimum level 35 BGMI account.",
+      "Emulators, triggers, and iPad devices are strictly prohibited.",
+      "POV screen recording required for the top 3 squads during finals.",
+      "Admins' decisions will be final and binding."
+    ],
+    status: "UPCOMING",
+    is_published: true,
+    created_at: "2026-09-29T00:00:00.000Z"
+  }
+];
 
 export const INITIAL_POINTS_TABLE: PointsTableEntry[] = [];
 
@@ -182,23 +222,28 @@ class DataStore {
         return this.events[idx];
       }
     }
+    const eventId = (event.id && UUID_REGEX.test(event.id)) ? event.id : generateUUID();
     const newEvent: Event = {
-      id: `evt-${Date.now()}`,
-      slug: (event.slug || event.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
+      id: eventId,
+      slug: (event.slug || event.title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + eventId.slice(0, 8),
       title: event.title,
-      game: event.game || 'Competitive Game',
-      poster_url: event.poster_url || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
-      date: event.date || '2026-12-31',
+      game: event.game || 'BGMI (Battlegrounds Mobile India)',
+      poster_url: event.poster_url || '/images/characters/bgmi_operator.jpg',
+      date: event.date || '2026-11-20',
       time: event.time || '06:00 PM IST',
-      venue: event.venue || 'Online',
+      venue: event.venue || 'Online Custom Rooms',
       mode: event.mode || 'ONLINE',
-      prize_pool: event.prize_pool || '₹10,000',
-      entry_fee: event.entry_fee || 'FREE',
-      registration_deadline: event.registration_deadline || '2026-12-25',
+      prize_pool: event.prize_pool || '₹50,000',
+      entry_fee: event.entry_fee || 'FREE ENTRY',
+      registration_deadline: event.registration_deadline || '2026-11-18 23:59:59',
       total_slots: event.total_slots || 100,
       filled_slots: event.filled_slots || 0,
       description: event.description || '',
-      rules: event.rules || [],
+      rules: event.rules || [
+        'All squad members must have a minimum level 35 BGMI account.',
+        'Emulators, triggers, and iPad devices are strictly prohibited.',
+        'POV screen recording required for the top 3 squads during finals.'
+      ],
       status: event.status || 'UPCOMING',
       is_published: event.is_published ?? true,
       stream_url: event.stream_url,

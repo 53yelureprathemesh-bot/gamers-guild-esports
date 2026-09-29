@@ -39,7 +39,7 @@ import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/
 import { formatExternalUrl } from '@/lib/formatUrl';
 
 export default function HomePage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
   const [gallery, setGallery] = useState<GalleryItem[]>(INITIAL_GALLERY);
@@ -53,7 +53,8 @@ export default function HomePage() {
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          if (Array.isArray(res.data.events)) setEvents(res.data.events);
+          const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
+          if (evList.length > 0) setEvents(evList);
           if (res.data.settings) setSettings(res.data.settings);
           if (Array.isArray(res.data.announcements)) setAnnouncements(res.data.announcements);
           if (Array.isArray(res.data.gallery)) setGallery(res.data.gallery);
