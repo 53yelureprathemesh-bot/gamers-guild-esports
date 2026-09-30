@@ -93,7 +93,15 @@ export async function GET(req: NextRequest) {
                 .neq('slug', 'system-site-settings')
                 .order('date', { ascending: true });
               if (!evError && Array.isArray(dbEvents)) {
-                events = dbEvents.filter((e: any) => e.slug !== 'system-site-settings');
+                events = dbEvents.filter((e: any) => e.slug !== 'system-site-settings').map((e: any) => {
+                  const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                  return {
+                    ...e,
+                    rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
+                    stream_url: rulesObj?.stream_url || e.stream_url || '',
+                    is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
+                  };
+                });
               }
             }
           } catch (e) {
@@ -278,36 +286,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: settings }, { headers: NO_CACHE_HEADERS });
       }
 
-      // 5b. EVENTS LIST
-      case 'events': {
-        let events = dataStore.getEvents();
-        if (isSupabaseConfigured) {
-          try {
-            const supabase = getServiceSupabase();
-            if (supabase) {
-              const { data: dbEvents, error } = await supabase
-                .from('events')
-                .select('*')
-                .neq('slug', 'system-site-settings')
-                .order('date', { ascending: true });
-              if (!error && Array.isArray(dbEvents) && dbEvents.length > 0) {
-                events = dbEvents.map((e: any) => {
-                  const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
-                  return {
-                    ...e,
-                    rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
-                    stream_url: rulesObj?.stream_url || e.stream_url || '',
-                    is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
-                  };
-                });
-              }
-            }
-          } catch (e) {
-            console.warn('Supabase fetch events error:', e);
-          }
-        }
-        return NextResponse.json({ success: true, data: events }, { headers: NO_CACHE_HEADERS });
-      }
+
 
       case 'points-table':
         return NextResponse.json({ success: true, data: dataStore.getPointsTable(searchParams.get('eventId') || undefined) }, { headers: NO_CACHE_HEADERS });
@@ -483,19 +462,17 @@ export async function GET(req: NextRequest) {
                 supabase.from('sponsors').select('*').order('tier', { ascending: true })
               ]);
 
-              if (!evRes.error && Array.isArray(evRes.data) && evRes.data.length > 0) {
+              if (!evRes.error && Array.isArray(evRes.data)) {
                 const filtered = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
-                if (filtered.length > 0) {
-                  events = filtered.map((e: any) => {
-                    const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
-                    return {
-                      ...e,
-                      rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
-                      stream_url: rulesObj?.stream_url || e.stream_url || '',
-                      is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
-                    };
-                  });
-                }
+                events = filtered.map((e: any) => {
+                  const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                  return {
+                    ...e,
+                    rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
+                    stream_url: rulesObj?.stream_url || e.stream_url || '',
+                    is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
+                  };
+                });
               }
               if (stRes.data && stRes.data.value) {
                 settings = { ...settings, ...stRes.data.value };

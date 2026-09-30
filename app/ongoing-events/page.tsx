@@ -43,7 +43,7 @@ export default function OngoingEventsPage() {
       .then(res => {
         if (res.success && res.data) {
           const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
-          if (evList.length > 0) setEvents(evList);
+          setEvents(evList);
           if (res.data.settings) setSettings(res.data.settings);
         }
       })

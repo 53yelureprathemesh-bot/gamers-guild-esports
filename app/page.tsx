@@ -39,7 +39,7 @@ import { GamingEmberParticles, HudCornerBrackets, LiveTelemetryTicker } from '@/
 import { formatExternalUrl } from '@/lib/formatUrl';
 
 export default function HomePage() {
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
+  const [events, setEvents] = useState<Event[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
   const [announcements, setAnnouncements] = useState<Announcement[]>(INITIAL_ANNOUNCEMENTS);
   const [gallery, setGallery] = useState<GalleryItem[]>(INITIAL_GALLERY);
@@ -54,7 +54,7 @@ export default function HomePage() {
       .then(res => {
         if (res.success && res.data) {
           const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
-          if (evList.length > 0) setEvents(evList);
+          setEvents(evList);
           if (res.data.settings) setSettings(res.data.settings);
           if (Array.isArray(res.data.announcements)) setAnnouncements(res.data.announcements);
           if (Array.isArray(res.data.gallery)) setGallery(res.data.gallery);
@@ -66,7 +66,7 @@ export default function HomePage() {
 
   const upcomingEvents = events.filter(e => e.status === 'UPCOMING' && e.is_published);
   const ongoingEvents = events.filter(e => e.status === 'ONGOING' && e.is_published);
-  const featuredEvent = upcomingEvents[0] || events[0];
+  const featuredEvent = upcomingEvents[0];
 
   const hasBgmi = events.some(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING') && (e.game.toLowerCase().includes('bgmi') || e.game.toLowerCase().includes('battlegrounds')));
   const hasFreeFire = events.some(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING') && (e.game.toLowerCase().includes('free fire') || e.game.toLowerCase().includes('freefire')));

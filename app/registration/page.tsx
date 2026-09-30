@@ -34,8 +34,8 @@ function RegistrationFormContent() {
   const searchParams = useSearchParams();
   const preselectedEventId = searchParams.get('event');
 
-  const [events, setEvents] = useState<Event[]>(INITIAL_EVENTS);
-  const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || (INITIAL_EVENTS[0]?.id || ''));
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || '');
   const [formFields, setFormFields] = useState<RegistrationField[]>(DEFAULT_FORM_FIELDS);
 
   // Form State
@@ -76,7 +76,7 @@ function RegistrationFormContent() {
       .then(res => {
         if (res.success && res.data) {
           const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
-          if (evList.length > 0) setEvents(evList);
+          setEvents(evList);
           if (Array.isArray(res.data.formFields)) setFormFields(res.data.formFields);
           if (res.data.settings) setSiteSettings(res.data.settings);
         }
@@ -94,7 +94,7 @@ function RegistrationFormContent() {
   }, [formData.state]);
 
   const activeEvents = events.filter(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING'));
-  const activeEvent = activeEvents.find(e => e.id === selectedEventId) || activeEvents[0] || events[0];
+  const activeEvent = activeEvents.find(e => e.id === selectedEventId) || activeEvents[0];
   const isRegistrationGloballyClosed = siteSettings?.registration_enabled === false;
   const noEventsAvailable = activeEvents.length === 0;
 

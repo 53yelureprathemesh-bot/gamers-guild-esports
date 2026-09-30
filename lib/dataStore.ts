@@ -28,35 +28,8 @@ function generateUUID(): string {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Initial Flagship Tournament Seed Data
-export const INITIAL_EVENTS: Event[] = [
-  {
-    id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
-    slug: "neural-nexus-bgmi-championship-2026",
-    title: "NEURAL NEXUS 2026 — BGMI STATE CHAMPIONSHIP",
-    game: "BGMI (Battlegrounds Mobile India)",
-    poster_url: "/images/characters/bgmi_operator.jpg",
-    date: "2026-11-20",
-    time: "06:00 PM IST",
-    venue: "Online Custom Rooms (Live Streamed)",
-    mode: "ONLINE",
-    prize_pool: "₹50,000",
-    entry_fee: "FREE ENTRY",
-    registration_deadline: "2026-11-18 23:59:59",
-    total_slots: 100,
-    filled_slots: 0,
-    description: "The premier competitive mobile battle royale tournament of the season. 100 squads drop into Erangel for ultimate glory, official circuit points, and cash prizes.",
-    rules: [
-      "All squad members must have a minimum level 35 BGMI account.",
-      "Emulators, triggers, and iPad devices are strictly prohibited.",
-      "POV screen recording required for the top 3 squads during finals.",
-      "Admins' decisions will be final and binding."
-    ],
-    status: "UPCOMING",
-    is_published: true,
-    created_at: "2026-09-29T00:00:00.000Z"
-  }
-];
+// Initial Tournament Seed Data (Empty by default - dynamic from database/admin)
+export const INITIAL_EVENTS: Event[] = [];
 
 export const INITIAL_POINTS_TABLE: PointsTableEntry[] = [];
 
