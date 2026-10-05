@@ -387,13 +387,13 @@ export default function AdminRegistrationsPage() {
 
   // Client-Side Secondary Filter Logic (State, District, Game)
   const filteredRegistrations = registrations.filter(r => {
-    const matchesState = selectedState === 'ALL' || r.state === selectedState;
-    const matchesDistrict = selectedDistrict === 'ALL' || r.district === selectedDistrict;
+    const matchesState = selectedState === 'ALL' || (r.state && r.state.trim().toLowerCase() === selectedState.trim().toLowerCase());
+    const matchesDistrict = selectedDistrict === 'ALL' || (r.district && r.district.trim().toLowerCase() === selectedDistrict.trim().toLowerCase());
     const matchesGame = selectedGame === 'ALL' || (r.game && r.game.toLowerCase().includes(selectedGame.toLowerCase()));
     return matchesState && matchesDistrict && matchesGame;
   });
 
-  const availableDistricts = Array.from(new Set(registrations.filter(r => selectedState === 'ALL' || r.state === selectedState).map(r => r.district).filter(Boolean)));
+  const availableDistricts = Array.from(new Set(registrations.filter(r => selectedState === 'ALL' || (r.state && r.state.trim().toLowerCase() === selectedState.trim().toLowerCase())).map(r => r.district).filter(Boolean)));
   const currentSelectedEvent = eventsList.find(e => e.id === selectedEventId);
 
   return (
