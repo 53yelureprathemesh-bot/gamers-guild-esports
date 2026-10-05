@@ -229,7 +229,13 @@ export async function GET(req: NextRequest) {
                         mime_type: rf.mime_type,
                         file_size: rf.file_size
                       }))
-                    : (dbData.files || [])
+                    : (dbData.files || []),
+                  answers: (dbData.registration_answers && dbData.registration_answers.length > 0)
+                    ? dbData.registration_answers.map((ra: any) => ({
+                        field_label: ra.field_label,
+                        value: ra.value
+                      }))
+                    : (dbData.answers || [])
                 };
                 return NextResponse.json({ success: true, data: mapped }, { headers: NO_CACHE_HEADERS });
               }
@@ -302,46 +308,23 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              // Priority 1: Check site_settings table
-              const { data: dbFormSetting } = await supabase
-                .from('site_settings')
-                .select('value')
-                .eq('key', 'form_fields_settings')
+              const { data: sysEvent } = await supabase
+                .from('events')
+                .select('rules')
+                .eq('slug', 'system-site-settings')
                 .single();
 
-              if (dbFormSetting?.value && typeof dbFormSetting.value === 'object') {
-                if (Array.isArray(dbFormSetting.value.formFields) && dbFormSetting.value.formFields.length > 0) {
-                  fields = dbFormSetting.value.formFields;
-                  formStore.setFields(fields);
-                }
-                if (dbFormSetting.value.formTitle) {
-                  formTitle = dbFormSetting.value.formTitle;
-                  formStore.setTitle(formTitle);
-                }
-                if (dbFormSetting.value.formDesc) {
-                  formDesc = dbFormSetting.value.formDesc;
-                  formStore.setDesc(formDesc);
-                }
-              } else {
-                // Priority 2: Fallback to system-site-settings rules in events table
-                const { data: sysEvent } = await supabase
-                  .from('events')
-                  .select('rules')
-                  .eq('slug', 'system-site-settings')
-                  .single();
-
-                if (sysEvent?.rules?.formFields && Array.isArray(sysEvent.rules.formFields) && sysEvent.rules.formFields.length > 0) {
-                  fields = sysEvent.rules.formFields;
-                  formStore.setFields(fields);
-                }
-                if (sysEvent?.rules?.formTitle) {
-                  formTitle = sysEvent.rules.formTitle;
-                  formStore.setTitle(formTitle);
-                }
-                if (sysEvent?.rules?.formDesc) {
-                  formDesc = sysEvent.rules.formDesc;
-                  formStore.setDesc(formDesc);
-                }
+              if (sysEvent?.rules?.formFields && Array.isArray(sysEvent.rules.formFields) && sysEvent.rules.formFields.length > 0) {
+                fields = sysEvent.rules.formFields;
+                formStore.setFields(fields);
+              }
+              if (sysEvent?.rules?.formTitle) {
+                formTitle = sysEvent.rules.formTitle;
+                formStore.setTitle(formTitle);
+              }
+              if (sysEvent?.rules?.formDesc) {
+                formDesc = sysEvent.rules.formDesc;
+                formStore.setDesc(formDesc);
               }
             }
           } catch (e) {
@@ -508,9 +491,8 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const [evRes, stRes, sysEvRes, anRes, galRes, spRes] = await Promise.all([
+              const [evRes, sysEvRes, anRes, galRes, spRes] = await Promise.all([
                 supabase.from('events').select('*').neq('slug', 'system-site-settings').order('date', { ascending: true }),
-                supabase.from('site_settings').select('value').eq('key', 'general_settings').single(),
                 supabase.from('events').select('rules').eq('slug', 'system-site-settings').single(),
                 supabase.from('announcements').select('*').eq('is_published', true).order('created_at', { ascending: false }),
                 supabase.from('gallery').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
@@ -533,10 +515,7 @@ export async function GET(req: NextRequest) {
                   };
                 });
               }
-              if (stRes.data && stRes.data.value) {
-                settings = { ...settings, ...stRes.data.value };
-                dataStore.updateSiteSettings(settings);
-              } else if (sysRules) {
+              if (sysRules) {
                 settings = { ...settings, ...sysRules };
                 dataStore.updateSiteSettings(settings);
               }
@@ -561,44 +540,16 @@ export async function GET(req: NextRequest) {
         let formTitle = formStore.getTitle();
         let formDesc = formStore.getDesc();
 
-        if (isSupabaseConfigured) {
-          try {
-            const supabase = getServiceSupabase();
-            if (supabase) {
-              const { data: dbFormSetting } = await supabase
-                .from('site_settings')
-                .select('value')
-                .eq('key', 'form_fields_settings')
-                .single();
-
-              if (dbFormSetting?.value && typeof dbFormSetting.value === 'object') {
-                if (Array.isArray(dbFormSetting.value.formFields) && dbFormSetting.value.formFields.length > 0) {
-                  formFields = dbFormSetting.value.formFields;
-                  formStore.setFields(formFields);
-                }
-                if (dbFormSetting.value.formTitle) {
-                  formTitle = dbFormSetting.value.formTitle;
-                  formStore.setTitle(formTitle);
-                }
-                if (dbFormSetting.value.formDesc) {
-                  formDesc = dbFormSetting.value.formDesc;
-                  formStore.setDesc(formDesc);
-                }
-              } else if (sysRules?.formFields && Array.isArray(sysRules.formFields) && sysRules.formFields.length > 0) {
-                formFields = sysRules.formFields;
-                formStore.setFields(formFields);
-                if (sysRules?.formTitle) {
-                  formTitle = sysRules.formTitle;
-                  formStore.setTitle(formTitle);
-                }
-                if (sysRules?.formDesc) {
-                  formDesc = sysRules.formDesc;
-                  formStore.setDesc(formDesc);
-                }
-              }
-            }
-          } catch (e) {
-            console.warn('Supabase bundle form check warning:', e);
+        if (sysRules?.formFields && Array.isArray(sysRules.formFields) && sysRules.formFields.length > 0) {
+          formFields = sysRules.formFields;
+          formStore.setFields(formFields);
+          if (sysRules?.formTitle) {
+            formTitle = sysRules.formTitle;
+            formStore.setTitle(formTitle);
+          }
+          if (sysRules?.formDesc) {
+            formDesc = sysRules.formDesc;
+            formStore.setDesc(formDesc);
           }
         }
 
@@ -1180,7 +1131,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: entry }, { headers: NO_CACHE_HEADERS });
       }
 
-      // 11. FORM FIELDS PERSISTENCE (Dual Supabase Tables + Cache Invalidation)
+      // 11. FORM FIELDS PERSISTENCE (Supabase events rules + Cache Invalidation)
       case 'save-form-fields': {
         const fieldsToSave = Array.isArray(payload?.fields) ? payload.fields : (Array.isArray(payload) ? payload : formStore.getFields());
         const titleToSave = payload?.formTitle || formStore.getTitle();
@@ -1194,61 +1145,38 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              // 1. Primary: Save to site_settings table as 'form_fields_settings'
-              try {
-                await supabase
-                  .from('site_settings')
-                  .upsert({
-                    key: 'form_fields_settings',
-                    value: {
-                      formFields: fieldsToSave,
-                      formTitle: titleToSave,
-                      formDesc: descToSave
-                    },
-                    description: 'Dynamic registration form schema, custom fields and instructions',
-                    updated_at: new Date().toISOString()
-                  }, { onConflict: 'key' });
-              } catch (ssErr) {
-                console.warn('Supabase site_settings form upsert warning:', ssErr);
-              }
+              const { data: sysEvent } = await supabase
+                .from('events')
+                .select('rules')
+                .eq('slug', 'system-site-settings')
+                .single();
 
-              // 2. Secondary Redundant: Save to system-site-settings rules in events table
-              try {
-                const { data: sysEvent } = await supabase
-                  .from('events')
-                  .select('rules')
-                  .eq('slug', 'system-site-settings')
-                  .single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object' && !Array.isArray(sysEvent.rules))
+                ? sysEvent.rules
+                : {};
 
-                const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object' && !Array.isArray(sysEvent.rules))
-                  ? sysEvent.rules
-                  : {};
+              const updatedRules = {
+                ...existingRules,
+                formFields: fieldsToSave,
+                formTitle: titleToSave,
+                formDesc: descToSave
+              };
 
-                const updatedRules = {
-                  ...existingRules,
-                  formFields: fieldsToSave,
-                  formTitle: titleToSave,
-                  formDesc: descToSave
-                };
-
-                await supabase.from('events').upsert({
-                  id: '00000000-0000-0000-0000-000000000001',
-                  slug: 'system-site-settings',
-                  title: 'SYSTEM_SITE_SETTINGS',
-                  game: 'SYSTEM',
-                  date: '2000-01-01',
-                  time: '00:00',
-                  venue: 'System',
-                  mode: 'ONLINE',
-                  prize_pool: '0',
-                  registration_deadline: '2000-01-01T00:00:00Z',
-                  rules: updatedRules,
-                  is_published: false,
-                  status: 'COMPLETED'
-                }, { onConflict: 'slug' });
-              } catch (evErr) {
-                console.warn('Supabase events system-site-settings rules warning:', evErr);
-              }
+              await supabase.from('events').upsert({
+                id: '00000000-0000-0000-0000-000000000001',
+                slug: 'system-site-settings',
+                title: 'SYSTEM_SITE_SETTINGS',
+                game: 'SYSTEM',
+                date: '2000-01-01',
+                time: '00:00',
+                venue: 'System',
+                mode: 'ONLINE',
+                prize_pool: '0',
+                registration_deadline: '2000-01-01T00:00:00Z',
+                rules: updatedRules,
+                is_published: false,
+                status: 'COMPLETED'
+              }, { onConflict: 'slug' });
             }
           } catch (e) {
             console.warn('Supabase save-form-fields error:', e);
@@ -1270,15 +1198,9 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('site_settings').upsert({
-                key: 'form_fields_settings',
-                value: {
-                  formFields: allFields,
-                  formTitle: formStore.getTitle(),
-                  formDesc: formStore.getDesc()
-                },
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'key' });
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object' && !Array.isArray(sysEvent.rules)) ? sysEvent.rules : {};
+              await supabase.from('events').update({ rules: { ...existingRules, formFields: allFields } }).eq('slug', 'system-site-settings');
             }
           } catch (_) {}
         }
@@ -1292,15 +1214,9 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('site_settings').upsert({
-                key: 'form_fields_settings',
-                value: {
-                  formFields: allFields,
-                  formTitle: formStore.getTitle(),
-                  formDesc: formStore.getDesc()
-                },
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'key' });
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object' && !Array.isArray(sysEvent.rules)) ? sysEvent.rules : {};
+              await supabase.from('events').update({ rules: { ...existingRules, formFields: allFields } }).eq('slug', 'system-site-settings');
             }
           } catch (_) {}
         }
@@ -1314,20 +1230,13 @@ export async function POST(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              await supabase.from('site_settings').upsert({
-                key: 'form_fields_settings',
-                value: {
-                  formFields: allFields,
-                  formTitle: formStore.getTitle(),
-                  formDesc: formStore.getDesc()
-                },
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'key' });
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object' && !Array.isArray(sysEvent.rules)) ? sysEvent.rules : {};
+              await supabase.from('events').update({ rules: { ...existingRules, formFields: allFields } }).eq('slug', 'system-site-settings');
             }
           } catch (_) {}
         }
         invalidateCache();
-        return NextResponse.json({ success: res }, { headers: NO_CACHE_HEADERS });
       }
 
       // 12. ADMIN ACCOUNTS (Super Admin Only)

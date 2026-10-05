@@ -137,7 +137,7 @@ export interface Registration {
   email_status: EmailStatus;
   admin_notes?: string;
   created_at: string;
-  answers?: Record<string, any>;
+  answers?: any;
   files?: RegistrationUploadedFile[];
   event_title?: string;
 }

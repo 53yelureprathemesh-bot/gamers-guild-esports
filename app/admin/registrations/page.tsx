@@ -852,6 +852,47 @@ export default function AdminRegistrationsPage() {
               </div>
             </div>
 
+            {/* CUSTOM FORM ANSWERS & OPERATOR QUALIFICATIONS */}
+            {selectedReg.answers && (Array.isArray(selectedReg.answers) ? selectedReg.answers.length > 0 : Object.keys(selectedReg.answers).length > 0) && (
+              <div className="mt-4 p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border space-y-2">
+                <div className="text-neon-cyan uppercase font-bold text-[10px] border-b border-cyber-border pb-1">
+                  CUSTOM FORM QUESTIONS & OPERATOR QUALIFICATIONS
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                  {Array.isArray(selectedReg.answers) ? (
+                    selectedReg.answers.map((ans: any, idx: number) => {
+                      const label = ans.field_label || `Question #${idx + 1}`;
+                      let val = ans.value;
+                      if (typeof val === 'string' && (val.startsWith('"') || val.startsWith('['))) {
+                        try { val = JSON.parse(val); } catch (_) {}
+                      }
+                      const displayVal = Array.isArray(val) ? val.join(', ') : (typeof val === 'object' ? JSON.stringify(val) : String(val ?? ''));
+                      return (
+                        <div key={idx} className="p-2.5 rounded bg-cyber-black/60 border border-cyber-border/60">
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">{label}</span>
+                          <span className="text-white font-semibold mt-0.5 block break-words whitespace-pre-wrap">{displayVal || '—'}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    Object.entries(selectedReg.answers).map(([key, rawVal]: [string, any], idx: number) => {
+                      let val = rawVal;
+                      if (typeof val === 'string' && (val.startsWith('"') || val.startsWith('['))) {
+                        try { val = JSON.parse(val); } catch (_) {}
+                      }
+                      const displayVal = Array.isArray(val) ? val.join(', ') : (typeof val === 'object' ? JSON.stringify(val) : String(val ?? ''));
+                      return (
+                        <div key={idx} className="p-2.5 rounded bg-cyber-black/60 border border-cyber-border/60">
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">{key}</span>
+                          <span className="text-white font-semibold mt-0.5 block break-words whitespace-pre-wrap">{displayVal || '—'}</span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* UPLOADED DOCUMENTS & IDENTITY PROOFS (ARBITER VAULT) */}
             <div className="mt-6 p-4 rounded-xl bg-cyber-dark/80 border border-cyber-border">
               <div className="flex items-center justify-between border-b border-cyber-border pb-2 mb-3">
