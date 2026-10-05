@@ -229,11 +229,11 @@ export async function POST(req: NextRequest) {
       return { success: false, error: err.message };
     });
 
-    // Race with a 200ms timeout for ultra-fast response under 5,000 concurrent users
-    const fastEmailResult = await Promise.race([
+    // Await email dispatch directly so serverless functions don't terminate mid-flight
+    const emailResult = await Promise.race([
       emailPromise,
-      new Promise<{ success: boolean; error: null }>(resolve => 
-        setTimeout(() => resolve({ success: true, error: null }), 200)
+      new Promise<{ success: boolean; error?: string }>(resolve => 
+        setTimeout(() => resolve({ success: false, error: 'Email delivery timed out after 8s.' }), 8000)
       )
     ]);
 
@@ -241,8 +241,8 @@ export async function POST(req: NextRequest) {
       success: true,
       publicCode: publicCode,
       registrationId: registrationId,
-      emailSent: fastEmailResult.success,
-      emailError: (fastEmailResult as any).error || null,
+      emailSent: emailResult.success,
+      emailError: emailResult.error || null,
       message: 'Registration successfully recorded!'
     });
   } catch (error: any) {

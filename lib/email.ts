@@ -10,15 +10,13 @@ import {
 export async function sendRegistrationConfirmationEmail(payload: EmailPayload): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
     const cleanKey = (str?: string) => (str || '').trim().split(/[\r\n]+/)[0].trim();
-    const smtpUser = cleanKey(process.env.SMTP_USER);
-    const smtpPass = cleanKey(process.env.SMTP_PASS).replace(/\s+/g, '');
+    const smtpUser = cleanKey(process.env.SMTP_USER) || 'gamersguildesports12@gmail.com';
+    const smtpPass = cleanKey(process.env.SMTP_PASS).replace(/\s+/g, '') || 'qrtmjhbdxozysjjy';
     const smtpHost = cleanKey(process.env.SMTP_HOST) || 'smtp.gmail.com';
     const smtpPort = parseInt(cleanKey(process.env.SMTP_PORT) || '465', 10);
     const resendApiKey = cleanKey(process.env.RESEND_API_KEY);
 
-    const defaultFrom = smtpUser 
-      ? `"Gamers Guild Esports" <${smtpUser}>` 
-      : '"Gamers Guild Esports" <onboarding@resend.dev>';
+    const defaultFrom = `"Gamers Guild Esports" <${smtpUser}>`;
     const fromEmail = cleanKey(process.env.EMAIL_FROM) || defaultFrom;
     const replyToEmail = smtpUser || 'gamersguildesports12@gmail.com';
 
@@ -35,18 +33,23 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
     const html = buildRegistrationEmailHtml(payload);
     const plainText = buildRegistrationEmailText(payload);
 
-    // 1. Prioritize SMTP (Gmail App Password or custom SMTP) if configured
+    // 1. Prioritize Gmail SMTP with verified SSL and timeouts
     if (smtpUser && smtpPass) {
       try {
         const isGmail = smtpUser.endsWith('@gmail.com') || smtpHost.includes('gmail');
         const transporter = nodemailer.createTransport(
           isGmail
             ? {
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
                 auth: {
                   user: smtpUser,
                   pass: smtpPass,
                 },
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
               }
             : {
                 host: smtpHost,
@@ -56,6 +59,9 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
                   user: smtpUser,
                   pass: smtpPass,
                 },
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
               }
         );
 
@@ -84,8 +90,13 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
       }
     }
 
-    // 2. Use Resend API if configured
+    // 2. Use Resend API fallback if configured
     if (resendApiKey) {
+      // If sending via Resend and domain is unverified, use onboarding@resend.dev as from
+      const resendFrom = fromEmail.includes('@gmail.com')
+        ? '"Gamers Guild Esports" <onboarding@resend.dev>'
+        : fromEmail;
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -93,7 +104,7 @@ export async function sendRegistrationConfirmationEmail(payload: EmailPayload): 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: fromEmail,
+          from: resendFrom,
           to: [payload.to],
           reply_to: replyToEmail,
           subject: subject,
@@ -141,16 +152,14 @@ export async function sendContactInquiryNotificationEmail(inquiry: {
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const cleanKey = (str?: string) => (str || '').trim().split(/[\r\n]+/)[0].trim();
-    const smtpUser = cleanKey(process.env.SMTP_USER);
-    const smtpPass = cleanKey(process.env.SMTP_PASS).replace(/\s+/g, '');
+    const smtpUser = cleanKey(process.env.SMTP_USER) || 'gamersguildesports12@gmail.com';
+    const smtpPass = cleanKey(process.env.SMTP_PASS).replace(/\s+/g, '') || 'qrtmjhbdxozysjjy';
     const smtpHost = cleanKey(process.env.SMTP_HOST) || 'smtp.gmail.com';
     const smtpPort = parseInt(cleanKey(process.env.SMTP_PORT) || '465', 10);
     const resendApiKey = cleanKey(process.env.RESEND_API_KEY);
 
     const targetRecipient = 'gamersgesports@gmail.com';
-    const defaultFrom = smtpUser 
-      ? `"Gamers Guild Battle Desk" <${smtpUser}>` 
-      : '"Gamers Guild Battle Desk" <onboarding@resend.dev>';
+    const defaultFrom = `"Gamers Guild Battle Desk" <${smtpUser}>`;
     const fromEmail = cleanKey(process.env.EMAIL_FROM) || defaultFrom;
 
     const emailSubject = `[Gamers Guild] New Transmit Message: ${inquiry.subject} from ${inquiry.name}`;
@@ -190,8 +199,24 @@ export async function sendContactInquiryNotificationEmail(inquiry: {
         const isGmail = smtpUser.endsWith('@gmail.com') || smtpHost.includes('gmail');
         const transporter = nodemailer.createTransport(
           isGmail
-            ? { service: 'gmail', auth: { user: smtpUser, pass: smtpPass } }
-            : { host: smtpHost, port: smtpPort, secure: smtpPort === 465, auth: { user: smtpUser, pass: smtpPass } }
+            ? {
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                auth: { user: smtpUser, pass: smtpPass },
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
+              }
+            : {
+                host: smtpHost,
+                port: smtpPort,
+                secure: smtpPort === 465,
+                auth: { user: smtpUser, pass: smtpPass },
+                connectionTimeout: 10000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000,
+              }
         );
 
         await transporter.sendMail({

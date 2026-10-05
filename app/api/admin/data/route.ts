@@ -807,25 +807,29 @@ export async function POST(req: NextRequest) {
 
         // Automatically dispatch status update email to the participant
         if (regRecord && regRecord.email) {
-          sendRegistrationConfirmationEmail({
-            to: regRecord.email,
-            playerName: regRecord.player_name,
-            registrationCode: regRecord.public_code,
-            eventName: regRecord.events?.title || regRecord.event_title || 'Gamers Guild Esports Championship',
-            game: regRecord.game || 'BGMI (Battlegrounds Mobile India)',
-            inGameName: regRecord.in_game_name || 'N/A',
-            playerUid: regRecord.player_uid || 'N/A',
-            teamName: regRecord.team_name || 'N/A',
-            teamRole: regRecord.team_role || 'Player',
-            state: regRecord.state,
-            district: regRecord.district || '',
-            city: regRecord.city || '',
-            phone: regRecord.phone || '',
-            gamingExperience: regRecord.gaming_experience || '',
-            status: payload.status,
-            submissionDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-            adminNotes: payload.notes || ''
-          }).catch(e => console.error('Status email dispatch error:', e));
+          try {
+            await sendRegistrationConfirmationEmail({
+              to: regRecord.email,
+              playerName: regRecord.player_name,
+              registrationCode: regRecord.public_code,
+              eventName: regRecord.events?.title || regRecord.event_title || 'Gamers Guild Esports Championship',
+              game: regRecord.game || 'BGMI (Battlegrounds Mobile India)',
+              inGameName: regRecord.in_game_name || 'N/A',
+              playerUid: regRecord.player_uid || 'N/A',
+              teamName: regRecord.team_name || 'N/A',
+              teamRole: regRecord.team_role || 'Player',
+              state: regRecord.state,
+              district: regRecord.district || '',
+              city: regRecord.city || '',
+              phone: regRecord.phone || '',
+              gamingExperience: regRecord.gaming_experience || '',
+              status: payload.status,
+              submissionDate: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+              adminNotes: payload.notes || ''
+            });
+          } catch (e) {
+            console.error('Status email dispatch error:', e);
+          }
         }
 
         invalidateCache();

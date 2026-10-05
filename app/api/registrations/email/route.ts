@@ -3,6 +3,8 @@ import { dataStore } from '@/lib/dataStore';
 import { sendRegistrationConfirmationEmail } from '@/lib/email';
 import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { registrationId } = await req.json();
@@ -16,11 +18,14 @@ export async function POST(req: NextRequest) {
     if (isSupabaseConfigured) {
       const supabase = getServiceSupabase();
       if (supabase) {
-        const { data } = await supabase
-          .from('registrations')
-          .select('*, events(title)')
-          .eq('id', registrationId)
-          .single();
+        const cleanId = String(registrationId).trim().replace(/^#/, '');
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+        let query = supabase.from('registrations').select('*, events(title)');
+        query = isUuid ? query.eq('id', cleanId) : query.ilike('public_code', cleanId);
+        const { data, error: qErr } = await query.maybeSingle();
+        if (qErr) {
+          console.warn('Supabase find registration for email resend query note:', qErr.message);
+        }
         if (data) {
           registration = {
             ...data,
@@ -31,7 +36,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!registration) {
-      registration = dataStore.getRegistrations().find(r => r.id === registrationId);
+      registration = dataStore.getRegistrations().find(r => 
+        r.id === registrationId || 
+        r.public_code.toLowerCase() === String(registrationId).toLowerCase().replace(/^#/, '')
+      );
     }
 
     if (!registration) {
@@ -59,14 +67,14 @@ export async function POST(req: NextRequest) {
       adminNotes: registration.admin_notes || ''
     });
 
-    if (isSupabaseConfigured && registrationId) {
+    if (isSupabaseConfigured && registration?.id) {
       try {
         const supabase = getServiceSupabase();
         if (supabase) {
           await supabase
             .from('registrations')
             .update({ email_status: emailResult.success ? 'SENT' : 'FAILED' })
-            .eq('id', registrationId);
+            .eq('id', registration.id);
         }
       } catch (sbErr) {
         console.warn('Could not update email_status in Supabase:', sbErr);
