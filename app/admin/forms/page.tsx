@@ -34,7 +34,11 @@ export default function AdminFormBuilderPage() {
     fetch('/api/admin/data?type=form-fields')
       .then(res => res.json())
       .then(res => {
-        if (res.success && res.data?.length) setFields(res.data);
+        if (res.success) {
+          if (Array.isArray(res.data) && res.data.length) setFields(res.data);
+          if (res.formTitle) setFormTitle(res.formTitle);
+          if (res.formDesc) setFormDesc(res.formDesc);
+        }
       })
       .catch(() => console.log('Using default form fields.'));
   }, []);
@@ -51,13 +55,15 @@ export default function AdminFormBuilderPage() {
         },
         body: JSON.stringify({
           action: 'save-form-fields',
-          payload: { fields }
+          payload: { fields, formTitle, formDesc }
         })
       });
       const data = await res.json();
       if (data.success) {
         setSaveNotice('Registration form configuration successfully saved and published!');
         setTimeout(() => setSaveNotice(null), 3500);
+      } else {
+        alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Failed to save form: ' + err.message);

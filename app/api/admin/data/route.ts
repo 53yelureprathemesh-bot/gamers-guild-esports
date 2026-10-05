@@ -294,8 +294,28 @@ export async function GET(req: NextRequest) {
       case 'matches':
         return NextResponse.json({ success: true, data: dataStore.getMatches(searchParams.get('eventId') || undefined) }, { headers: NO_CACHE_HEADERS });
 
-      case 'form-fields':
-        return NextResponse.json({ success: true, data: formStore.getFields() }, { headers: NO_CACHE_HEADERS });
+      case 'form-fields': {
+        let fields = formStore.getFields();
+        let formTitle = 'PLAYER & SQUAD REGISTRATION';
+        let formDesc = 'Fill out player details and required verification proofs to enter the competitive bracket.';
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              if (sysEvent?.rules?.formFields && Array.isArray(sysEvent.rules.formFields)) {
+                fields = sysEvent.rules.formFields;
+                formStore.setFields(fields);
+              }
+              if (sysEvent?.rules?.formTitle) formTitle = sysEvent.rules.formTitle;
+              if (sysEvent?.rules?.formDesc) formDesc = sysEvent.rules.formDesc;
+            }
+          } catch (e) {
+            console.warn('Supabase fetch form-fields error:', e);
+          }
+        }
+        return NextResponse.json({ success: true, data: fields, formTitle, formDesc }, { headers: NO_CACHE_HEADERS });
+      }
 
       case 'announcements': {
         let anns = dataStore.getAnnouncements();
@@ -448,6 +468,7 @@ export async function GET(req: NextRequest) {
         let announcements = dataStore.getAnnouncements();
         let gallery = dataStore.getGallery();
         let sponsors = dataStore.getSponsors();
+        let sysRules: any = null;
 
         if (isSupabaseConfigured) {
           try {
@@ -461,6 +482,10 @@ export async function GET(req: NextRequest) {
                 supabase.from('gallery').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
                 supabase.from('sponsors').select('*').order('tier', { ascending: true })
               ]);
+
+              if (sysEvRes?.data?.rules && typeof sysEvRes.data.rules === 'object') {
+                sysRules = sysEvRes.data.rules;
+              }
 
               if (!evRes.error && Array.isArray(evRes.data)) {
                 const filtered = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
@@ -477,20 +502,20 @@ export async function GET(req: NextRequest) {
               if (stRes.data && stRes.data.value) {
                 settings = { ...settings, ...stRes.data.value };
                 dataStore.updateSiteSettings(settings);
-              } else if (sysEvRes.data && sysEvRes.data.rules && typeof sysEvRes.data.rules === 'object') {
-                settings = { ...settings, ...(sysEvRes.data.rules as any) };
+              } else if (sysRules) {
+                settings = { ...settings, ...sysRules };
                 dataStore.updateSiteSettings(settings);
               }
               if (!anRes.error && Array.isArray(anRes.data)) announcements = anRes.data;
               if (!galRes.error && Array.isArray(galRes.data)) {
                 gallery = galRes.data;
-              } else if (sysEvRes.data?.rules?.gallery && Array.isArray(sysEvRes.data.rules.gallery)) {
-                gallery = sysEvRes.data.rules.gallery;
+              } else if (sysRules?.gallery && Array.isArray(sysRules.gallery)) {
+                gallery = sysRules.gallery;
               }
               if (!spRes.error && Array.isArray(spRes.data)) {
                 sponsors = spRes.data;
-              } else if (sysEvRes.data?.rules?.sponsors && Array.isArray(sysEvRes.data.rules.sponsors)) {
-                sponsors = sysEvRes.data.rules.sponsors;
+              } else if (sysRules?.sponsors && Array.isArray(sysRules.sponsors)) {
+                sponsors = sysRules.sponsors;
               }
             }
           } catch (e) {
@@ -498,10 +523,22 @@ export async function GET(req: NextRequest) {
           }
         }
 
+        let formFields = formStore.getFields();
+        let formTitle = 'PLAYER & SQUAD REGISTRATION';
+        let formDesc = 'Fill out player details and required verification proofs to enter the competitive bracket.';
+        if (sysRules?.formFields && Array.isArray(sysRules.formFields)) {
+          formFields = sysRules.formFields;
+          formStore.setFields(formFields);
+        }
+        if (sysRules?.formTitle) formTitle = sysRules.formTitle;
+        if (sysRules?.formDesc) formDesc = sysRules.formDesc;
+
         const bundle = {
           events,
           settings,
-          formFields: formStore.getFields(),
+          formFields,
+          formTitle,
+          formDesc,
           announcements,
           gallery,
           sponsors
@@ -1225,6 +1262,39 @@ export async function POST(req: NextRequest) {
 
         invalidateCache();
         return NextResponse.json({ success: true }, { headers: NO_CACHE_HEADERS });
+      }
+
+      // 15. DYNAMIC REGISTRATION FORM FIELDS PERSISTENCE
+      case 'save-form-fields': {
+        const { fields, formTitle, formDesc } = payload || {};
+        if (!Array.isArray(fields)) {
+          return NextResponse.json({ success: false, error: 'Form fields array is required.' }, { status: 400 });
+        }
+
+        formStore.setFields(fields);
+
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: sysEvent } = await supabase.from('events').select('rules').eq('slug', 'system-site-settings').single();
+              const existingRules = (sysEvent?.rules && typeof sysEvent.rules === 'object') ? sysEvent.rules : {};
+              const updatedRules = {
+                ...existingRules,
+                formFields: fields,
+                formTitle: formTitle || existingRules.formTitle || 'PLAYER & SQUAD REGISTRATION',
+                formDesc: formDesc !== undefined ? formDesc : (existingRules.formDesc || '')
+              };
+
+              await supabase.from('events').update({ rules: updatedRules }).eq('slug', 'system-site-settings');
+            }
+          } catch (e) {
+            console.warn('Supabase save form fields error:', e);
+          }
+        }
+
+        invalidateCache();
+        return NextResponse.json({ success: true, data: fields }, { headers: NO_CACHE_HEADERS });
       }
 
       default:

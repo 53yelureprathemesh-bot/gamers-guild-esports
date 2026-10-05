@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Radio, 
   Trophy, 
@@ -11,9 +11,13 @@ import {
   CheckCircle2, 
   Play, 
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Upload,
+  Image as ImageIcon,
+  Sparkles,
+  X
 } from 'lucide-react';
-import { Event, PointsTableEntry, TournamentMatch, SiteSettings } from '@/lib/types';
+import { Event, PointsTableEntry, TournamentMatch, SiteSettings, GalleryItem } from '@/lib/types';
 import { INITIAL_EVENTS, INITIAL_POINTS_TABLE, INITIAL_MATCHES, INITIAL_SITE_SETTINGS } from '@/lib/dataStore';
 
 export default function AdminOngoingEventsPage() {
@@ -38,6 +42,14 @@ export default function AdminOngoingEventsPage() {
   const [streamUrl, setStreamUrl] = useState('');
   const [isStreamLive, setIsStreamLive] = useState(true);
   const [savingStream, setSavingStream] = useState(false);
+
+  // Poster State
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [eventPoster, setEventPoster] = useState('');
+  const [isCompressingPoster, setIsCompressingPoster] = useState(false);
+  const [savingPoster, setSavingPoster] = useState(false);
+  const posterFileInputRef = useRef<HTMLInputElement>(null);
 
   const getAuthHeaders = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
@@ -75,14 +87,104 @@ export default function AdminOngoingEventsPage() {
         }
       })
       .catch(() => {});
+
+    // Fetch gallery for poster picker
+    fetch('/api/admin/data?type=gallery', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && Array.isArray(res.data)) setGallery(res.data);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (currentEvent) {
       setStreamUrl(currentEvent.stream_url || '');
       setIsStreamLive(currentEvent.is_stream_live ?? true);
+      setEventPoster(currentEvent.poster_url || '');
     }
   }, [selectedEventId, currentEvent]);
+
+  // Handle direct device poster upload with canvas compression
+  const handleDevicePosterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    setIsCompressingPoster(true);
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      const rawDataUrl = loadEvt.target?.result as string;
+      const img = new window.Image();
+      img.onload = () => {
+        const maxDim = 1400;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          setEventPoster(compressed);
+        } else {
+          setEventPoster(rawDataUrl);
+        }
+        setIsCompressingPoster(false);
+      };
+      img.onerror = () => {
+        setIsCompressingPoster(false);
+        setEventPoster(rawDataUrl);
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSavePoster = async () => {
+    if (!currentEvent) return;
+    setSavingPoster(true);
+    try {
+      const res = await fetch('/api/admin/data', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          action: 'save-event',
+          payload: {
+            ...currentEvent,
+            poster_url: eventPoster
+          }
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNotice('Tournament poster successfully updated!');
+        setEvents(prev => prev.map(ev => ev.id === selectedEventId ? { ...ev, poster_url: eventPoster } : ev));
+        setTimeout(() => setNotice(null), 3500);
+      } else {
+        alert('Failed to update poster: ' + (data.error || 'Server error'));
+      }
+    } catch (err: any) {
+      alert('Error updating poster: ' + err.message);
+    } finally {
+      setSavingPoster(false);
+    }
+  };
 
   const handleSaveStream = async () => {
     setSavingStream(true);
@@ -396,6 +498,96 @@ export default function AdminOngoingEventsPage() {
         </div>
       </div>
 
+      {/* TOURNAMENT POSTER & BANNER CONTROLLER */}
+      <div className="glass-hud p-6 rounded-2xl border-2 border-neon-cyan/40 space-y-4 shadow-hud">
+        <div className="flex items-center justify-between border-b border-cyber-border pb-3">
+          <div className="flex items-center space-x-2">
+            <ImageIcon className="w-5 h-5 text-neon-cyan" />
+            <h2 className="text-base font-black text-white font-mono uppercase">
+              TOURNAMENT BANNER & POSTER CONTROLLER
+            </h2>
+          </div>
+          <span className="text-xs font-mono text-gray-400">
+            Selected Event: <strong className="text-white">{currentEvent?.title}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-mono font-bold text-gray-300 block">
+                Update Poster Image for this Event
+              </label>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGalleryPicker(true)}
+                  className="px-3.5 py-2.5 rounded-lg bg-cyber-dark border border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 font-bold text-xs flex items-center space-x-2"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span>📁 Choose from Gallery / Posters</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => posterFileInputRef.current?.click()}
+                  disabled={isCompressingPoster}
+                  className="px-3.5 py-2.5 rounded-lg bg-cyber-dark border border-neon-emerald/50 text-neon-emerald hover:bg-neon-emerald/10 font-bold text-xs flex items-center space-x-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>{isCompressingPoster ? 'Compressing...' : '📤 Upload from Device'}</span>
+                </button>
+
+                <input
+                  ref={posterFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleDevicePosterUpload}
+                  className="hidden"
+                />
+              </div>
+
+              <div className="pt-1">
+                <input
+                  type="text"
+                  placeholder="Or enter poster URL (https://...)"
+                  value={eventPoster}
+                  onChange={(e) => setEventPoster(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSavePoster}
+              disabled={savingPoster || !eventPoster}
+              className="btn-cyber-primary w-full py-2.5 rounded-lg text-xs font-black font-mono uppercase flex items-center justify-center space-x-2 disabled:opacity-50"
+            >
+              <Save className="w-4 h-4 text-cyber-black" />
+              <span>{savingPoster ? 'SAVING POSTER...' : 'SAVE & UPDATE TOURNAMENT POSTER'}</span>
+            </button>
+          </div>
+
+          {/* Poster Preview */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-mono font-bold text-gray-400">
+              Active Tournament Poster Preview:
+            </label>
+            {eventPoster ? (
+              <div className="relative h-48 w-full rounded-xl overflow-hidden border border-cyber-border bg-black flex items-center justify-center">
+                <img src={eventPoster} alt="Event Poster Preview" className="w-full h-full object-contain" />
+              </div>
+            ) : (
+              <div className="h-48 rounded-xl border-2 border-dashed border-cyber-border flex flex-col items-center justify-center p-4 text-center text-gray-500 font-mono text-xs">
+                <ImageIcon className="w-8 h-8 text-gray-600 mb-2" />
+                <span>No poster assigned to this event. Pick one from gallery or upload from device.</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Points Table Console */}
       <div className="glass-panel p-6 rounded-2xl border border-cyber-border space-y-4">
         <div className="flex justify-between items-center border-b border-cyber-border pb-3">
@@ -544,6 +736,75 @@ export default function AdminOngoingEventsPage() {
                 className="btn-cyber-primary px-5 py-2 rounded text-xs font-mono font-bold uppercase"
               >
                 Save Score
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GALLERY POSTER PICKER MODAL */}
+      {showGalleryPicker && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-hud p-6 rounded-2xl border-2 border-neon-cyan/60 max-w-3xl w-full space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-cyber-border pb-3">
+              <div>
+                <h3 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+                  <ImageIcon className="w-5 h-5 text-neon-cyan" />
+                  <span>SELECT POSTER FROM MEDIA GALLERY</span>
+                </h3>
+                <p className="text-xs text-gray-400 font-mono">
+                  Pick any uploaded poster or photo to use as this tournament's official banner.
+                </p>
+              </div>
+              <button onClick={() => setShowGalleryPicker(false)} className="text-gray-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {gallery.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 font-mono text-xs">
+                No media in Gallery yet. Use "Upload from Device" or visit the Gallery page to upload posters.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {gallery.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setEventPoster(item.image_url);
+                      setShowGalleryPicker(false);
+                    }}
+                    className={`glass-panel p-2 rounded-xl border cursor-pointer transition flex flex-col justify-between group ${
+                      eventPoster === item.image_url
+                        ? 'border-neon-emerald shadow-neon-glow'
+                        : 'border-cyber-border hover:border-neon-cyan'
+                    }`}
+                  >
+                    <div className="relative h-36 w-full rounded-lg overflow-hidden bg-black mb-2">
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-mono text-neon-cyan font-bold">
+                        {item.category}
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-mono font-bold text-white truncate mb-1">{item.title}</div>
+                    <button
+                      type="button"
+                      className="w-full py-1 text-[10px] font-mono font-bold rounded bg-neon-cyan/20 text-neon-cyan group-hover:bg-neon-emerald group-hover:text-black transition"
+                    >
+                      {eventPoster === item.image_url ? '✓ SELECTED' : 'USE THIS POSTER'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-cyber-border flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowGalleryPicker(false)}
+                className="px-4 py-2 text-xs font-mono font-bold text-gray-400 hover:text-white"
+              >
+                Close
               </button>
             </div>
           </div>

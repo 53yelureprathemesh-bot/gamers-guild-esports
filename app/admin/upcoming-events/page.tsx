@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { 
   Calendar, 
@@ -14,16 +14,23 @@ import {
   Users, 
   Clock, 
   MapPin, 
-  X
+  X,
+  Upload,
+  Image as ImageIcon,
+  Sparkles
 } from 'lucide-react';
-import { Event, EventStatus, EventMode } from '@/lib/types';
+import { Event, EventStatus, EventMode, GalleryItem } from '@/lib/types';
 import { INITIAL_EVENTS } from '@/lib/dataStore';
 
 export default function AdminUpcomingEventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [editingEvent, setEditingEvent] = useState<Partial<Event> | null>(null);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [showGalleryPicker, setShowGalleryPicker] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const posterFileInputRef = useRef<HTMLInputElement>(null);
 
   const getAuthHeaders = () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
@@ -43,9 +50,70 @@ export default function AdminUpcomingEventsPage() {
       .catch(() => console.log('Using initial events.'));
   };
 
+  const fetchGallery = () => {
+    fetch('/api/admin/data?type=gallery', { headers: getAuthHeaders() })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && Array.isArray(res.data)) setGallery(res.data);
+      })
+      .catch(() => {});
+  };
+
   useEffect(() => {
     fetchEvents();
+    fetchGallery();
   }, []);
+
+  // Handle direct device poster upload with canvas compression
+  const handleDevicePosterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    setIsCompressing(true);
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      const rawDataUrl = loadEvt.target?.result as string;
+      const img = new window.Image();
+      img.onload = () => {
+        const maxDim = 1400;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          setEditingEvent(prev => prev ? ({ ...prev, poster_url: compressed }) : null);
+        } else {
+          setEditingEvent(prev => prev ? ({ ...prev, poster_url: rawDataUrl }) : null);
+        }
+        setIsCompressing(false);
+      };
+      img.onerror = () => {
+        setIsCompressing(false);
+        setEditingEvent(prev => prev ? ({ ...prev, poster_url: rawDataUrl }) : null);
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleOpenAdd = () => {
     setEditingEvent({
@@ -360,14 +428,61 @@ export default function AdminUpcomingEventsPage() {
                 />
               </div>
 
-              <div>
-                <label className="text-gray-300 font-bold block mb-1">Poster Image URL</label>
-                <input
-                  type="text"
-                  value={editingEvent.poster_url || ''}
-                  onChange={(e) => setEditingEvent({ ...editingEvent, poster_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-white"
-                />
+              {/* TOURNAMENT POSTER CONTROLLER */}
+              <div className="space-y-2 p-3.5 rounded-xl bg-cyber-dark/80 border border-cyber-border">
+                <div className="flex justify-between items-center">
+                  <label className="text-gray-300 font-bold block text-xs">
+                    Tournament Poster *
+                  </label>
+                  <span className="text-[10px] text-neon-cyan font-mono">
+                    {editingEvent.poster_url ? '✓ Active Poster Set' : 'No Poster Set'}
+                  </span>
+                </div>
+
+                {editingEvent.poster_url && (
+                  <div className="relative h-44 w-full rounded-lg overflow-hidden border border-cyber-border bg-black flex items-center justify-center">
+                    <img src={editingEvent.poster_url} alt="Poster preview" className="w-full h-full object-contain" />
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowGalleryPicker(true)}
+                    className="px-3 py-2 rounded-lg bg-cyber-dark border border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/10 font-bold text-xs flex items-center space-x-1.5"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>📁 Choose from Gallery</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => posterFileInputRef.current?.click()}
+                    disabled={isCompressing}
+                    className="px-3 py-2 rounded-lg bg-cyber-dark border border-neon-emerald/50 text-neon-emerald hover:bg-neon-emerald/10 font-bold text-xs flex items-center space-x-1.5"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isCompressing ? 'Compressing...' : '📤 Upload from Device'}</span>
+                  </button>
+
+                  <input
+                    ref={posterFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleDevicePosterUpload}
+                    className="hidden"
+                  />
+                </div>
+
+                <div className="pt-1">
+                  <input
+                    type="text"
+                    placeholder="Or enter poster URL (https://...)"
+                    value={editingEvent.poster_url || ''}
+                    onChange={(e) => setEditingEvent({ ...editingEvent, poster_url: e.target.value })}
+                    className="w-full px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-white text-xs"
+                  />
+                </div>
               </div>
 
               <div>
@@ -406,6 +521,75 @@ export default function AdminUpcomingEventsPage() {
                 className="btn-cyber-primary px-5 py-2 rounded text-xs font-mono font-bold uppercase"
               >
                 Save Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GALLERY POSTER PICKER MODAL */}
+      {showGalleryPicker && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-hud p-6 rounded-2xl border-2 border-neon-cyan/60 max-w-3xl w-full space-y-4 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-cyber-border pb-3">
+              <div>
+                <h3 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+                  <ImageIcon className="w-5 h-5 text-neon-cyan" />
+                  <span>SELECT POSTER FROM MEDIA GALLERY</span>
+                </h3>
+                <p className="text-xs text-gray-400 font-mono">
+                  Pick any uploaded poster or photo to use as this tournament's official banner.
+                </p>
+              </div>
+              <button onClick={() => setShowGalleryPicker(false)} className="text-gray-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {gallery.length === 0 ? (
+              <div className="p-8 text-center text-gray-400 font-mono text-xs">
+                No media in Gallery yet. Use "Upload from Device" or visit the Gallery page to upload posters.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {gallery.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setEditingEvent(prev => prev ? ({ ...prev, poster_url: item.image_url }) : null);
+                      setShowGalleryPicker(false);
+                    }}
+                    className={`glass-panel p-2 rounded-xl border cursor-pointer transition flex flex-col justify-between group ${
+                      editingEvent?.poster_url === item.image_url
+                        ? 'border-neon-emerald shadow-neon-glow'
+                        : 'border-cyber-border hover:border-neon-cyan'
+                    }`}
+                  >
+                    <div className="relative h-36 w-full rounded-lg overflow-hidden bg-black mb-2">
+                      <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition" />
+                      <div className="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-black/80 text-[9px] font-mono text-neon-cyan font-bold">
+                        {item.category}
+                      </div>
+                    </div>
+                    <div className="text-[11px] font-mono font-bold text-white truncate mb-1">{item.title}</div>
+                    <button
+                      type="button"
+                      className="w-full py-1 text-[10px] font-mono font-bold rounded bg-neon-cyan/20 text-neon-cyan group-hover:bg-neon-emerald group-hover:text-black transition"
+                    >
+                      {editingEvent?.poster_url === item.image_url ? '✓ SELECTED' : 'USE THIS POSTER'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-cyber-border flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowGalleryPicker(false)}
+                className="px-4 py-2 text-xs font-mono font-bold text-gray-400 hover:text-white"
+              >
+                Close
               </button>
             </div>
           </div>

@@ -37,6 +37,8 @@ function RegistrationFormContent() {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string>(preselectedEventId || '');
   const [formFields, setFormFields] = useState<RegistrationField[]>(DEFAULT_FORM_FIELDS);
+  const [formTitle, setFormTitle] = useState<string>('OPERATOR & SQUAD REGISTRATION');
+  const [formDesc, setFormDesc] = useState<string>('Welcome to the official tactical registration portal for Gamers Guild Esports national tournaments. Enter verified player and in-game credentials. Upon completion, our state code engine will generate your immutable bracket identification (e.g. #MH27).');
 
   // Form State
   const [formData, setFormData] = useState<Record<string, any>>({
@@ -78,6 +80,8 @@ function RegistrationFormContent() {
           const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
           setEvents(evList);
           if (Array.isArray(res.data.formFields)) setFormFields(res.data.formFields);
+          if (res.data.formTitle) setFormTitle(res.data.formTitle);
+          if (res.data.formDesc) setFormDesc(res.data.formDesc);
           if (res.data.settings) setSiteSettings(res.data.settings);
         }
       })
@@ -219,14 +223,111 @@ function RegistrationFormContent() {
     });
   };
 
+  // Dynamic field helpers
+  const getField = (id: string) => formFields.find(f => f.id === id);
+  const hasField = (id: string) => formFields.some(f => f.id === id);
+
+  const coreIds = [
+    'f-name', 'f-dob', 'f-gender', 'f-phone', 'f-email', 'f-state', 'f-district', 'f-city',
+    'f-game', 'f-ign', 'f-uid', 'f-team', 'f-role', 'f-exp'
+  ];
+
+  const uploadFields = formFields.filter(f => 
+    f.field_type === 'IMAGE_UPLOAD' || 
+    f.field_type === 'PDF_UPLOAD' || 
+    f.field_type === 'FILE_UPLOAD'
+  );
+
+  const customFields = formFields.filter(f => 
+    !coreIds.includes(f.id) && 
+    f.field_type !== 'IMAGE_UPLOAD' && 
+    f.field_type !== 'PDF_UPLOAD' && 
+    f.field_type !== 'FILE_UPLOAD'
+  );
+
   // Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    // Validation
-    if (!formData.fullName || !formData.phone || !formData.email || !formData.inGameName || !formData.playerUid || !formData.teamName) {
-      setErrorMsg('Please complete all required fields with valid details.');
+    // Dynamic Form Validation based on formFields configuration
+    for (const f of formFields) {
+      if (f.is_required) {
+        if (f.id === 'f-name' && !formData.fullName?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-phone' && !formData.phone?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-email' && !formData.email?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-dob' && !formData.dateOfBirth?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-state' && !formData.state?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-district' && !formData.district?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-city' && !formData.city?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-game' && !formData.game?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-ign' && !formData.inGameName?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-uid' && !formData.playerUid?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (f.id === 'f-team' && !formData.teamName?.trim()) {
+          setErrorMsg(`${f.label} is required.`);
+          window.scrollTo({ top: 100, behavior: 'smooth' });
+          return;
+        }
+        if (uploadFields.some(uf => uf.id === f.id)) {
+          if (!uploadedFiles[f.id]) {
+            setErrorMsg(`${f.label} is required. Please upload the requested file.`);
+            window.scrollTo({ top: 250, behavior: 'smooth' });
+            return;
+          }
+        }
+        if (customFields.some(cf => cf.id === f.id)) {
+          const val = customAnswers[f.id];
+          if (val === undefined || val === null || val === '' || (Array.isArray(val) && val.length === 0)) {
+            setErrorMsg(`${f.label} is required.`);
+            window.scrollTo({ top: 250, behavior: 'smooth' });
+            return;
+          }
+        }
+      }
+    }
+
+    if (!formData.fullName || !formData.phone || !formData.email || !formData.inGameName || !formData.playerUid) {
+      setErrorMsg('Please complete all mandatory identity fields (Name, Phone, Email, IGN, Player UID).');
       window.scrollTo({ top: 100, behavior: 'smooth' });
       return;
     }
@@ -467,7 +568,7 @@ function RegistrationFormContent() {
                   <span className="text-neon-cyan">OFFICIAL ENLISTMENT</span>
                 </span>
                 <h1 className="text-xl sm:text-2xl font-black text-white font-orbitron uppercase">
-                  OPERATOR & SQUAD REGISTRATION
+                  {formTitle || 'OPERATOR & SQUAD REGISTRATION'}
                 </h1>
               </div>
             </div>
@@ -477,7 +578,7 @@ function RegistrationFormContent() {
           </div>
 
           <p className="mt-4 text-xs sm:text-sm text-gray-300 font-rajdhani font-semibold leading-relaxed">
-            Welcome to the official tactical registration portal for Gamers Guild Esports national tournaments. Enter verified player and in-game credentials. Upon completion, our state code engine will generate your immutable bracket identification (e.g. #MH27).
+            {formDesc || 'Welcome to the official tactical registration portal for Gamers Guild Esports national tournaments. Enter verified player and in-game credentials. Upon completion, our state code engine will generate your immutable bracket identification (e.g. #MH27).'}
           </p>
 
           <div className="mt-4 pt-3 border-t border-cyber-border flex items-center text-xs font-mono text-neon-red space-x-1">
@@ -520,428 +621,541 @@ function RegistrationFormContent() {
           </div>
 
           {/* SECTION 1: PERSONAL INFORMATION */}
-          <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
-            <div className="border-b border-cyber-border pb-3">
-              <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-neon-emerald"></span>
-                <span>1. PERSONAL IDENTIFICATION</span>
-              </h2>
-              <p className="text-xs text-gray-400 font-sans mt-0.5">
-                Legal player details for identity verification and prize distributions.
-              </p>
+          {(hasField('f-name') || hasField('f-dob') || hasField('f-gender') || hasField('f-phone') || hasField('f-email') || hasField('f-state') || hasField('f-district') || hasField('f-city')) && (
+            <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
+              <div className="border-b border-cyber-border pb-3">
+                <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-neon-emerald"></span>
+                  <span>1. PERSONAL IDENTIFICATION</span>
+                </h2>
+                <p className="text-xs text-gray-400 font-sans mt-0.5">
+                  Legal player details for identity verification and prize distributions.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Full Name */}
+                {hasField('f-name') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-name')?.label || 'Full Legal Name'} {getField('f-name')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={getField('f-name')?.is_required}
+                      placeholder={getField('f-name')?.placeholder || 'e.g. Rahul Deshmukh'}
+                      value={formData.fullName}
+                      onChange={(e) => handleInputChange('fullName', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                    {getField('f-name')?.description && (
+                      <span className="text-[10px] font-mono text-gray-400 block">{getField('f-name')?.description}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Date of Birth */}
+                {hasField('f-dob') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-dob')?.label || 'Date of Birth'} {getField('f-dob')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="date"
+                      required={getField('f-dob')?.is_required}
+                      value={formData.dateOfBirth}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                    {getField('f-dob')?.description && (
+                      <span className="text-[10px] font-mono text-gray-400 block">{getField('f-dob')?.description}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Gender */}
+                {hasField('f-gender') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-gender')?.label || 'Gender'} {getField('f-gender')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <select
+                      value={formData.gender}
+                      onChange={(e) => handleInputChange('gender', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    >
+                      {(getField('f-gender')?.options && getField('f-gender')!.options!.length > 0
+                        ? getField('f-gender')!.options!
+                        : ['Male', 'Female', 'Non-Binary', 'Prefer not to say']
+                      ).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Mobile Phone */}
+                {hasField('f-phone') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-phone')?.label || 'Mobile Number (WhatsApp Active)'} {getField('f-phone')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="tel"
+                      required={getField('f-phone')?.is_required}
+                      placeholder={getField('f-phone')?.placeholder || '+91 98765 43210'}
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                    {getField('f-phone')?.description && (
+                      <span className="text-[10px] font-mono text-gray-400 block">{getField('f-phone')?.description}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Email */}
+                {hasField('f-email') && (
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-email')?.label || 'Email Address'} {getField('f-email')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="email"
+                      required={getField('f-email')?.is_required}
+                      placeholder={getField('f-email')?.placeholder || 'player@gmail.com'}
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                    <span className="text-[11px] font-mono text-gray-400">
+                      {getField('f-email')?.description || 'Your state registration code and match schedule will be delivered to this inbox.'}
+                    </span>
+                  </div>
+                )}
+
+                {/* State */}
+                {hasField('f-state') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-neon-cyan">
+                      {getField('f-state')?.label || 'State (Generates State Code: MH, GJ, MP, etc.)'} {getField('f-state')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <select
+                      value={formData.state}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
+                    >
+                      {INDIAN_STATES.map((st) => (
+                        <option key={st.code} value={st.name}>
+                          {st.name} ({st.code})
+                        </option>
+                      ))}
+                      <option value="Other">Other / International</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* District */}
+                {hasField('f-district') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-district')?.label || 'District'} {getField('f-district')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={getField('f-district')?.is_required}
+                      placeholder={getField('f-district')?.placeholder || 'e.g. Nagpur'}
+                      value={formData.district}
+                      onChange={(e) => handleInputChange('district', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                  </div>
+                )}
+
+                {/* City */}
+                {hasField('f-city') && (
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-city')?.label || 'City / Town'} {getField('f-city')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={getField('f-city')?.is_required}
+                      placeholder={getField('f-city')?.placeholder || 'e.g. Nagpur'}
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Full Name */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Full Legal Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Rahul Deshmukh"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange('fullName', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-
-              {/* Date of Birth */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Date of Birth *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-
-              {/* Gender */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Gender *
-                </label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Non-Binary">Non-Binary</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-              </div>
-
-              {/* Mobile Phone */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Mobile Number (WhatsApp Active) *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="+91 98765 43210"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-
-              {/* Email */}
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="player@gmail.com"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-                <span className="text-[11px] font-mono text-gray-400">
-                  Your state registration code and match schedule will be delivered to this inbox.
-                </span>
-              </div>
-
-              {/* State */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-neon-cyan">
-                  State (Generates State Code: MH, GJ, MP, etc.) *
-                </label>
-                <select
-                  value={formData.state}
-                  onChange={(e) => handleInputChange('state', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-cyan"
-                >
-                  {INDIAN_STATES.map((st) => (
-                    <option key={st.code} value={st.name}>
-                      {st.name} ({st.code})
-                    </option>
-                  ))}
-                  <option value="Other">Other / International</option>
-                </select>
-              </div>
-
-              {/* District */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  District *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Nagpur"
-                  value={formData.district}
-                  onChange={(e) => handleInputChange('district', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-
-              {/* City */}
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  City / Town *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Nagpur"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange('city', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* SECTION 2: GAMING INFORMATION */}
-          <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
-            <div className="border-b border-cyber-border pb-3">
-              <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-neon-cyan"></span>
-                <span>2. GAMING & ROSTER INFORMATION</span>
-              </h2>
-              <p className="text-xs text-gray-400 font-sans mt-0.5">
-                Exact handle and account UID used to identify and invite your character.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Game */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Selected Game *
-                </label>
-                <select
-                  value={formData.game}
-                  onChange={(e) => handleInputChange('game', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                >
-                  <option value="BGMI (Battlegrounds Mobile India)">BGMI (Battlegrounds Mobile India)</option>
-                  <option value="Free Fire Max">Free Fire Max</option>
-                  <option value="Valorant">Valorant</option>
-                  <option value="Call of Duty: Mobile">Call of Duty: Mobile</option>
-                </select>
+          {(hasField('f-game') || hasField('f-ign') || hasField('f-uid') || hasField('f-team') || hasField('f-role') || hasField('f-exp')) && (
+            <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
+              <div className="border-b border-cyber-border pb-3">
+                <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-neon-cyan"></span>
+                  <span>2. GAMING & ROSTER INFORMATION</span>
+                </h2>
+                <p className="text-xs text-gray-400 font-sans mt-0.5">
+                  Exact handle and account UID used to identify and invite your character.
+                </p>
               </div>
 
-              {/* In-Game Name */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  In-Game Name (IGN) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. TITAN_SNIPER"
-                  value={formData.inGameName}
-                  onChange={(e) => handleInputChange('inGameName', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-
-              {/* Character UID */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Character UID / Player ID (Numbers Only) *
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  required
-                  placeholder="e.g. 5129481023 (Digits Only)"
-                  value={formData.playerUid}
-                  onChange={(e) => {
-                    const digitsOnly = e.target.value.replace(/\D/g, '');
-                    handleInputChange('playerUid', digitsOnly);
-                  }}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-                <span className="text-[10px] font-mono text-neon-cyan block">
-                  Only numeric digits (0-9) allowed. E.g. in-game numeric account ID.
-                </span>
-              </div>
-
-              {/* Team Name */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Team / Squad Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. CYBER TITANS"
-                  value={formData.teamName}
-                  onChange={(e) => handleInputChange('teamName', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-
-              {/* Team Role */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Tactical Role in Team
-                </label>
-                <select
-                  value={formData.teamRole}
-                  onChange={(e) => handleInputChange('teamRole', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                >
-                  <option value="IGL (In-Game Leader)">IGL (In-Game Leader)</option>
-                  <option value="Assaulter">Assaulter</option>
-                  <option value="Sniper">Sniper</option>
-                  <option value="Support / Healer">Support / Healer</option>
-                  <option value="Substitute">Substitute</option>
-                </select>
-              </div>
-
-              {/* Gaming Experience */}
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-mono font-bold text-gray-300">
-                  Past Competitive Experience / Achievements
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. Tier-2 Scrims finalist, City LAN winner 2025."
-                  value={formData.gamingExperience}
-                  onChange={(e) => handleInputChange('gamingExperience', e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 3: DOCUMENT & PROOF UPLOADS */}
-          <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
-            <div className="border-b border-cyber-border pb-3">
-              <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-neon-gold"></span>
-                <span>3. DOCUMENT & VERIFICATION PROOFS</span>
-              </h2>
-              <p className="text-xs text-gray-400 font-sans mt-0.5">
-                Private uploads. Strictly accessible only by authorized tournament arbiters.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              
-              {/* ID Proof (Mandatory) */}
-              <div className="p-4 rounded-xl bg-cyber-dark/60 border border-cyber-border">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="text-xs font-mono font-bold text-white block">
-                      Government ID Proof (Aadhaar / Driving License / College ID)
-                    </span>
-                    <span className="text-[11px] font-mono text-gray-400">
-                      Optional online (can be presented at tournament check-in). PDF, JPG, PNG (Max 5MB)
-                    </span>
-                  </div>
-                  <span title="Private Document">
-                    <Lock className="w-4 h-4 text-neon-gold" />
-                  </span>
-                </div>
-
-                {uploadedFiles['f-doc-id'] ? (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
-                    <div className="flex items-center space-x-2.5">
-                      {uploadedFiles['f-doc-id'].type.startsWith('image/') ? (
-                        <img src={uploadedFiles['f-doc-id'].url} alt="ID preview" className="w-10 h-10 object-cover rounded border border-cyber-border flex-shrink-0" />
-                      ) : (
-                        <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
-                      )}
-                      <div>
-                        <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles['f-doc-id'].name}</span>
-                        <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles['f-doc-id'].size})</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile('f-doc-id')}
-                      className="text-neon-red hover:text-white p-1"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {/* Game */}
+                {hasField('f-game') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-game')?.label || 'Selected Game'} {getField('f-game')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <select
+                      value={formData.game}
+                      onChange={(e) => handleInputChange('game', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      {(getField('f-game')?.options && getField('f-game')!.options!.length > 0
+                        ? getField('f-game')!.options!
+                        : ['BGMI (Battlegrounds Mobile India)', 'Free Fire Max', 'Valorant', 'Call of Duty: Mobile']
+                      ).map((g) => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
                   </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-cyber-border hover:border-neon-cyan/50 rounded-lg cursor-pointer bg-cyber-black/40 transition">
-                    <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                    <span className="text-xs font-mono text-neon-cyan font-semibold">Select or Drop Document</span>
+                )}
+
+                {/* In-Game Name */}
+                {hasField('f-ign') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-ign')?.label || 'In-Game Name (IGN)'} {getField('f-ign')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
                     <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={(e) => handleFileUpload('f-doc-id', e)}
-                      className="hidden"
+                      type="text"
+                      required={getField('f-ign')?.is_required}
+                      placeholder={getField('f-ign')?.placeholder || 'e.g. TITAN_SNIPER'}
+                      value={formData.inGameName}
+                      onChange={(e) => handleInputChange('inGameName', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
                     />
-                  </label>
+                  </div>
+                )}
+
+                {/* Character UID */}
+                {hasField('f-uid') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-uid')?.label || 'Character UID / Player ID (Numbers Only)'} {getField('f-uid')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      required={getField('f-uid')?.is_required}
+                      placeholder={getField('f-uid')?.placeholder || 'e.g. 5129481023 (Digits Only)'}
+                      value={formData.playerUid}
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\D/g, '');
+                        handleInputChange('playerUid', digitsOnly);
+                      }}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                    <span className="text-[10px] font-mono text-neon-cyan block">
+                      {getField('f-uid')?.description || 'Only numeric digits (0-9) allowed. E.g. in-game numeric account ID.'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Team Name */}
+                {hasField('f-team') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-team')?.label || 'Team / Squad Name'} {getField('f-team')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <input
+                      type="text"
+                      required={getField('f-team')?.is_required}
+                      placeholder={getField('f-team')?.placeholder || 'e.g. CYBER TITANS'}
+                      value={formData.teamName}
+                      onChange={(e) => handleInputChange('teamName', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                  </div>
+                )}
+
+                {/* Team Role */}
+                {hasField('f-role') && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-role')?.label || 'Tactical Role in Team'} {getField('f-role')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <select
+                      value={formData.teamRole}
+                      onChange={(e) => handleInputChange('teamRole', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    >
+                      {(getField('f-role')?.options && getField('f-role')!.options!.length > 0
+                        ? getField('f-role')!.options!
+                        : ['IGL (In-Game Leader)', 'Assaulter', 'Sniper', 'Support / Healer', 'Substitute']
+                      ).map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Gaming Experience */}
+                {hasField('f-exp') && (
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-gray-300">
+                      {getField('f-exp')?.label || 'Past Competitive Experience / Achievements'} {getField('f-exp')?.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder={getField('f-exp')?.placeholder || 'e.g. Tier-2 Scrims finalist, City LAN winner 2025.'}
+                      value={formData.gamingExperience}
+                      onChange={(e) => handleInputChange('gamingExperience', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                    />
+                  </div>
                 )}
               </div>
-
-              {/* Profile Photo */}
-              <div className="p-4 rounded-xl bg-cyber-dark/60 border border-cyber-border">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="text-xs font-mono font-bold text-white block">
-                      Player Profile Photo / Headshot
-                    </span>
-                    <span className="text-[11px] font-mono text-gray-400">
-                      High-resolution portrait photo for stream overlays
-                    </span>
-                  </div>
-                </div>
-
-                {uploadedFiles['f-doc-photo'] ? (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
-                    <div className="flex items-center space-x-2.5">
-                      {uploadedFiles['f-doc-photo'].type.startsWith('image/') ? (
-                        <img src={uploadedFiles['f-doc-photo'].url} alt="Photo preview" className="w-10 h-10 object-cover rounded-full border border-neon-cyan flex-shrink-0" />
-                      ) : (
-                        <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
-                      )}
-                      <div>
-                        <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles['f-doc-photo'].name}</span>
-                        <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles['f-doc-photo'].size})</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile('f-doc-photo')}
-                      className="text-neon-red hover:text-white p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-cyber-border hover:border-neon-cyan/50 rounded-lg cursor-pointer bg-cyber-black/40 transition">
-                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
-                    <span className="text-xs font-mono text-neon-cyan font-semibold">Upload Photo (JPG/PNG)</span>
-                    <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload('f-doc-photo', e)}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-
-              {/* Payment Screenshot (Optional) */}
-              <div className="p-4 rounded-xl bg-cyber-dark/60 border border-cyber-border">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <span className="text-xs font-mono font-bold text-white block">
-                      Payment Screenshot (If Entry Fee Applicable)
-                    </span>
-                    <span className="text-[11px] font-mono text-gray-400">
-                      Upload transaction screenshot if event has paid slot entry
-                    </span>
-                  </div>
-                </div>
-
-                {uploadedFiles['f-doc-payment'] ? (
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
-                    <div className="flex items-center space-x-2.5">
-                      {uploadedFiles['f-doc-payment'].type.startsWith('image/') ? (
-                        <img src={uploadedFiles['f-doc-payment'].url} alt="Payment preview" className="w-10 h-10 object-cover rounded border border-cyber-border flex-shrink-0" />
-                      ) : (
-                        <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
-                      )}
-                      <div>
-                        <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles['f-doc-payment'].name}</span>
-                        <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles['f-doc-payment'].size})</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile('f-doc-payment')}
-                      className="text-neon-red hover:text-white p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-cyber-border hover:border-neon-cyan/50 rounded-lg cursor-pointer bg-cyber-black/40 transition">
-                    <Upload className="w-5 h-5 text-gray-400 mb-1" />
-                    <span className="text-xs font-mono text-neon-cyan font-semibold">Upload Payment Proof</span>
-                    <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload('f-doc-payment', e)}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-
             </div>
-          </div>
+          )}
+
+          {/* SECTION 3: DOCUMENT & PROOF UPLOADS (DYNAMIC) */}
+          {uploadFields.length > 0 && (
+            <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
+              <div className="border-b border-cyber-border pb-3">
+                <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-neon-gold"></span>
+                  <span>3. DOCUMENT & VERIFICATION PROOFS</span>
+                </h2>
+                <p className="text-xs text-gray-400 font-sans mt-0.5">
+                  Private uploads. Strictly accessible only by authorized tournament arbiters.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {uploadFields.map((field) => (
+                  <div key={field.id} className="p-4 rounded-xl bg-cyber-dark/60 border border-cyber-border">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="text-xs font-mono font-bold text-white block">
+                          {field.label} {field.is_required && <span className="text-neon-red">*</span>}
+                        </span>
+                        <span className="text-[11px] font-mono text-gray-400">
+                          {field.description || (field.field_type === 'IMAGE_UPLOAD' ? 'Image upload (JPG, PNG, WEBP max 10MB)' : 'Document upload (PDF, JPG, PNG max 10MB)')}
+                        </span>
+                      </div>
+                      <span title="Private Document">
+                        <Lock className="w-4 h-4 text-neon-gold" />
+                      </span>
+                    </div>
+
+                    {uploadedFiles[field.id] ? (
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-cyber-black border border-neon-emerald/40 text-xs font-mono">
+                        <div className="flex items-center space-x-2.5">
+                          {uploadedFiles[field.id].type.startsWith('image/') ? (
+                            <img src={uploadedFiles[field.id].url} alt="Uploaded preview" className="w-10 h-10 object-cover rounded border border-cyber-border flex-shrink-0" />
+                          ) : (
+                            <FileCheck className="w-5 h-5 text-neon-emerald flex-shrink-0" />
+                          )}
+                          <div>
+                            <span className="text-white truncate max-w-[180px] sm:max-w-xs block font-bold">{uploadedFiles[field.id].name}</span>
+                            <span className="text-[10px] text-neon-emerald">✓ Uploaded & Ready ({uploadedFiles[field.id].size})</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(field.id)}
+                          className="text-neon-red hover:text-white p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-cyber-border hover:border-neon-cyan/50 rounded-lg cursor-pointer bg-cyber-black/40 transition">
+                        <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                        <span className="text-xs font-mono text-neon-cyan font-semibold">Select or Drop File</span>
+                        <input
+                          type="file"
+                          accept={field.field_type === 'IMAGE_UPLOAD' ? '.jpg,.jpeg,.png,.webp' : '.jpg,.jpeg,.png,.webp,.pdf'}
+                          onChange={(e) => handleFileUpload(field.id, e)}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 4: ADDITIONAL TOURNAMENT QUESTIONS (DYNAMIC) */}
+          {customFields.length > 0 && (
+            <div className="glass-panel p-6 sm:p-8 rounded-xl border border-cyber-border space-y-6">
+              <div className="border-b border-cyber-border pb-3">
+                <h2 className="text-base font-black text-white font-mono uppercase flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                  <span>4. ADDITIONAL TOURNAMENT QUESTIONS</span>
+                </h2>
+                <p className="text-xs text-gray-400 font-sans mt-0.5">
+                  Custom questions and qualifications configured for this tournament circuit.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {customFields.map((cf) => (
+                  <div key={cf.id} className="p-4 rounded-xl bg-cyber-dark/60 border border-cyber-border space-y-2">
+                    <label className="text-xs font-mono font-bold text-gray-200 block">
+                      {cf.label} {cf.is_required && <span className="text-neon-red">*</span>}
+                    </label>
+                    {cf.description && (
+                      <p className="text-[11px] text-gray-400 font-mono">{cf.description}</p>
+                    )}
+
+                    {cf.field_type === 'SHORT_TEXT' && (
+                      <input
+                        type="text"
+                        required={cf.is_required}
+                        placeholder={cf.placeholder || 'Enter your response'}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      />
+                    )}
+
+                    {cf.field_type === 'LONG_TEXT' && (
+                      <textarea
+                        rows={3}
+                        required={cf.is_required}
+                        placeholder={cf.placeholder || 'Enter your detailed response...'}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      />
+                    )}
+
+                    {cf.field_type === 'NUMBER' && (
+                      <input
+                        type="number"
+                        required={cf.is_required}
+                        placeholder={cf.placeholder || '0'}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      />
+                    )}
+
+                    {cf.field_type === 'EMAIL' && (
+                      <input
+                        type="email"
+                        required={cf.is_required}
+                        placeholder={cf.placeholder || 'email@example.com'}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      />
+                    )}
+
+                    {cf.field_type === 'PHONE' && (
+                      <input
+                        type="tel"
+                        required={cf.is_required}
+                        placeholder={cf.placeholder || '+91 98765 43210'}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      />
+                    )}
+
+                    {cf.field_type === 'DATE' && (
+                      <input
+                        type="date"
+                        required={cf.is_required}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      />
+                    )}
+
+                    {cf.field_type === 'DROPDOWN' && (
+                      <select
+                        required={cf.is_required}
+                        value={customAnswers[cf.id] || ''}
+                        onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-xs font-mono bg-cyber-dark border border-cyber-border rounded-lg text-white focus:outline-none focus:border-neon-emerald"
+                      >
+                        <option value="">{cf.placeholder || '-- Select an option --'}</option>
+                        {cf.options?.map((opt, i) => (
+                          <option key={i} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    )}
+
+                    {cf.field_type === 'MULTIPLE_CHOICE' && (
+                      <div className="space-y-2 pt-1">
+                        {cf.options?.map((opt, i) => (
+                          <label key={i} className="flex items-center space-x-2 text-xs font-mono text-gray-300 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={cf.id}
+                              value={opt}
+                              checked={customAnswers[cf.id] === opt}
+                              onChange={(e) => handleCustomAnswerChange(cf.id, e.target.value)}
+                              className="accent-neon-emerald"
+                            />
+                            <span>{opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {cf.field_type === 'CHECKBOX' && (
+                      <div className="space-y-2 pt-1">
+                        {cf.options && cf.options.length > 0 ? (
+                          cf.options.map((opt, i) => {
+                            const currentList: string[] = Array.isArray(customAnswers[cf.id]) ? customAnswers[cf.id] : [];
+                            const checked = currentList.includes(opt);
+                            return (
+                              <label key={i} className="flex items-center space-x-2 text-xs font-mono text-gray-300 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => {
+                                    const updated = e.target.checked
+                                      ? [...currentList, opt]
+                                      : currentList.filter(x => x !== opt);
+                                    handleCustomAnswerChange(cf.id, updated);
+                                  }}
+                                  className="accent-neon-emerald"
+                                />
+                                <span>{opt}</span>
+                              </label>
+                            );
+                          })
+                        ) : (
+                          <label className="flex items-center space-x-2 text-xs font-mono text-gray-300 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(customAnswers[cf.id])}
+                              onChange={(e) => handleCustomAnswerChange(cf.id, e.target.checked)}
+                              className="accent-neon-emerald"
+                            />
+                            <span>{cf.placeholder || 'I confirm and agree to this condition'}</span>
+                          </label>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* SUBMISSION ACTION BUTTON */}
           <div className="pt-4 text-center">

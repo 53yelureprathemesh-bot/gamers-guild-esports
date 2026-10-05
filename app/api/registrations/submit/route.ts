@@ -59,13 +59,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Strict Validation
-    if (!playerName || !email || !phone || !state || !district || !city || !game || !inGameName || !playerUid || !teamName) {
+    // Flexible Validation: enforce essential identity fields
+    if (!playerName || !email || !phone || !inGameName || !playerUid) {
       return NextResponse.json(
-        { success: false, error: 'Please fill in all required fields.' },
+        { success: false, error: 'Please fill in all essential required fields (Full Name, Email, Phone, IGN, and Player UID).' },
         { status: 400 }
       );
     }
+
+    const safeState = state || 'Maharashtra';
+    const safeDistrict = district || 'General';
+    const safeCity = city || 'General';
+    const safeGame = game || 'Esports';
+    const safeTeamName = teamName || `${playerName}'s Squad`;
 
     let publicCode = '';
     let registrationId = '';
@@ -77,7 +83,7 @@ export async function POST(req: NextRequest) {
       try {
         const supabase = getServiceSupabase();
         if (supabase) {
-          const codePrefix = getStateCode(state);
+          const codePrefix = getStateCode(safeState);
           const { data: codeResult, error: codeErr } = await supabase.rpc('generate_state_registration_code', {
             p_state_code: codePrefix
           });
@@ -102,13 +108,13 @@ export async function POST(req: NextRequest) {
               phone: phone,
               date_of_birth: dateOfBirth || null,
               gender: gender || null,
-              state: state,
-              district: district,
-              city: city,
-              game: game,
+              state: safeState,
+              district: safeDistrict,
+              city: safeCity,
+              game: safeGame,
               in_game_name: inGameName,
               player_uid: playerUid,
-              team_name: teamName,
+              team_name: safeTeamName,
               team_role: teamRole || null,
               gaming_experience: gamingExperience || null,
               status: 'PENDING',
@@ -166,13 +172,13 @@ export async function POST(req: NextRequest) {
       phone: phone,
       date_of_birth: dateOfBirth,
       gender: gender,
-      state: state,
-      district: district,
-      city: city,
-      game: game,
+      state: safeState,
+      district: safeDistrict,
+      city: safeCity,
+      game: safeGame,
       in_game_name: inGameName,
       player_uid: playerUid,
-      team_name: teamName,
+      team_name: safeTeamName,
       team_role: teamRole,
       gaming_experience: gamingExperience,
       answers: answers || {},
