@@ -220,6 +220,8 @@ export const DEFAULT_FORM_FIELDS: RegistrationField[] = [
 
 class FormStore {
   private fields: RegistrationField[] = [...DEFAULT_FORM_FIELDS];
+  private formTitle: string = 'NEURAL NEXUS 2K26 — PLAYER & SQUAD REGISTRATION';
+  private formDesc: string = 'Fill out legal player details, game identifiers, and required verification proofs to enter the competitive bracket.';
 
   public getFields(): RegistrationField[] {
     return [...this.fields].sort((a, b) => a.sort_order - b.sort_order);
@@ -227,6 +229,22 @@ class FormStore {
 
   public setFields(newFields: RegistrationField[]) {
     this.fields = newFields;
+  }
+
+  public getTitle(): string {
+    return this.formTitle;
+  }
+
+  public setTitle(title: string) {
+    if (title && typeof title === 'string') this.formTitle = title;
+  }
+
+  public getDesc(): string {
+    return this.formDesc;
+  }
+
+  public setDesc(desc: string) {
+    if (desc && typeof desc === 'string') this.formDesc = desc;
   }
 
   public addField(field: Omit<RegistrationField, 'id' | 'form_id'>): RegistrationField {

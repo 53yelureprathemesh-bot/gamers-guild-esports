@@ -73,13 +73,16 @@ function RegistrationFormContent() {
 
   // Fetch events & form fields & site settings
   useEffect(() => {
-    fetch('/api/admin/data')
+    // 1. Primary bundle fetch with cache-busting
+    fetch(`/api/admin/data?_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
           const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
           setEvents(evList);
-          if (Array.isArray(res.data.formFields)) setFormFields(res.data.formFields);
+          if (Array.isArray(res.data.formFields) && res.data.formFields.length > 0) {
+            setFormFields(res.data.formFields);
+          }
           if (res.data.formTitle) setFormTitle(res.data.formTitle);
           if (res.data.formDesc) setFormDesc(res.data.formDesc);
           if (res.data.settings) setSiteSettings(res.data.settings);
@@ -87,6 +90,20 @@ function RegistrationFormContent() {
       })
       .catch(() => console.log('Loaded default client form structure.'))
       .finally(() => setIsLoadingSettings(false));
+
+    // 2. Direct dedicated form-fields fetch with cache-busting (guarantees instantaneous sync with Form Builder)
+    fetch(`/api/admin/data?type=form-fields&_t=${Date.now()}`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) {
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            setFormFields(res.data);
+          }
+          if (res.formTitle) setFormTitle(res.formTitle);
+          if (res.formDesc) setFormDesc(res.formDesc);
+        }
+      })
+      .catch(() => console.log('Loaded direct form fields.'));
   }, []);
 
   // Update district dropdown when state changes

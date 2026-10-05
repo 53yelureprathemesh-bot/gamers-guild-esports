@@ -31,17 +31,36 @@ export default function AdminFormBuilderPage() {
   const [isNewField, setIsNewField] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/data?type=form-fields')
+    // 1. Check local draft first for instant recovery
+    try {
+      const savedDraft = localStorage.getItem('gg_form_builder_draft');
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (Array.isArray(parsed.fields) && parsed.fields.length > 0) setFields(parsed.fields);
+        if (parsed.formTitle) setFormTitle(parsed.formTitle);
+        if (parsed.formDesc) setFormDesc(parsed.formDesc);
+      }
+    } catch (_) {}
+
+    // 2. Fetch fresh published state from database with cache-busting
+    fetch(`/api/admin/data?type=form-fields&_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success) {
-          if (Array.isArray(res.data) && res.data.length) setFields(res.data);
+          if (Array.isArray(res.data) && res.data.length > 0) setFields(res.data);
           if (res.formTitle) setFormTitle(res.formTitle);
           if (res.formDesc) setFormDesc(res.formDesc);
         }
       })
       .catch(() => console.log('Using default form fields.'));
   }, []);
+
+  // Auto-backup draft to localStorage so unsaved changes survive accidental browser refresh
+  useEffect(() => {
+    try {
+      localStorage.setItem('gg_form_builder_draft', JSON.stringify({ fields, formTitle, formDesc }));
+    } catch (_) {}
+  }, [fields, formTitle, formDesc]);
 
   // Save all fields to server
   const handleSaveForm = async () => {
@@ -60,13 +79,27 @@ export default function AdminFormBuilderPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setSaveNotice('Registration form configuration successfully saved and published!');
-        setTimeout(() => setSaveNotice(null), 3500);
+        try {
+          localStorage.setItem('gg_form_builder_draft', JSON.stringify({ fields, formTitle, formDesc }));
+        } catch (_) {}
+        setSaveNotice('Registration form configuration successfully saved to database and published live!');
+        setTimeout(() => setSaveNotice(null), 4000);
       } else {
         alert('Save failed: ' + (data.error || 'Server error'));
       }
     } catch (err: any) {
       alert('Failed to save form: ' + err.message);
+    }
+  };
+
+  const handleResetToDefault = () => {
+    if (confirm('Are you sure you want to reset the registration form back to the default esports structure?')) {
+      setFields(DEFAULT_FORM_FIELDS);
+      setFormTitle('NEURAL NEXUS 2K26 — PLAYER & SQUAD REGISTRATION');
+      setFormDesc('Fill out legal player details, game identifiers, and required verification proofs to enter the competitive bracket.');
+      try {
+        localStorage.removeItem('gg_form_builder_draft');
+      } catch (_) {}
     }
   };
 
@@ -159,6 +192,15 @@ export default function AdminFormBuilderPage() {
         </div>
 
         <div className="flex items-center space-x-3">
+          <button
+            onClick={handleResetToDefault}
+            className="px-3.5 py-2 rounded text-xs font-mono font-bold uppercase border border-red-500/40 text-red-400 hover:bg-red-500/10 transition flex items-center space-x-1.5"
+            title="Reset form back to default esports configuration"
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>RESET DEFAULTS</span>
+          </button>
+
           <button
             onClick={() => setPreviewOpen(true)}
             className="btn-cyber-secondary px-4 py-2 rounded text-xs font-mono font-bold uppercase flex items-center space-x-1.5"
