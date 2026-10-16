@@ -59,6 +59,17 @@ export default function HomePage() {
           if (Array.isArray(res.data.announcements)) setAnnouncements(res.data.announcements);
           if (Array.isArray(res.data.gallery)) setGallery(res.data.gallery);
           if (Array.isArray(res.data.sponsors)) setSponsors(res.data.sponsors);
+
+          // Warm up registration cache in sessionStorage in advance
+          try {
+            sessionStorage.setItem('gg_reg_init', JSON.stringify({
+              events: evList,
+              formFields: res.data.formFields,
+              formTitle: res.data.formTitle,
+              formDesc: res.data.formDesc,
+              siteSettings: res.data.settings
+            }));
+          } catch {}
         }
       })
       .catch(err => console.log('Using default client store data.'));

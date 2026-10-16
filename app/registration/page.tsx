@@ -59,38 +59,49 @@ function RegistrationFormContent() {
   const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Fetch published form fields, title, description, and events directly from server
+  // High-Speed Initialization: Stale-While-Revalidate with client sessionStorage & single DB endpoint
   useEffect(() => {
-    // 1. Direct dedicated form-fields fetch with cache-busting (instantly reflects admin edits)
-    fetch(`/api/admin/data?type=form-fields&_t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          if (Array.isArray(res.data) && res.data.length > 0) {
-            setFormFields(res.data);
-          }
-          if (res.formTitle) setFormTitle(res.formTitle);
-          if (res.formDesc) setFormDesc(res.formDesc);
+    // 1. Instant 0ms load from sessionStorage if available
+    try {
+      const cached = sessionStorage.getItem('gg_reg_init');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed.events) && parsed.events.length > 0) {
+          setEvents(parsed.events);
         }
-      })
-      .catch(() => console.log('Loaded direct form fields.'));
+        if (Array.isArray(parsed.formFields) && parsed.formFields.length > 0) {
+          setFormFields(parsed.formFields);
+        }
+        if (parsed.formTitle) setFormTitle(parsed.formTitle);
+        if (parsed.formDesc) setFormDesc(parsed.formDesc);
+        if (parsed.siteSettings) setSiteSettings(parsed.siteSettings);
+        setIsLoading(false);
+      }
+    } catch {
+      // sessionStorage unavailable or private browsing
+    }
 
-    // 2. Events & site settings bundle
-    fetch(`/api/admin/data?_t=${Date.now()}`, { cache: 'no-store' })
+    // 2. High-speed single request for fresh server state
+    fetch('/api/admin/data?type=registration-init')
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
-          const evList = Array.isArray(res.data.events) ? res.data.events : (Array.isArray(res.data) ? res.data : []);
-          setEvents(evList);
-          if (res.data.settings) setSiteSettings(res.data.settings);
+          if (Array.isArray(res.data.events) && res.data.events.length > 0) {
+            setEvents(res.data.events);
+          }
           if (Array.isArray(res.data.formFields) && res.data.formFields.length > 0) {
             setFormFields(res.data.formFields);
           }
           if (res.data.formTitle) setFormTitle(res.data.formTitle);
           if (res.data.formDesc) setFormDesc(res.data.formDesc);
+          if (res.data.siteSettings) setSiteSettings(res.data.siteSettings);
+
+          try {
+            sessionStorage.setItem('gg_reg_init', JSON.stringify(res.data));
+          } catch {}
         }
       })
-      .catch(() => console.log('Loaded client bundle.'))
+      .catch(err => console.warn('Could not sync registration init:', err))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -103,7 +114,7 @@ function RegistrationFormContent() {
   const activeEvents = events.filter(e => e.is_published && (e.status === 'UPCOMING' || e.status === 'ONGOING'));
   const activeEvent = activeEvents.find(e => e.id === selectedEventId) || activeEvents[0];
   const isRegistrationGloballyClosed = siteSettings?.registration_enabled === false;
-  const noEventsAvailable = activeEvents.length === 0;
+  const noEventsAvailable = !isLoading && activeEvents.length === 0;
 
   useEffect(() => {
     if (activeEvents.length > 0 && !activeEvents.some(e => e.id === selectedEventId)) {
@@ -416,6 +427,29 @@ function RegistrationFormContent() {
             </div>
           </div>
 
+        </div>
+      </div>
+    );
+  }
+
+  // LOADING STATE (Clean cyberpunk mainframe sync HUD)
+  if (isLoading && events.length === 0) {
+    return (
+      <div className="min-h-screen cyber-bg py-20 flex items-center justify-center relative overflow-hidden font-rajdhani">
+        <GamingEmberParticles />
+        <div className="max-w-md mx-auto px-4 text-center relative z-10">
+          <div className="glass-hud rounded-2xl border border-neon-cyan/40 p-8 shadow-neon-glow relative">
+            <HudCornerBrackets color="cyan" />
+            <div className="w-16 h-16 rounded-full bg-neon-cyan/10 border-2 border-neon-cyan flex items-center justify-center mx-auto mb-4">
+              <Loader2 className="w-8 h-8 text-neon-cyan animate-spin" />
+            </div>
+            <div className="text-neon-cyan font-orbitron font-bold text-sm tracking-widest uppercase mb-2">
+              CONNECTING TO TOURNAMENT MAINFRAME
+            </div>
+            <p className="text-gray-400 font-mono text-xs">
+              Synchronizing active championship brackets & verification protocols...
+            </p>
+          </div>
         </div>
       </div>
     );

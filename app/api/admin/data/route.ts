@@ -334,6 +334,78 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, data: fields, formTitle, formDesc }, { headers: NO_CACHE_HEADERS });
       }
 
+      // Dedicated registration initialization (single fast query on events table with caching)
+      case 'registration-init': {
+        const cacheKey = 'cache:registration_init';
+        const cached = getCached<any>(cacheKey);
+        if (cached) {
+          return NextResponse.json({ success: true, data: cached }, { headers: NO_CACHE_HEADERS });
+        }
+
+        let fields = formStore.getFields();
+        let formTitle = formStore.getTitle();
+        let formDesc = formStore.getDesc();
+        let events = dataStore.getEvents();
+        let siteSettings = dataStore.getSiteSettings();
+
+        if (isSupabaseConfigured) {
+          try {
+            const supabase = getServiceSupabase();
+            if (supabase) {
+              const { data: dbEvents, error } = await supabase
+                .from('events')
+                .select('*');
+
+              if (!error && Array.isArray(dbEvents)) {
+                const sysEvent = dbEvents.find(e => e.slug === 'system-site-settings');
+                if (sysEvent?.rules && typeof sysEvent.rules === 'object') {
+                  const rules = sysEvent.rules as any;
+                  if (Array.isArray(rules.formFields) && rules.formFields.length > 0) {
+                    fields = rules.formFields;
+                    formStore.setFields(fields);
+                  }
+                  if (rules.formTitle) {
+                    formTitle = rules.formTitle;
+                    formStore.setTitle(formTitle);
+                  }
+                  if (rules.formDesc) {
+                    formDesc = rules.formDesc;
+                    formStore.setDesc(formDesc);
+                  }
+                  siteSettings = { ...siteSettings, ...rules };
+                  dataStore.updateSiteSettings(siteSettings);
+                }
+
+                events = dbEvents
+                  .filter((e: any) => e.slug !== 'system-site-settings')
+                  .map((e: any) => {
+                    const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                    return {
+                      ...e,
+                      rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
+                      stream_url: rulesObj?.stream_url || e.stream_url || '',
+                      is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
+                    };
+                  });
+              }
+            }
+          } catch (e) {
+            console.warn('Supabase fetch registration-init error:', e);
+          }
+        }
+
+        const payload = {
+          events,
+          formFields: fields,
+          formTitle,
+          formDesc,
+          siteSettings
+        };
+
+        setCached(cacheKey, payload, 15); // 15s in-memory cache for ultra-low latency
+        return NextResponse.json({ success: true, data: payload }, { headers: NO_CACHE_HEADERS });
+      }
+
       case 'announcements': {
         let anns = dataStore.getAnnouncements();
         if (isSupabaseConfigured) {
