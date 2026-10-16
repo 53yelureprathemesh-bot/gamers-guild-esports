@@ -121,6 +121,7 @@ export default function AdminFormBuilderPage() {
       if (data.success) {
         try {
           localStorage.setItem('gg_form_builder_draft', JSON.stringify({ fields, formTitle, formDesc }));
+          sessionStorage.removeItem('gg_reg_init');
         } catch (_) {}
         setSaveNotice('REGISTRATION FORM PUBLISHED LIVE! All edits, question orders, and custom fields are now instantly visible on /registration.');
         setTimeout(() => setSaveNotice(null), 5000);
@@ -144,6 +145,7 @@ export default function AdminFormBuilderPage() {
       setFormDesc(defDesc);
       try {
         localStorage.removeItem('gg_form_builder_draft');
+        sessionStorage.removeItem('gg_reg_init');
       } catch (_) {}
       autoPersistToServer(defaults, defTitle, defDesc);
     }

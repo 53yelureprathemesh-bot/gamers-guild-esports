@@ -24,7 +24,7 @@ export default function AboutPage() {
   const [settings, setSettings] = useState<SiteSettings>(INITIAL_SITE_SETTINGS);
 
   useEffect(() => {
-    fetch('/api/admin/data?type=settings')
+    fetch(`/api/admin/data?type=settings&_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) setSettings(res.data);

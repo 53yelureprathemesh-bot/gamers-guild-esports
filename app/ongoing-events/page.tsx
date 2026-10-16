@@ -38,7 +38,7 @@ export default function OngoingEventsPage() {
   const [activeTab, setActiveTab] = useState<'standings' | 'schedule' | 'qualified'>('standings');
 
   useEffect(() => {
-    fetch('/api/admin/data')
+    fetch(`/api/admin/data?_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {

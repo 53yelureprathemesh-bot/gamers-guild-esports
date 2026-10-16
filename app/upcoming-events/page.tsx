@@ -39,7 +39,7 @@ export default function UpcomingEventsPage() {
   const [activeRulesModal, setActiveRulesModal] = useState<Event | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/data?type=events')
+    fetch(`/api/admin/data?type=events&_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.events) ? res.data.events : []);

@@ -33,7 +33,7 @@ export default function ContactPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/data?type=site-settings')
+    fetch(`/api/admin/data?type=site-settings&_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {

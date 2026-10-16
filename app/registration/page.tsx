@@ -82,7 +82,7 @@ function RegistrationFormContent() {
     }
 
     // 2. High-speed single request for fresh server state
-    fetch('/api/admin/data?type=registration-init')
+    fetch(`/api/admin/data?type=registration-init&_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {

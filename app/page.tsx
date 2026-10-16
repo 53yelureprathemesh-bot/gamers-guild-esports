@@ -49,7 +49,7 @@ export default function HomePage() {
 
   // Fetch updated data from API if available
   useEffect(() => {
-    fetch('/api/admin/data')
+    fetch(`/api/admin/data?_t=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then(res => {
         if (res.success && res.data) {
