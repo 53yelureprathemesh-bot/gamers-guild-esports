@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { 
@@ -15,45 +15,40 @@ import {
   Phone,
   Hash,
   RotateCw,
-  Lock
+  Lock,
+  Search,
+  Mail,
+  UserCheck,
+  Sparkles
 } from 'lucide-react';
 import PrintableReceipt, { PrintableReceiptProps } from '@/components/PrintableReceipt';
 import { GamingEmberParticles, HudCornerBrackets } from '@/components/GamingVisualEffects';
 
 function FindRegistrationContent() {
   const searchParams = useSearchParams();
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
+  const [query, setQuery] = useState('');
+  const [searchedTerm, setSearchedTerm] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [activePrintReceipt, setActivePrintReceipt] = useState<PrintableReceiptProps | null>(null);
 
-  // Auto-fill registration code if present in URL (e.g. ?code=MH27 or ?query=MH27)
-  useEffect(() => {
-    const urlCode = searchParams.get('code') || searchParams.get('query');
-    if (urlCode && !/^\d{10}$/.test(urlCode)) {
-      setCode(urlCode.toUpperCase().replace(/^#/, ''));
-    }
-  }, [searchParams]);
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setValidationError(null);
-
-    const cleanDigits = phone.replace(/\D/g, '');
-    if (cleanDigits.length < 10) {
-      setValidationError('Please enter your full 10-digit registered mobile number to verify your registration.');
+  const executeSearch = useCallback(async (rawInput: string) => {
+    const term = (rawInput || '').trim();
+    if (!term) {
+      setValidationError('Please enter your Registration Code (#MH11), 10-digit Mobile Number, or Email.');
       return;
     }
 
+    setValidationError(null);
     setLoading(true);
     setSearched(true);
+    setSearchedTerm(term);
 
     try {
-      const cleanCode = code.trim().replace(/^#/, '');
-      const queryUrl = `/api/admin/data?type=find-registration&phone=${encodeURIComponent(cleanDigits)}&code=${encodeURIComponent(cleanCode)}`;
+      const cleanTerm = term.replace(/^#+/, '').trim();
+      const queryUrl = `/api/admin/data?type=find-registration&query=${encodeURIComponent(cleanTerm)}`;
       const res = await fetch(queryUrl);
       const data = await res.json();
 
@@ -68,7 +63,7 @@ function FindRegistrationContent() {
           eventName: serverReg.event_title || serverReg.eventName || 'Gamers Guild Championship',
           state: serverReg.state,
           district: serverReg.district || '',
-          phone: serverReg.phone || phone,
+          phone: serverReg.phone || '',
           email: serverReg.email || '',
           status: serverReg.status || 'PENDING',
           date: new Date(serverReg.created_at || Date.now()).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
@@ -86,6 +81,21 @@ function FindRegistrationContent() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Auto-fill and execute search if present in URL (e.g. from confirmation email: ?query=MH11 or ?code=MH11)
+  useEffect(() => {
+    const urlParam = searchParams.get('query') || searchParams.get('code') || searchParams.get('phone') || searchParams.get('q');
+    if (urlParam) {
+      const clean = urlParam.trim();
+      setQuery(clean);
+      executeSearch(clean);
+    }
+  }, [searchParams, executeSearch]);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeSearch(query);
   };
 
   const getStatusBadge = (status: string) => {
@@ -123,7 +133,7 @@ function FindRegistrationContent() {
       `🎫 Registration Number: #${reg.publicCode}\n` +
       `⚡ State Circuit: ${reg.state}\n` +
       `🏆 Tournament: ${reg.eventName}\n\n` +
-      `Track your live status securely at: ${window.location.origin}/find-registration`
+      `Track your live status securely at: ${window.location.origin}/find-registration?query=${reg.publicCode}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   };
@@ -143,11 +153,11 @@ function FindRegistrationContent() {
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-white font-orbitron uppercase tracking-tight">
-            CHECK YOUR REGISTRATION
+            FIND YOUR REGISTRATION
           </h1>
 
           <p className="mt-3 text-base text-gray-300 font-rajdhani font-semibold">
-            Enter your 10-digit registered mobile number to securely view your tournament status and print your official registration receipt.
+            Search with your <strong className="text-neon-cyan">Registration Code (#MH11)</strong>, <strong className="text-neon-emerald">10-Digit Mobile Number</strong>, or <strong className="text-neon-gold">Registered Email</strong> to view your tournament entry and download your official receipt.
           </p>
         </div>
 
@@ -155,56 +165,60 @@ function FindRegistrationContent() {
         <div className="max-w-2xl mx-auto mb-12 screen-only">
           <div className="glass-hud rounded-2xl p-6 sm:p-8 border-2 border-neon-cyan/50 shadow-hud relative overflow-hidden">
             <HudCornerBrackets color="cyan" />
-            <form onSubmit={handleSearch} className="space-y-4 relative z-10">
+            <form onSubmit={handleFormSubmit} className="space-y-4 relative z-10">
               
-              {/* Mobile Number Field */}
-              <div className="space-y-1.5">
+              {/* Universal Search Input */}
+              <div className="space-y-2">
                 <label className="text-xs font-rajdhani font-bold uppercase text-gray-200 flex items-center justify-between">
                   <span className="flex items-center space-x-1.5">
-                    <Phone className="w-3.5 h-3.5 text-neon-cyan" />
-                    <span>Registered Mobile Number *</span>
+                    <Search className="w-3.5 h-3.5 text-neon-cyan" />
+                    <span>Search Registration *</span>
                   </span>
-                  <span className="text-[10px] text-gray-400 font-normal font-mono">10-Digit Mobile</span>
+                  <span className="text-[10px] text-gray-400 font-normal font-mono">Code / Mobile / Email</span>
                 </label>
 
                 <div className="relative flex items-center">
-                  <span className="absolute left-3.5 text-xs font-mono font-bold text-gray-400 select-none">
-                    +91
-                  </span>
+                  <div className="absolute left-3.5 text-gray-400">
+                    <Search className="w-4 h-4 text-neon-cyan" />
+                  </div>
                   <input
-                    type="tel"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={10}
+                    type="text"
                     required
-                    value={phone}
+                    value={query}
                     onChange={(e) => {
-                      setPhone(e.target.value.replace(/\D/g, '').slice(0, 10));
+                      setQuery(e.target.value);
                       setValidationError(null);
                     }}
-                    placeholder="Enter 10-digit mobile number..."
-                    className="w-full pl-14 pr-4 py-3 bg-cyber-dark border border-cyber-border rounded-xl text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan"
+                    placeholder="Enter Registration Code (e.g. #MH11), Mobile, or Email..."
+                    className="w-full pl-11 pr-4 py-3.5 bg-cyber-dark border border-cyber-border rounded-xl text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan shadow-inner"
                   />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      className="absolute right-3 text-xs font-mono text-gray-400 hover:text-white px-2 py-1"
+                    >
+                      &times; Clear
+                    </button>
+                  )}
                 </div>
-                <p className="text-[10px] font-mono text-gray-400">
-                  Only the player who registered with this mobile number can access their status.
-                </p>
-              </div>
 
-              {/* Optional Registration Code Field */}
-              <div className="space-y-1.5 pt-1">
-                <label className="text-xs font-rajdhani font-bold uppercase text-gray-300 flex items-center space-x-1.5">
-                  <Hash className="w-3.5 h-3.5 text-neon-gold" />
-                  <span>Registration Number (Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  maxLength={12}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. MH27 (leave blank to search all registrations under your phone)"
-                  className="w-full px-4 py-2.5 bg-cyber-dark border border-cyber-border rounded-xl text-xs font-mono text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan"
-                />
+                {/* Helper Filter Pills */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] font-mono text-gray-400">
+                  <span className="text-gray-500">Quick Search:</span>
+                  <span className="px-2 py-0.5 rounded bg-cyber-dark border border-cyber-border text-neon-cyan flex items-center space-x-1">
+                    <Hash className="w-3 h-3" />
+                    <span>Code (#MH11)</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-cyber-dark border border-cyber-border text-neon-emerald flex items-center space-x-1">
+                    <Phone className="w-3 h-3" />
+                    <span>Mobile Number</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-cyber-dark border border-cyber-border text-neon-gold flex items-center space-x-1">
+                    <Mail className="w-3 h-3" />
+                    <span>Email Address</span>
+                  </span>
+                </div>
               </div>
 
               {validationError && (
@@ -218,12 +232,12 @@ function FindRegistrationContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-cyber-primary clip-esports-btn w-full py-3.5 text-xs font-black font-orbitron uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-2"
+                className="btn-cyber-primary clip-esports-btn w-full py-3.5 text-xs font-black font-orbitron uppercase tracking-wider flex items-center justify-center space-x-2 shadow-neon-emerald mt-3"
               >
                 {loading ? (
                   <>
                     <RotateCw className="w-4 h-4 animate-spin text-cyber-black" />
-                    <span>VERIFYING CREDENTIALS...</span>
+                    <span>VERIFYING REGISTRATION...</span>
                   </>
                 ) : (
                   <>
@@ -238,7 +252,7 @@ function FindRegistrationContent() {
             <div className="mt-4 pt-4 border-t border-cyber-border/60 flex items-start space-x-2 text-[10px] font-mono text-gray-400">
               <Lock className="w-3.5 h-3.5 text-neon-emerald flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Privacy Protected:</strong> Other players cannot see your registration details. Your tournament record is strictly protected and authenticated by your registered mobile number.
+                <strong>Instant Tournament Verification:</strong> Validated in real-time against official tournament arbiter logs. You can print your official receipt or share it directly to WhatsApp.
               </span>
             </div>
           </div>
@@ -275,9 +289,15 @@ function FindRegistrationContent() {
                 <h3 className="text-lg font-bold font-mono text-white uppercase">
                   NO REGISTRATION FOUND
                 </h3>
-                <p className="text-xs text-gray-400 max-w-md mx-auto font-sans">
-                  No active tournament registration was found matching mobile number <strong className="text-neon-cyan font-mono">+91 {phone.slice(0, 2)}******{phone.slice(-2)}</strong>. Please verify you entered the exact number you registered with.
+                <p className="text-xs text-gray-300 max-w-md mx-auto font-sans leading-relaxed">
+                  No active tournament registration was found matching <strong className="text-neon-cyan font-mono">&quot;{searchedTerm}&quot;</strong>.
                 </p>
+                <div className="text-[11px] font-mono text-gray-400 max-w-sm mx-auto bg-cyber-dark/80 p-3 rounded-xl border border-cyber-border text-left space-y-1">
+                  <p className="font-bold text-gray-300 text-center mb-1">Search Tips:</p>
+                  <p>&bull; Try entering your Registration Code (e.g. <strong className="text-neon-cyan">#MH11</strong>).</p>
+                  <p>&bull; Enter your registered 10-digit mobile number.</p>
+                  <p>&bull; Or search using your registered email address.</p>
+                </div>
                 <div className="pt-2">
                   <Link
                     href="/registration"

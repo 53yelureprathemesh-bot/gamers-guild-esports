@@ -56,7 +56,8 @@ export function buildRegistrationEmailHtml(payload: EmailPayload): string {
     statusNotice = `Your registration application could not be approved at this time.${payload.adminNotes ? ` Reason: ${payload.adminNotes}` : ' Please contact support if you believe this is an error.'}`;
   }
 
-  const receiptUrl = `https://gamers-guild-esports.vercel.app/find-registration?query=${encodeURIComponent(payload.registrationCode)}`;
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://gamers-guild-esports.vercel.app').replace(/\/$/, '');
+  const receiptUrl = `${baseUrl}/find-registration?query=${encodeURIComponent(payload.registrationCode)}`;
 
   return `<!DOCTYPE html>
 <html>
@@ -227,7 +228,7 @@ PLAYER & ROSTER DETAILS:
 ${payload.gamingExperience ? `- Competitive Experience: ${payload.gamingExperience}\n` : ''}${payload.adminNotes ? `- Admin Notes: ${payload.adminNotes}\n` : ''}- Timestamp: ${payload.submissionDate}
 
 Track or Print Your Official Receipt:
-https://gamers-guild-esports.vercel.app/find-registration?query=${payload.registrationCode}
+${(process.env.NEXT_PUBLIC_APP_URL || 'https://gamers-guild-esports.vercel.app').replace(/\/$/, '')}/find-registration?query=${encodeURIComponent(payload.registrationCode)}
 
 Gamers Guild Esports Organization • Nagpur, Maharashtra, India
 Support: gamersguildesports12@gmail.com`;

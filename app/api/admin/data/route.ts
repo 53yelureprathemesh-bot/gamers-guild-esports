@@ -22,20 +22,27 @@ export async function GET(req: NextRequest) {
     const type = searchParams.get('type');
 
     switch (type) {
-      // 1. PUBLIC FIND REGISTRATION (Strict 10-digit mobile verification)
+      // 1. PUBLIC FIND REGISTRATION (Smart Multi-Field Verification)
       case 'find-registration': {
-        const rawPhone = (searchParams.get('phone') || searchParams.get('query') || '').trim();
-        const rawCode = (searchParams.get('code') || '').trim().replace(/^#/, '');
+        const rawPhone = (searchParams.get('phone') || '').trim();
+        const rawCode = (searchParams.get('code') || '').trim().replace(/^#+/, '');
+        const rawEmail = (searchParams.get('email') || '').trim();
+        const rawQuery = (searchParams.get('query') || searchParams.get('q') || '').trim().replace(/^#+/, '');
 
-        const cleanDigits = rawPhone.replace(/\D/g, '');
-        if (cleanDigits.length < 10) {
+        const effectiveSearch = (rawCode || rawEmail || rawQuery || rawPhone).trim();
+        if (!effectiveSearch) {
           return NextResponse.json({
             success: false,
-            error: 'Please enter your full 10-digit registered mobile number to verify your registration.'
+            error: 'Please enter your Registration Code (e.g. #MH11), Registered Mobile Number, or Email to find your registration.'
           }, { status: 400, headers: NO_CACHE_HEADERS });
         }
 
-        const last10 = cleanDigits.slice(-10);
+        const cleanDigits = effectiveSearch.replace(/\D/g, '');
+        const isLikelyPhone = cleanDigits.length >= 10;
+        const last10Digits = isLikelyPhone ? cleanDigits.slice(-10) : '';
+        const isEmail = effectiveSearch.includes('@');
+        const isStateCode = /^[a-zA-Z]{2}\d+$/i.test(effectiveSearch.replace(/^#+/, '').trim());
+        const stateCodeOnly = isStateCode ? effectiveSearch.replace(/^#+/, '').trim().toUpperCase() : '';
 
         if (isSupabaseConfigured) {
           const supabase = getServiceSupabase();
@@ -43,11 +50,23 @@ export async function GET(req: NextRequest) {
             try {
               let query = supabase
                 .from('registrations')
-                .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_id, state, district, city, phone, email, status, created_at, events(title)')
-                .ilike('phone', `%${last10}%`);
+                .select('id, public_code, player_name, in_game_name, player_uid, team_name, team_role, game, event_id, state, district, city, phone, email, status, created_at, events(title)');
 
-              if (rawCode) {
+              if (rawPhone && rawCode) {
+                const phoneDigits = rawPhone.replace(/\D/g, '').slice(-10);
+                query = query.ilike('phone', `%${phoneDigits}%`).ilike('public_code', rawCode);
+              } else if (rawCode) {
                 query = query.ilike('public_code', rawCode);
+              } else if (stateCodeOnly) {
+                query = query.ilike('public_code', stateCodeOnly);
+              } else if (rawEmail) {
+                query = query.ilike('email', rawEmail);
+              } else if (isEmail) {
+                query = query.ilike('email', `%${effectiveSearch}%`);
+              } else if (isLikelyPhone) {
+                query = query.or(`phone.ilike.%${last10Digits}%,player_uid.ilike.%${effectiveSearch}%`);
+              } else {
+                query = query.or(`public_code.ilike.%${effectiveSearch}%,email.ilike.%${effectiveSearch}%,player_name.ilike.%${effectiveSearch}%,in_game_name.ilike.%${effectiveSearch}%,player_uid.ilike.%${effectiveSearch}%,phone.ilike.%${effectiveSearch}%`);
               }
 
               const { data: dbData } = await query;
@@ -66,7 +85,22 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        const results = dataStore.findRegistrationsByPhone(rawPhone, rawCode).map(r => ({
+        // Memory Store Fallback
+        const memoryRegs = dataStore.getRegistrations();
+        const searchLower = effectiveSearch.toLowerCase();
+        const results = memoryRegs.filter(r => {
+          if (rawCode && r.public_code.toLowerCase() === rawCode.toLowerCase()) return true;
+          if (stateCodeOnly && r.public_code.toUpperCase() === stateCodeOnly) return true;
+          if (rawEmail && r.email.toLowerCase() === rawEmail.toLowerCase()) return true;
+          if (isLikelyPhone && r.phone.replace(/\D/g, '').slice(-10) === last10Digits) return true;
+          if (isEmail && r.email.toLowerCase().includes(searchLower)) return true;
+          if (r.public_code.toLowerCase().includes(searchLower)) return true;
+          if (r.player_name.toLowerCase().includes(searchLower)) return true;
+          if (r.email.toLowerCase().includes(searchLower)) return true;
+          if (r.in_game_name && r.in_game_name.toLowerCase().includes(searchLower)) return true;
+          if (r.player_uid && r.player_uid.includes(effectiveSearch)) return true;
+          return false;
+        }).map(r => ({
           ...r,
           files: undefined,
           answers: undefined
@@ -136,7 +170,7 @@ export async function GET(req: NextRequest) {
                 query = query.eq('status', status);
               }
               if (search) {
-                query = query.or(`player_name.ilike.%${search}%,public_code.ilike.%${search}%,phone.ilike.%${search}%,team_name.ilike.%${search}%,in_game_name.ilike.%${search}%`);
+                query = query.or(`player_name.ilike.%${search}%,public_code.ilike.%${search}%,phone.ilike.%${search}%,team_name.ilike.%${search}%,in_game_name.ilike.%${search}%,email.ilike.%${search}%,player_uid.ilike.%${search}%`);
               }
 
               const from = (page - 1) * limit;
@@ -179,6 +213,8 @@ export async function GET(req: NextRequest) {
             r.player_name.toLowerCase().includes(s) ||
             r.public_code.toLowerCase().includes(s) ||
             r.phone.includes(s) ||
+            (r.email && r.email.toLowerCase().includes(s)) ||
+            (r.player_uid && r.player_uid.includes(search)) ||
             r.team_name.toLowerCase().includes(s) ||
             (r.in_game_name && r.in_game_name.toLowerCase().includes(s))
           );
@@ -557,19 +593,28 @@ export async function GET(req: NextRequest) {
         let announcements = dataStore.getAnnouncements();
         let gallery = dataStore.getGallery();
         let sponsors = dataStore.getSponsors();
+        let registrations = dataStore.getRegistrations();
         let sysRules: any = null;
 
         if (isSupabaseConfigured) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const [evRes, sysEvRes, anRes, galRes, spRes] = await Promise.all([
+              const [evRes, sysEvRes, anRes, galRes, spRes, regRes] = await Promise.all([
                 supabase.from('events').select('*').neq('slug', 'system-site-settings').order('date', { ascending: true }),
                 supabase.from('events').select('rules').eq('slug', 'system-site-settings').single(),
                 supabase.from('announcements').select('*').eq('is_published', true).order('created_at', { ascending: false }),
                 supabase.from('gallery').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
-                supabase.from('sponsors').select('*').order('tier', { ascending: true })
+                supabase.from('sponsors').select('*').order('tier', { ascending: true }),
+                supabase.from('registrations').select('id, public_code, player_name, in_game_name, player_uid, team_name, game, state, phone, email, status, created_at, events(title)').order('created_at', { ascending: false }).limit(100)
               ]);
+
+              if (regRes?.data && Array.isArray(regRes.data)) {
+                registrations = regRes.data.map((d: any) => ({
+                  ...d,
+                  event_title: d.events?.title || 'Gamers Guild Tournament'
+                }));
+              }
 
               if (sysEvRes?.data?.rules && typeof sysEvRes.data.rules === 'object') {
                 sysRules = sysEvRes.data.rules;
@@ -628,6 +673,7 @@ export async function GET(req: NextRequest) {
         const bundle = {
           events,
           settings,
+          registrations,
           formFields,
           formTitle,
           formDesc,

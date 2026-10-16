@@ -26,6 +26,9 @@ export default function AdminDashboardPage() {
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
 
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    const authHeaders = { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) };
+
     fetch('/api/admin/data')
       .then(res => res.json())
       .then(res => {
@@ -36,9 +39,17 @@ export default function AdminDashboardPage() {
       })
       .catch(() => console.log('Loaded initial dashboard metrics.'));
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('gg_admin_token') || '' : '';
+    fetch('/api/admin/data?type=registrations&limit=100', { headers: authHeaders })
+      .then(res => res.json())
+      .then(res => {
+        if (res.success && Array.isArray(res.data)) {
+          setRegistrations(res.data);
+        }
+      })
+      .catch(() => {});
+
     fetch('/api/admin/data?type=contact-messages', {
-      headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+      headers: authHeaders
     })
       .then(res => res.json())
       .then(res => {
