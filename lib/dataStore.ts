@@ -181,7 +181,15 @@ class DataStore {
   }
 
   // Events
-  public getEvents(): Event[] { return this.events.filter(e => e.slug !== 'system-site-settings'); }
+  public getEvents(): Event[] { 
+    return this.events.filter(e => e.slug !== 'system-site-settings').map(e => {
+      const regCount = this.registrations.filter(r => r.event_id === e.id).length;
+      return {
+        ...e,
+        filled_slots: Math.max(e.filled_slots || 0, regCount)
+      };
+    }); 
+  }
   public getUpcomingEvents(): Event[] { return this.events.filter(e => e.status === 'UPCOMING' && e.is_published && e.slug !== 'system-site-settings'); }
   public getOngoingEvents(): Event[] { return this.events.filter(e => e.status === 'ONGOING' && e.is_published && e.slug !== 'system-site-settings'); }
   public getEventBySlug(slug: string): Event | undefined { return this.events.find(e => e.slug === slug && e.slug !== 'system-site-settings'); }

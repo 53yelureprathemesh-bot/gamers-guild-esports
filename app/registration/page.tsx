@@ -598,7 +598,7 @@ function RegistrationFormContent() {
             {activeEvent && (
               <div className="text-[11px] font-mono text-gray-400 pt-1 flex justify-between">
                 <span>Mode: {activeEvent.mode} &bull; Venue: {activeEvent.venue}</span>
-                <span className="text-neon-emerald font-bold">Slots: {activeEvent.filled_slots}/{activeEvent.total_slots}</span>
+                <span className="text-neon-emerald font-bold">Slots: {activeEvent.filled_slots || 0}/{activeEvent.total_slots || 100}</span>
               </div>
             )}
           </div>

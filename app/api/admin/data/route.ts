@@ -16,6 +16,22 @@ const NO_CACHE_HEADERS = {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+async function getEventSlotCounts(supabase: any): Promise<Record<string, number>> {
+  try {
+    const { data: regCounts, error } = await supabase.from('registrations').select('event_id');
+    if (!error && Array.isArray(regCounts)) {
+      const counts: Record<string, number> = {};
+      regCounts.forEach((r: any) => {
+        if (r.event_id) counts[r.event_id] = (counts[r.event_id] || 0) + 1;
+      });
+      return counts;
+    }
+  } catch (e) {
+    console.warn('Error fetching registration counts for slots:', e);
+  }
+  return {};
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -121,16 +137,21 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const { data: dbEvents, error: evError } = await supabase
-                .from('events')
-                .select('*')
-                .neq('slug', 'system-site-settings')
-                .order('date', { ascending: true });
+              const [{ data: dbEvents, error: evError }, countsByEvent] = await Promise.all([
+                supabase
+                  .from('events')
+                  .select('*')
+                  .neq('slug', 'system-site-settings')
+                  .order('date', { ascending: true }),
+                getEventSlotCounts(supabase)
+              ]);
               if (!evError && Array.isArray(dbEvents)) {
                 events = dbEvents.filter((e: any) => e.slug !== 'system-site-settings').map((e: any) => {
                   const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                  const liveFilled = countsByEvent[e.id] ?? e.filled_slots ?? 0;
                   return {
                     ...e,
+                    filled_slots: liveFilled,
                     rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
                     stream_url: rulesObj?.stream_url || e.stream_url || '',
                     is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
@@ -388,9 +409,10 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const { data: dbEvents, error } = await supabase
-                .from('events')
-                .select('*');
+              const [{ data: dbEvents, error }, countsByEvent] = await Promise.all([
+                supabase.from('events').select('*'),
+                getEventSlotCounts(supabase)
+              ]);
 
               if (!error && Array.isArray(dbEvents)) {
                 const sysEvent = dbEvents.find(e => e.slug === 'system-site-settings');
@@ -416,8 +438,10 @@ export async function GET(req: NextRequest) {
                   .filter((e: any) => e.slug !== 'system-site-settings')
                   .map((e: any) => {
                     const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                    const liveFilled = countsByEvent[e.id] ?? e.filled_slots ?? 0;
                     return {
                       ...e,
+                      filled_slots: liveFilled,
                       rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
                       stream_url: rulesObj?.stream_url || e.stream_url || '',
                       is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
@@ -600,13 +624,14 @@ export async function GET(req: NextRequest) {
           try {
             const supabase = getServiceSupabase();
             if (supabase) {
-              const [evRes, sysEvRes, anRes, galRes, spRes, regRes] = await Promise.all([
+              const [evRes, sysEvRes, anRes, galRes, spRes, regRes, countsByEvent] = await Promise.all([
                 supabase.from('events').select('*').neq('slug', 'system-site-settings').order('date', { ascending: true }),
                 supabase.from('events').select('rules').eq('slug', 'system-site-settings').single(),
                 supabase.from('announcements').select('*').eq('is_published', true).order('created_at', { ascending: false }),
                 supabase.from('gallery').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
                 supabase.from('sponsors').select('*').order('tier', { ascending: true }),
-                supabase.from('registrations').select('id, public_code, player_name, in_game_name, player_uid, team_name, game, state, phone, email, status, created_at, events(title)').order('created_at', { ascending: false }).limit(100)
+                supabase.from('registrations').select('id, public_code, player_name, in_game_name, player_uid, team_name, game, state, phone, email, status, created_at, events(title)').order('created_at', { ascending: false }).limit(100),
+                getEventSlotCounts(supabase)
               ]);
 
               if (regRes?.data && Array.isArray(regRes.data)) {
@@ -624,8 +649,10 @@ export async function GET(req: NextRequest) {
                 const filtered = evRes.data.filter((e: any) => e.slug !== 'system-site-settings');
                 events = filtered.map((e: any) => {
                   const rulesObj = (e.rules && typeof e.rules === 'object' && !Array.isArray(e.rules)) ? e.rules : null;
+                  const liveFilled = countsByEvent[e.id] ?? e.filled_slots ?? 0;
                   return {
                     ...e,
+                    filled_slots: liveFilled,
                     rules: Array.isArray(e.rules) ? e.rules : (rulesObj?.rulesList || []),
                     stream_url: rulesObj?.stream_url || e.stream_url || '',
                     is_stream_live: rulesObj?.is_stream_live ?? e.is_stream_live ?? false
@@ -806,6 +833,19 @@ export async function POST(req: NextRequest) {
                 cleanDeadline = new Date().toISOString();
               }
 
+              // Automatically fetch live registration count for this event so filled_slots is always accurate
+              let liveFilledSlots = Number(saved.filled_slots) || 0;
+              try {
+                const { count: actualRegCount } = await supabase
+                  .from('registrations')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('event_id', saved.id);
+                if (typeof actualRegCount === 'number') {
+                  liveFilledSlots = actualRegCount;
+                  saved.filled_slots = actualRegCount;
+                }
+              } catch (_) {}
+
               const { error: upsertError } = await supabase
                 .from('events')
                 .upsert({
@@ -822,7 +862,7 @@ export async function POST(req: NextRequest) {
                   entry_fee: saved.entry_fee,
                   registration_deadline: cleanDeadline,
                   total_slots: Number(saved.total_slots) || 100,
-                  filled_slots: Number(saved.filled_slots) || 0,
+                  filled_slots: liveFilledSlots,
                   description: saved.description || '',
                   rules: rulesPayload,
                   status: saved.status,
@@ -978,12 +1018,18 @@ export async function POST(req: NextRequest) {
                 await supabase.from('registration_answers').delete().eq('registration_id', target.id);
                 // 3. Delete parent registration entry
                 await supabase.from('registrations').delete().eq('id', target.id);
-                // 4. Decrement filled slots on the event
+                // 4. Update filled slots accurately on the event
                 if (target.event_id) {
-                  const { data: evData } = await supabase.from('events').select('filled_slots').eq('id', target.event_id).single();
-                  if (evData && evData.filled_slots > 0) {
-                    await supabase.from('events').update({ filled_slots: Math.max(0, evData.filled_slots - 1) }).eq('id', target.event_id);
-                  }
+                  try {
+                    const { count: remainingRegs } = await supabase
+                      .from('registrations')
+                      .select('id', { count: 'exact', head: true })
+                      .eq('event_id', target.event_id);
+                    await supabase
+                      .from('events')
+                      .update({ filled_slots: typeof remainingRegs === 'number' ? remainingRegs : 0 })
+                      .eq('id', target.event_id);
+                  } catch (_) {}
                 }
               }
             }

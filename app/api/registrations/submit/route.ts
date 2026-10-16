@@ -3,6 +3,7 @@ import { dataStore } from '@/lib/dataStore';
 import { sendRegistrationConfirmationEmail } from '@/lib/email';
 import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 import { getStateCode } from '@/lib/stateCodes';
+import { invalidateCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -286,9 +287,24 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          if (cleanEventId && !eventTitle) {
-            const { data: eventData } = await supabase.from('events').select('title').eq('id', cleanEventId).single();
-            if (eventData) eventTitle = eventData.title;
+          if (cleanEventId) {
+            try {
+              if (!eventTitle) {
+                const { data: eventData } = await supabase.from('events').select('title').eq('id', cleanEventId).single();
+                if (eventData) eventTitle = eventData.title;
+              }
+
+              // Automatically sync exact live registration count for this event
+              const { count: totalRegsForEvent } = await supabase
+                .from('registrations')
+                .select('id', { count: 'exact', head: true })
+                .eq('event_id', cleanEventId);
+
+              const actualFilled = typeof totalRegsForEvent === 'number' ? totalRegsForEvent : 1;
+              await supabase.from('events').update({ filled_slots: actualFilled }).eq('id', cleanEventId);
+            } catch (slotUpdateErr) {
+              console.warn('Could not update event filled_slots:', slotUpdateErr);
+            }
           }
         }
       } catch (sbError: any) {
@@ -375,6 +391,9 @@ export async function POST(req: NextRequest) {
         setTimeout(() => resolve({ success: false, error: 'Email delivery timed out after 8s.' }), 8000)
       )
     ]);
+
+    // Invalidate in-memory cached events and bundles so slot counts update immediately
+    invalidateCache();
 
     return NextResponse.json({
       success: true,

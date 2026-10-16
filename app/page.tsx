@@ -522,13 +522,13 @@ export default function HomePage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Slots:</span>
-                      <span className="text-neon-emerald font-bold">{event.filled_slots}/{event.total_slots} Filled</span>
+                      <span className="text-neon-emerald font-bold">{event.filled_slots || 0}/{event.total_slots || 100} Filled</span>
                     </div>
                     {/* Slots Progress Bar */}
                     <div className="w-full h-1.5 bg-cyber-dark rounded-full overflow-hidden border border-cyber-border">
                       <div 
                         className="h-full bg-gradient-to-r from-neon-emerald to-neon-cyan" 
-                        style={{ width: `${Math.min(100, (event.filled_slots / event.total_slots) * 100)}%` }}
+                        style={{ width: `${Math.min(100, ((event.filled_slots || 0) / (event.total_slots || 100)) * 100)}%` }}
                       ></div>
                     </div>
                   </div>

@@ -150,7 +150,9 @@ export default function UpcomingEventsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredEvents.map((event) => {
-              const isFull = event.filled_slots >= event.total_slots;
+              const totalSlots = event.total_slots || 100;
+              const filledSlots = event.filled_slots || 0;
+              const isFull = filledSlots >= totalSlots;
               const posterSrc = getGamePoster(event.game, event.poster_url);
               return (
                 <div
@@ -227,12 +229,12 @@ export default function UpcomingEventsPage() {
                       <div className="pt-2 border-t border-cyber-border">
                         <div className="flex justify-between text-[11px] mb-1.5">
                           <span className="text-gray-400">Slots Availability:</span>
-                          <span className="text-white font-bold">{event.filled_slots} / {event.total_slots} Filled</span>
+                          <span className="text-white font-bold">{filledSlots} / {totalSlots} Filled</span>
                         </div>
                         <div className="w-full h-2 bg-cyber-dark rounded-full overflow-hidden border border-cyber-border">
                           <div 
                             className={`h-full ${isFull ? 'bg-neon-red' : 'bg-gradient-to-r from-neon-emerald to-neon-cyan'}`}
-                            style={{ width: `${Math.min(100, (event.filled_slots / event.total_slots) * 100)}%` }}
+                            style={{ width: `${Math.min(100, (filledSlots / totalSlots) * 100)}%` }}
                           ></div>
                         </div>
                       </div>
